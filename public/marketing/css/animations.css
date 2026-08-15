@@ -1,0 +1,123 @@
+/*==================================================
+                EDUCONNECT
+              ANIMATIONS.CSS
+==================================================*/
+
+/*==========================
+    HERO KEYFRAMES
+==========================*/
+
+@keyframes halo {
+
+    0%,
+    100% {
+        transform: scale(1);
+        opacity: .8;
+    }
+
+    50% {
+        transform: scale(1.08);
+        opacity: 1;
+    }
+
+}
+
+@keyframes rotateCircle {
+
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+
+}
+
+@keyframes floating {
+
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-18px);
+    }
+
+}
+
+/*==========================
+    SCROLL INDICATOR
+==========================*/
+
+@keyframes scrollPulse {
+
+    0%,
+    100% {
+        opacity: .4;
+    }
+
+    50% {
+        opacity: 1;
+    }
+
+}
+
+.scroll-indicator span {
+    animation: scrollPulse 2s ease-in-out infinite;
+}
+
+/*==========================
+    SCROLL REVEAL
+==========================*/
+
+.reveal {
+    opacity: 0;
+    transform: translateY(40px);
+    transition: opacity .8s ease, transform .8s ease;
+}
+
+.reveal.active {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/*==========================
+    STAGGERED CARD REVEAL
+==========================*/
+
+.services-grid .service-card,
+.why-grid .why-card,
+.subjects-grid .subject-card,
+.tutors-grid .tutor-card,
+.testimonial-grid .testimonial-card,
+.quick-stats .stat-card {
+    opacity: 0;
+    transform: translateY(30px);
+    transition: opacity .6s ease, transform .6s ease;
+}
+
+.services-grid .service-card.active,
+.why-grid .why-card.active,
+.subjects-grid .subject-card.active,
+.tutors-grid .tutor-card.active,
+.testimonial-grid .testimonial-card.active,
+.quick-stats .stat-card.active {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/*==========================
+    REDUCED MOTION
+==========================*/
+
+@media (prefers-reduced-motion: reduce) {
+
+    * {
+        animation-duration: .001ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: .001ms !important;
+    }
+
+}

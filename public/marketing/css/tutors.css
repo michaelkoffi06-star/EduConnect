@@ -1,0 +1,71 @@
+/*==================================================
+                EDUCONNECT
+               TUTORS.CSS
+==================================================*/
+
+.tutors-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 35px;
+}
+
+.tutor-card {
+    overflow: hidden;
+    transition: var(--transition);
+}
+
+.tutor-card:hover {
+    transform: translateY(-10px);
+    border-color: var(--gold);
+}
+
+.tutor-image {
+    height: 240px;
+    overflow: hidden;
+}
+
+.tutor-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform .5s ease;
+}
+
+.tutor-card:hover .tutor-image img {
+    transform: scale(1.08);
+}
+
+.tutor-content {
+    padding: 30px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.tutor-content h3 {
+    font-family: 'Cinzel', serif;
+    font-size: 1.2rem;
+}
+
+.tutor-content span {
+    color: var(--gold);
+    font-size: .85rem;
+    font-weight: 600;
+    letter-spacing: .5px;
+}
+
+.tutor-content p {
+    color: var(--text);
+    line-height: 1.7;
+    font-size: .92rem;
+}
+
+.rating {
+    font-size: .85rem;
+}
+
+.tutor-content .btn-primary {
+    margin-top: 10px;
+    padding: 12px 26px;
+    font-size: .9rem;
+}

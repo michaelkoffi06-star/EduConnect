@@ -1,0 +1,207 @@
+/*==================================================
+                EDUCONNECT
+                BASE.CSS
+==================================================*/
+
+/*==========================
+        RESET
+==========================*/
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    font-family: 'Poppins', sans-serif;
+    background: linear-gradient(135deg, #0A1628, #112240);
+    color: white;
+    overflow-x: hidden;
+    position: relative;
+    min-height: 100vh;
+}
+
+/*==========================
+        SCROLLBAR
+==========================*/
+
+::-webkit-scrollbar {
+    width: 10px;
+}
+
+::-webkit-scrollbar-track {
+    background: #071326;
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--gold);
+    border-radius: 20px;
+}
+
+/*==========================
+        LINKS / LISTS / IMG
+==========================*/
+
+a {
+    text-decoration: none;
+    color: inherit;
+}
+
+ul {
+    list-style: none;
+}
+
+img {
+    display: block;
+    max-width: 100%;
+}
+
+i {
+    color: var(--gold);
+}
+
+/*==========================
+    BACKGROUND EFFECT
+==========================*/
+
+.bg-circle {
+    position: fixed;
+    border-radius: 50%;
+    filter: blur(80px);
+    z-index: -2;
+    opacity: .55;
+}
+
+.circle-one {
+    width: 420px;
+    height: 420px;
+    background: #17335E;
+    top: -120px;
+    left: -120px;
+}
+
+.circle-two {
+    width: 500px;
+    height: 500px;
+    background: #C9951A;
+    bottom: -220px;
+    right: -220px;
+}
+
+.light {
+    position: fixed;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, .05);
+    filter: blur(120px);
+    z-index: -3;
+}
+
+.light-one {
+    width: 700px;
+    height: 700px;
+    left: 20%;
+    top: 10%;
+}
+
+.light-two {
+    width: 600px;
+    height: 600px;
+    right: 10%;
+    bottom: 0;
+}
+
+/*==========================
+        SECTIONS (shared)
+==========================*/
+
+section {
+    padding: 120px 8%;
+    position: relative;
+}
+
+.section-header {
+    text-align: center;
+    max-width: 700px;
+    margin: 0 auto 70px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 18px;
+}
+
+.section-badge {
+    display: inline-flex;
+    width: max-content;
+    padding: 10px 22px;
+    border-radius: 50px;
+    background: rgba(201, 149, 26, .12);
+    border: 1px solid rgba(201, 149, 26, .45);
+    color: var(--gold);
+    font-weight: 600;
+    letter-spacing: 1px;
+    font-size: .8rem;
+    text-transform: uppercase;
+}
+
+.section-header h2 {
+    font-family: 'Cinzel', serif;
+    font-size: clamp(2rem, 3.5vw, 2.8rem);
+    line-height: 1.3;
+}
+
+.section-header p {
+    color: var(--text);
+    line-height: 1.8;
+}
+
+.center {
+    text-align: center;
+    margin-top: 50px;
+}
+
+/* Legacy single-line title, kept for compatibility */
+.section-title {
+    text-align: center;
+    font-size: 42px;
+    font-family: 'Cinzel', serif;
+    margin-bottom: 70px;
+    position: relative;
+}
+
+.section-title::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    bottom: -18px;
+    width: 90px;
+    height: 4px;
+    border-radius: 50px;
+    background: var(--gold);
+}
+
+/*==========================
+    GLASS EFFECT (shared)
+==========================*/
+
+.card,
+.stat-card,
+.service-card,
+.why-card,
+.subject-card,
+.tutor-card,
+.testimonial-card,
+.contact-info,
+.contact-form,
+.faq-container details {
+    background: var(--glass);
+    backdrop-filter: blur(18px);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+}

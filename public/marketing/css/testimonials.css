@@ -1,0 +1,58 @@
+/*==================================================
+                EDUCONNECT
+             TESTIMONIALS.CSS
+==================================================*/
+
+.testimonial-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 35px;
+}
+
+.testimonial-card {
+    padding: 40px 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+    transition: var(--transition);
+}
+
+.testimonial-card:hover {
+    transform: translateY(-8px);
+    border-color: var(--gold);
+}
+
+.stars {
+    color: var(--gold);
+    letter-spacing: 3px;
+}
+
+.testimonial-card p {
+    color: var(--text);
+    line-height: 1.8;
+    font-style: italic;
+    flex-grow: 1;
+}
+
+.client {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.client img {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid var(--gold);
+}
+
+.client h4 {
+    font-size: .95rem;
+}
+
+.client span {
+    color: var(--text);
+    font-size: .8rem;
+}

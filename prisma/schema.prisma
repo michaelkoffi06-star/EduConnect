@@ -1,0 +1,112 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider   = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// 1. Catégories d'instructeurs
+enum InstructorType {
+  ETUDIANT
+  PROF_COLLEGE
+  PROF_LYCEE
+}
+
+// 2. Statut pour la modération des inscriptions
+enum ProfileStatus {
+  PENDING
+  APPROVED
+  SUSPENDED
+}
+
+// 3. Niveaux d'enseignement pris en charge
+enum AcademicLevel {
+  COLLEGE
+  LYCEE
+  ALL
+}
+
+// 4. Statut de traitement des messages de contact du site
+enum ContactStatus {
+  NEW
+  READ
+  ARCHIVED
+}
+
+// 5. Table principale : Les Instructeurs
+model Instructor {
+  id          String         @id @default(uuid())
+  firstName   String
+  lastName    String
+  type        InstructorType @default(ETUDIANT)
+  status      ProfileStatus  @default(PENDING)
+  levels      AcademicLevel  @default(ALL)
+  bio         String?        @db.Text
+  photoUrl    String?
+  cniUrl      String?
+  cvUrl       String?
+  email       String         @unique
+  whatsapp    String
+  rating      Float?
+  ratingCount Int            @default(0)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  subjects      InstructorSubject[]
+  matchRequests MatchRequest[]
+}
+
+// 6. Table des Disciplines (Maths, Physique...)
+model Subject {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  slug        String   @unique
+
+  instructors InstructorSubject[]
+}
+
+// 7. Table de liaison explicite Many-to-Many
+model InstructorSubject {
+  instructorId String
+  subjectId    String
+
+  instructor   Instructor @relation(fields: [instructorId], references: [id], onDelete: Cascade)
+  subject      Subject    @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+
+  @@id([instructorId, subjectId])
+}
+
+// 8. Messages envoyés depuis le formulaire de contact général du site
+model ContactMessage {
+  id        String        @id @default(uuid())
+  fullName  String
+  email     String
+  subject   String?
+  message   String        @db.Text
+  status    ContactStatus @default(NEW)
+  createdAt DateTime      @default(now())
+}
+
+// 9. Statut de traitement d'une demande de mise en relation
+enum MatchStatus {
+  NEW
+  CONTACTED
+  DONE
+}
+
+// 10. Demande d'un parent/élève : "je veux cet instructeur".
+model MatchRequest {
+  id             String      @id @default(uuid())
+  studentEmail   String
+  studentMessage String      @db.Text
+  instructorId   String
+  instructorName String
+  status         MatchStatus @default(NEW)
+  createdAt      DateTime    @default(now())
+
+  instructor     Instructor  @relation(fields: [instructorId], references: [id], onDelete: Cascade)
+}

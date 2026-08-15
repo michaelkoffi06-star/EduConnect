@@ -1,0 +1,40 @@
+/*==================================================
+                EDUCONNECT
+               SUBJECTS.CSS
+==================================================*/
+
+.subjects-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 25px;
+}
+
+.subject-card {
+    padding: 35px 20px;
+    text-align: center;
+    background: var(--glass);
+    backdrop-filter: blur(18px);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    transition: var(--transition);
+}
+
+.subject-card:hover {
+    transform: translateY(-6px) scale(1.02);
+    border-color: var(--gold);
+    background: var(--glass-strong);
+}
+
+.subject-card i {
+    font-size: 1.8rem;
+}
+
+.subject-card h3 {
+    font-family: 'Cinzel', serif;
+    font-size: 1rem;
+    font-weight: 700;
+}

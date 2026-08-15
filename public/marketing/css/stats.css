@@ -1,0 +1,47 @@
+/*==================================================
+                EDUCONNECT
+                STATS.CSS
+==================================================*/
+
+.quick-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 30px;
+    padding-top: 60px;
+    padding-bottom: 60px;
+}
+
+.stat-card {
+    padding: 40px 25px;
+    text-align: center;
+    transition: var(--transition);
+}
+
+.stat-card:hover {
+    transform: translateY(-8px);
+    border-color: var(--gold);
+}
+
+.stat-card .icon {
+    width: 60px;
+    height: 60px;
+    margin: 0 auto 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: rgba(201, 149, 26, .12);
+    font-size: 1.4rem;
+}
+
+.stat-card h2 {
+    font-family: 'Cinzel', serif;
+    font-size: 2.6rem;
+    color: var(--gold);
+}
+
+.stat-card p {
+    color: var(--text);
+    margin-top: 8px;
+    font-size: .95rem;
+}

@@ -1,0 +1,27 @@
+/*==================================================
+                EDUCONNECT
+              VARIABLES.CSS
+==================================================*/
+
+:root {
+
+    --primary: #0A1628;
+    --secondary: #112240;
+    --gold: #C9951A;
+    --gold-light: #D4A820;
+
+    --white: #ffffff;
+    --text: #D8D8D8;
+
+    --glass: rgba(17, 34, 64, .55);
+    --glass-strong: rgba(17, 34, 64, .75);
+
+    --border: rgba(42, 74, 110, .6);
+
+    --shadow: 0 15px 45px rgba(0, 0, 0, .35);
+
+    --transition: .35s ease;
+
+    --radius: 18px;
+
+}

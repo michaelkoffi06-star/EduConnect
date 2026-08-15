@@ -1,0 +1,46 @@
+/*==================================================
+                EDUCONNECT
+               BUTTONS.CSS
+==================================================*/
+
+.btn-primary {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    padding: 15px 34px;
+    background: linear-gradient(45deg, var(--gold), var(--gold-light));
+    color: #041125;
+    font-weight: 600;
+    border-radius: 50px;
+    border: none;
+    cursor: pointer;
+    transition: var(--transition);
+    box-shadow: 0 8px 30px rgba(201, 149, 26, .35);
+}
+
+.btn-primary:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 18px 35px rgba(201, 149, 26, .45);
+}
+
+.btn-secondary {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    padding: 15px 34px;
+    border: 2px solid var(--gold);
+    border-radius: 50px;
+    color: white;
+    background: transparent;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.btn-secondary:hover {
+    background: var(--gold);
+    color: #041125;
+}
+
+.desktop-btn {
+    margin-left: 20px;
+}

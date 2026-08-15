@@ -1,0 +1,59 @@
+/*==================================================
+                EDUCONNECT
+               SERVICES.CSS
+==================================================*/
+
+.services-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 35px;
+}
+
+.service-card {
+    padding: 45px 35px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    transition: var(--transition);
+}
+
+.service-card:hover {
+    transform: translateY(-10px);
+    border-color: var(--gold);
+}
+
+.service-icon {
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 16px;
+    background: rgba(201, 149, 26, .12);
+    font-size: 1.5rem;
+}
+
+.service-card h3 {
+    font-family: 'Cinzel', serif;
+    font-size: 1.35rem;
+}
+
+.service-card p {
+    color: var(--text);
+    line-height: 1.75;
+    flex-grow: 1;
+}
+
+.service-card a {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--gold);
+    font-weight: 600;
+    font-size: .9rem;
+    transition: gap .3s ease;
+}
+
+.service-card a:hover {
+    gap: 16px;
+}

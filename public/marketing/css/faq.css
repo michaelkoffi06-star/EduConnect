@@ -1,0 +1,47 @@
+/*==================================================
+                EDUCONNECT
+                FAQ.CSS
+==================================================*/
+
+.faq-container {
+    max-width: 800px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.faq-container details {
+    padding: 24px 30px;
+    cursor: pointer;
+}
+
+.faq-container summary {
+    font-weight: 600;
+    font-size: 1.05rem;
+    list-style: none;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.faq-container summary::-webkit-details-marker {
+    display: none;
+}
+
+.faq-container summary::after {
+    content: "+";
+    color: var(--gold);
+    font-size: 1.4rem;
+    transition: transform .3s ease;
+}
+
+.faq-container details[open] summary::after {
+    transform: rotate(45deg);
+}
+
+.faq-container p {
+    color: var(--text);
+    line-height: 1.8;
+    margin-top: 16px;
+}
