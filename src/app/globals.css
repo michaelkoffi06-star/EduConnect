@@ -32,3 +32,22 @@ body {
 .animate-fade-in-up {
   animation: fadeInUp 0.5s ease both;
 }
+
+/* Systeme de theme clair/sombre pour les pages publiques */
+:root {
+  --ec-bg: #ffffff;
+  --ec-bg-alt: #faf8f2;
+  --ec-text: #0d1b3e;
+  --ec-text-muted: #4b5563;
+  --ec-border: #eee6d3;
+  --ec-card: #ffffff;
+}
+
+.dark {
+  --ec-bg: #0a1628;
+  --ec-bg-alt: #0d1f38;
+  --ec-text: #f3f4f6;
+  --ec-text-muted: #9ca3af;
+  --ec-border: #2a4a6e;
+  --ec-card: #112240;
+}

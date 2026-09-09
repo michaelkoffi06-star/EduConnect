@@ -39,14 +39,16 @@ export default function SiteHeader({ theme = "light" }: SiteHeaderProps) {
           </div>
         </Link>
 
-        <button
-          onClick={() => setMenuOpen((open) => !open)}
-          aria-label="Ouvrir le menu"
-          aria-expanded={menuOpen}
-          className={`${textColor} text-xl w-9 h-9 flex items-center justify-center rounded-lg border ${headerBorder} hover:border-[#C9951A] hover:text-[#C9951A] transition`}
-        >
-          {menuOpen ? "✕" : "☰"}
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setMenuOpen((open) => !open)}
+            aria-label="Ouvrir le menu"
+            aria-expanded={menuOpen}
+            className={`${textColor} text-xl w-9 h-9 flex items-center justify-center rounded-lg border ${headerBorder} hover:border-[#C9951A] hover:text-[#C9951A] transition`}
+          >
+            {menuOpen ? "✕" : "☰"}
+          </button>
+        </div>
 
       </div>
 

@@ -7,15 +7,15 @@ import { prisma } from "@/lib/prisma";
 export const metadata = {
   title: "EduConnect - Trouvez le tuteur ideal pour votre enfant",
   description:
-    "EduConnect connecte les élèves du système scolaire (6e à Terminale) avec des instructeurs qualifiés et vérifiés, a domicile ou en ligne.",
+    "EduConnect connecte les eleves du systeme scolaire (6e a Terminale) avec des instructeurs qualifies et verifies, a domicile ou en ligne.",
 };
 
 export const dynamic = "force-dynamic";
 
 const HOW_IT_WORKS = [
-  { title: "Parcourez les profils", desc: "Consultez les instructeurs disponibles par matière." },
-  { title: "Faites votre choix", desc: "Sélectionnez celui qui correspond aux besoins de votre enfant." },
-  { title: "On s'occupe du reste", desc: "L'équipe EduConnect organise la mise en relation." },
+  { title: "Parcourez les profils", desc: "Consultez les instructeurs disponibles par matiere." },
+  { title: "Faites votre choix", desc: "Selectionnez celui qui correspond aux besoins de votre enfant." },
+  { title: "On s'occupe du reste", desc: "L'equipe EduConnect organise la mise en relation." },
 ];
 
 export default async function HomePage() {
@@ -47,14 +47,14 @@ export default async function HomePage() {
             <div className="flex items-center gap-2 mb-6">
               <span className="w-8 h-px bg-[#c9951a]" />
               <span className="text-xs font-medium text-[#8a6510] tracking-wide">
-                Soutien scolaire, du collège à la terminale
+                Soutien scolaire, du college a la terminale
               </span>
             </div>
             <h1 className="font-[family-name:var(--font-cinzel)] text-4xl md:text-5xl lg:text-6xl leading-[1.05] mb-6">
               Le bon tuteur,<br /><span className="text-[#c9951a]">au bon moment</span>
             </h1>
             <p className="text-gray-600 text-base md:text-lg max-w-md mb-9 leading-relaxed">
-              EduConnect met les familles en relation avec des instructeurs vérifiés, choisis pour leur pédagogie autant que pour leurs résultats.
+              EduConnect met les familles en relation avec des instructeurs verifies, choisis pour leur pedagogie autant que pour leurs resultats.
             </p>
             <div className="flex flex-wrap gap-4">
               <Link href="/trouver-un-tuteur" className="px-7 py-3 rounded-full bg-gradient-to-r from-[#c9951a] to-[#d4a820] text-white font-semibold shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all">
@@ -95,12 +95,12 @@ export default async function HomePage() {
                 <div className="font-[family-name:var(--font-cinzel)] text-5xl text-[#0d1b3e] leading-none">
                   <AnimatedCounter value={approvedCount} suffix="+" />
                 </div>
-                <p className="text-sm text-gray-500 mt-2 mb-6">instructeurs vérifiés par notre équipe</p>
+                <p className="text-sm text-gray-500 mt-2 mb-6">instructeurs verifies par notre equipe</p>
 
                 <div className="flex gap-6 pt-6 border-t border-[#eee6d3] text-sm">
                   <div>
                     <span className="font-semibold text-[#0d1b3e]"><AnimatedCounter value={subjectCount} /></span>
-                    <span className="text-gray-500 ml-1">matières</span>
+                    <span className="text-gray-500 ml-1">matieres</span>
                   </div>
                   <div>
                     <span className="font-semibold text-[#0d1b3e]"><AnimatedCounter value={doneMatchesCount} suffix="+" /></span>
@@ -123,7 +123,7 @@ export default async function HomePage() {
             <div className="flex items-end justify-between mb-8 flex-wrap gap-4">
               <div>
                 <h2 className="font-[family-name:var(--font-cinzel)] text-2xl md:text-3xl">Nos instructeurs</h2>
-                <p className="text-gray-600 text-sm mt-1">Une sélection de profils déjà valides par notre équipe.</p>
+                <p className="text-gray-600 text-sm mt-1">Une selection de profils deja valides par notre equipe.</p>
               </div>
               <Link href="/trouver-un-tuteur" className="text-sm font-semibold text-[#c9951a] hover:underline whitespace-nowrap">
                 Voir tous les instructeurs
@@ -196,7 +196,7 @@ export default async function HomePage() {
         <ScrollReveal>
           <div className="relative max-w-3xl mx-auto px-6 text-center">
             <h2 className="font-[family-name:var(--font-cinzel)] text-2xl md:text-3xl text-white mb-3">
-              Prêt à trouver le bon tuteur ?
+              Pret a trouver le bon tuteur ?
             </h2>
             <p className="text-gray-300 text-sm mb-7">
               Quelques minutes suffisent pour lancer votre demande.
@@ -229,16 +229,16 @@ export default async function HomePage() {
             <h4 className="text-xs font-semibold text-[#c9951a] uppercase tracking-widest mb-3">Suivez-nous</h4>
             <ul className="text-sm text-gray-600 space-y-1.5">
               <li>
-                <a href="https://www.facebook.com/profile.php?id=100090481355986" target="_blank" rel="noopener noreferrer" className="hover:text-[#c9951a]">Facebook</a>
+                <a href="https://facebook.com/educonnect.ci" target="_blank" rel="noopener noreferrer" className="hover:text-[#c9951a]">Facebook</a>
               </li>
               <li>
-                <a href="https://wa.me/2250758529323" target="_blank" rel="noopener noreferrer" className="hover:text-[#c9951a]">WhatsApp</a>
+                <a href="https://wa.me/2250000000000" target="_blank" rel="noopener noreferrer" className="hover:text-[#c9951a]">WhatsApp</a>
               </li>
             </ul>
           </div>
         </div>
         <div className="border-t border-[#eee6d3] mt-10 pt-6 text-center text-xs text-gray-500">
-          (c) 2026 EduConnect. Tous droits réservés.
+          (c) 2026 EduConnect. Tous droits reserves.
         </div>
       </footer>
     </div>
