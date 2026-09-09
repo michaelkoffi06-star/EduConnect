@@ -33,9 +33,14 @@ export async function middleware(request: NextRequest) {
 
   // --- Mode maintenance : bloque tout le reste du site (public + API publiques)
   // tant que MAINTENANCE_MODE=true, sans toucher au code.
+  // Exceptions : suggestions et soutien restent accessibles même pendant la maintenance.
   const maintenanceMode = process.env.MAINTENANCE_MODE === 'true';
+  const isExemptFromMaintenance =
+    pathname === '/suggestions' ||
+    pathname === '/soutenir' ||
+    pathname === '/api/feedback';
 
-  if (maintenanceMode && pathname !== '/maintenance') {
+  if (maintenanceMode && pathname !== '/maintenance' && !isExemptFromMaintenance) {
     if (pathname.startsWith('/api/')) {
       return NextResponse.json({ error: 'Site en maintenance.' }, { status: 503 });
     }

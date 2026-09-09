@@ -220,7 +220,7 @@ export default async function HomePage() {
             <h4 className="text-xs font-semibold text-[#c9951a] uppercase tracking-widest mb-3">Contact</h4>
             <ul className="text-sm text-gray-600 space-y-1.5">
               <li>+225 07 58 52 93 23</li>
-              <li>+225 01 01 68 09 71</li>
+              <li>+225 07 88 08 22 45</li>
               <li>+225 05 75 53 52 97</li>
               <li>jk4177234@gmail.com</li>
             </ul>
@@ -229,10 +229,10 @@ export default async function HomePage() {
             <h4 className="text-xs font-semibold text-[#c9951a] uppercase tracking-widest mb-3">Suivez-nous</h4>
             <ul className="text-sm text-gray-600 space-y-1.5">
               <li>
-                <a href="https://facebook.com/educonnect.ci" target="_blank" rel="noopener noreferrer" className="hover:text-[#c9951a]">Facebook</a>
+                <a href="https://www.facebook.com/profile.php?id=100090481355986" target="_blank" rel="noopener noreferrer" className="hover:text-[#c9951a]">Facebook</a>
               </li>
               <li>
-                <a href="https://wa.me/2250000000000" target="_blank" rel="noopener noreferrer" className="hover:text-[#c9951a]">WhatsApp</a>
+                <a href="https://wa.me/2250778114938" target="_blank" rel="noopener noreferrer" className="hover:text-[#c9951a]">WhatsApp</a>
               </li>
               <li>
                 <a href="/suggestions" className="hover:text-[#c9951a]">Suggestions</a>
