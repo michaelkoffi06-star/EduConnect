@@ -34,7 +34,7 @@ export async function GET(
 
   const contentType = result.contentType || (fileName.endsWith('.pdf') ? 'application/pdf' : 'image/jpeg');
 
-  return new NextResponse(result.buffer, {
+  return new NextResponse(new Uint8Array(result.buffer), {
     headers: {
       'Content-Type': contentType,
       'Content-Disposition': `inline; filename="${fileName}"`,
