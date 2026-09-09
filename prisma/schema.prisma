@@ -49,6 +49,7 @@ model Instructor {
   photoUrl    String?
   cniUrl      String?
   cvUrl       String?
+  editToken   String         @unique @default(uuid()) // Lien secret d'auto-edition du profil
   email       String         @unique
   whatsapp    String
   rating      Float?

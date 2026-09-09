@@ -1,30 +1,246 @@
+import Link from "next/link";
 import SiteHeader from "@/components/SiteHeader";
-import MarketingStyles from "@/components/MarketingStyles";
-import Script from "next/script";
+import ScrollReveal from "@/components/ScrollReveal";
+import AnimatedCounter from "@/components/AnimatedCounter";
+import { prisma } from "@/lib/prisma";
 
 export const metadata = {
-  title: "EduConnect — Trouvez le Home Tutor idéal pour votre enfant",
+  title: "EduConnect - Trouvez le tuteur ideal pour votre enfant",
   description:
-    "EduConnect connecte les élèves du système scolaire français (6e à Terminale) avec des Home Tutors qualifiés, à domicile ou en ligne.",
+    "EduConnect connecte les élèves du système scolaire (6e à Terminale) avec des instructeurs qualifiés et vérifiés, a domicile ou en ligne.",
 };
 
-// Contenu du site vitrine (converti depuis le mockup HTML/CSS/JS).
-// Rendu tel quel via dangerouslySetInnerHTML pour préserver exactement
-// la structure et les classes CSS déjà stylées dans public/marketing/css/.
-// Le header/nav d'origine a été retiré de ce contenu : c'est désormais
-// <SiteHeader /> qui gère la navigation, de façon identique sur toutes les pages.
-const MARKETING_HTML = "\n\n    <!-- ================= BACKGROUND ================= -->\n\n    <div class=\"bg-circle circle-one\"></div>\n    <div class=\"bg-circle circle-two\"></div>\n\n    <div class=\"light light-one\"></div>\n    <div class=\"light light-two\"></div>\n\n    <!-- ================= HEADER ================= -->\n<!-- ================= MOBILE MENU ================= -->\n<!-- ================= HERO ================= -->\n\n    <section id=\"home\" class=\"hero\">\n\n        <div class=\"hero-text\">\n\n            <span class=\"badge\">\n\n                Plateforme de Home Tutors\n\n            </span>\n\n            <h1>\n\n                L'excellence acad\u00e9mique commence\n                avec un <span>Home Tutor</span>\n                d'exception.\n\n            </h1>\n\n            <p>\n\n                EduConnect s\u00e9lectionne les meilleurs\n                enseignants afin d'accompagner les \u00e9l\u00e8ves\n                vers la r\u00e9ussite scolaire gr\u00e2ce \u00e0 un\n                suivi personnalis\u00e9.\n\n            </p>\n\n            <div class=\"hero-buttons\">\n\n                <a href=\"/trouver-un-tuteur\" class=\"btn-primary\">\n\n                    Trouver un tuteur\n\n                </a>\n\n                <a href=\"/register-instructor\" class=\"btn-secondary\">\n\n                    Devenir tuteur\n\n                </a>\n\n            </div>\n\n        </div>\n\n        <div class=\"hero-image\">\n\n            <div class=\"hero-logo-mark\"><img src=\"/marketing/images/logo.png\" alt=\"EduConnect\"></div>\n\n        </div>\n\n        <div class=\"scroll-indicator\">\n\n            <small>D\u00e9couvrir</small>\n\n            <span></span>\n\n        </div>\n\n    </section>\n\n    <!-- ========================================= -->\n    <!--        QUICK STATS                        -->\n    <!-- ========================================= -->\n\n    <section class=\"quick-stats\" id=\"stats\">\n\n        <div class=\"stat-card\">\n\n            <div class=\"icon\">\n                <i class=\"fa-solid fa-user-graduate\"></i>\n            </div>\n\n            <h2 data-count=\"500\">0</h2>\n\n            <p>\u00c9l\u00e8ves accompagn\u00e9s</p>\n\n        </div>\n\n        <div class=\"stat-card\">\n\n            <div class=\"icon\">\n                <i class=\"fa-solid fa-chalkboard-user\"></i>\n            </div>\n\n            <h2 data-count=\"120\">0</h2>\n\n            <p>Home Tutors certifi\u00e9s</p>\n\n        </div>\n\n        <div class=\"stat-card\">\n\n            <div class=\"icon\">\n                <i class=\"fa-solid fa-book-open\"></i>\n            </div>\n\n            <h2 data-count=\"15\">0</h2>\n\n            <p>Mati\u00e8res enseign\u00e9es</p>\n\n        </div>\n\n        <div class=\"stat-card\">\n\n            <div class=\"icon\">\n                <i class=\"fa-solid fa-star\"></i>\n            </div>\n\n            <h2 data-count=\"98\">0</h2>\n\n            <p>Taux de satisfaction</p>\n\n        </div>\n\n    </section>\n\n    <!-- ========================================= -->\n    <!--               SERVICES                    -->\n    <!-- ========================================= -->\n\n    <section class=\"services\" id=\"services\">\n\n        <div class=\"section-header\">\n\n            <span class=\"section-badge\">\n\n                Nos Services\n\n            </span>\n\n            <h2>\n\n                Des solutions adapt\u00e9es \u00e0 chaque besoin\n\n            </h2>\n\n            <p>\n\n                EduConnect accompagne les \u00e9l\u00e8ves de tous les niveaux\n                gr\u00e2ce \u00e0 un r\u00e9seau d'enseignants exp\u00e9riment\u00e9s,\n                s\u00e9lectionn\u00e9s selon des crit\u00e8res rigoureux.\n\n            </p>\n\n        </div>\n\n        <div class=\"services-grid\">\n\n            <article class=\"service-card\">\n\n                <div class=\"service-icon\">\n\n                    <i class=\"fa-solid fa-house\"></i>\n\n                </div>\n\n                <h3>\n\n                    Cours \u00e0 domicile\n\n                </h3>\n\n                <p>\n\n                    Un Home Tutor se d\u00e9place chez vous\n                    pour un accompagnement personnalis\u00e9\n                    dans un environnement rassurant.\n\n                </p>\n\n                <a href=\"#\">\n\n                    En savoir plus\n\n                    <i class=\"fa-solid fa-arrow-right\"></i>\n\n                </a>\n\n            </article>\n\n            <article class=\"service-card\">\n\n                <div class=\"service-icon\">\n\n                    <i class=\"fa-solid fa-laptop\"></i>\n\n                </div>\n\n                <h3>\n\n                    Cours en ligne\n\n                </h3>\n\n                <p>\n\n                    Des s\u00e9ances interactives via visioconf\u00e9rence\n                    avec des outils num\u00e9riques modernes.\n\n                </p>\n\n                <a href=\"#\">\n\n                    En savoir plus\n\n                    <i class=\"fa-solid fa-arrow-right\"></i>\n\n                </a>\n\n            </article>\n\n            <article class=\"service-card\">\n\n                <div class=\"service-icon\">\n\n                    <i class=\"fa-solid fa-book-open-reader\"></i>\n\n                </div>\n\n                <h3>\n\n                    Pr\u00e9paration aux examens\n\n                </h3>\n\n                <p>\n\n                    Pr\u00e9paration intensive au CEPE,\n                    BEPC, BAC, concours et examens\n                    universitaires.\n\n                </p>\n\n                <a href=\"#\">\n\n                    En savoir plus\n\n                    <i class=\"fa-solid fa-arrow-right\"></i>\n\n                </a>\n\n            </article>\n\n            <article class=\"service-card\">\n\n                <div class=\"service-icon\">\n\n                    <i class=\"fa-solid fa-chart-line\"></i>\n\n                </div>\n\n                <h3>\n\n                    Suivi scolaire\n\n                </h3>\n\n                <p>\n\n                    \u00c9valuation continue,\n                    rapports de progression\n                    et conseils p\u00e9dagogiques.\n\n                </p>\n\n                <a href=\"#\">\n\n                    En savoir plus\n\n                    <i class=\"fa-solid fa-arrow-right\"></i>\n\n                </a>\n\n            </article>\n\n            <article class=\"service-card\">\n\n                <div class=\"service-icon\">\n\n                    <i class=\"fa-solid fa-brain\"></i>\n\n                </div>\n\n                <h3>\n\n                    Coaching acad\u00e9mique\n\n                </h3>\n\n                <p>\n\n                    D\u00e9veloppement des m\u00e9thodes\n                    de travail, de la motivation\n                    et de l'organisation.\n\n                </p>\n\n                <a href=\"#\">\n\n                    En savoir plus\n\n                    <i class=\"fa-solid fa-arrow-right\"></i>\n\n                </a>\n\n            </article>\n\n            <article class=\"service-card\">\n\n                <div class=\"service-icon\">\n\n                    <i class=\"fa-solid fa-users\"></i>\n\n                </div>\n\n                <h3>\n\n                    Cours en petits groupes\n\n                </h3>\n\n                <p>\n\n                    Des groupes r\u00e9duits favorisant\n                    les \u00e9changes et la progression\n                    de chacun.\n\n                </p>\n\n                <a href=\"#\">\n\n                    En savoir plus\n\n                    <i class=\"fa-solid fa-arrow-right\"></i>\n\n                </a>\n\n            </article>\n\n        </div>\n\n    </section>\n\n    <!--=========================================\n            HOW IT WORKS\n    ==========================================-->\n\n    <section class=\"how-it-works\" id=\"process\">\n\n        <div class=\"section-header\">\n\n            <span class=\"section-badge\">\n                Comment \u00e7a fonctionne\n            </span>\n\n            <h2>\n                Trouver un Home Tutor n'a jamais \u00e9t\u00e9 aussi simple\n            </h2>\n\n            <p>\n                En seulement quelques \u00e9tapes, nous trouvons\n                l'enseignant qui correspond parfaitement\n                aux besoins de votre enfant.\n            </p>\n\n        </div>\n\n        <div class=\"timeline\">\n\n            <div class=\"step\">\n\n                <div class=\"step-number\">\n                    01\n                </div>\n\n                <div class=\"step-icon\">\n\n                    <i class=\"fa-solid fa-user-plus\"></i>\n\n                </div>\n\n                <h3>\n\n                    Inscription\n\n                </h3>\n\n                <p>\n\n                    Le parent cr\u00e9e son compte\n                    et renseigne les besoins\n                    de l'\u00e9l\u00e8ve.\n\n                </p>\n\n            </div>\n\n            <div class=\"step\">\n\n                <div class=\"step-number\">\n                    02\n                </div>\n\n                <div class=\"step-icon\">\n\n                    <i class=\"fa-solid fa-magnifying-glass\"></i>\n\n                </div>\n\n                <h3>\n\n                    Recherche\n\n                </h3>\n\n                <p>\n\n                    Notre \u00e9quipe s\u00e9lectionne\n                    le meilleur Home Tutor\n                    selon le profil recherch\u00e9.\n\n                </p>\n\n            </div>\n\n            <div class=\"step\">\n\n                <div class=\"step-number\">\n                    03\n                </div>\n\n                <div class=\"step-icon\">\n\n                    <i class=\"fa-solid fa-handshake\"></i>\n\n                </div>\n\n                <h3>\n\n                    Mise en relation\n\n                </h3>\n\n                <p>\n\n                    Une rencontre est organis\u00e9e\n                    entre le parent,\n                    l'\u00e9l\u00e8ve et le tuteur.\n\n                </p>\n\n            </div>\n\n            <div class=\"step\">\n\n                <div class=\"step-number\">\n                    04\n                </div>\n\n                <div class=\"step-icon\">\n\n                    <i class=\"fa-solid fa-graduation-cap\"></i>\n\n                </div>\n\n                <h3>\n\n                    D\u00e9but des cours\n\n                </h3>\n\n                <p>\n\n                    Les s\u00e9ances commencent\n                    avec un suivi r\u00e9gulier\n                    des progr\u00e8s.\n\n                </p>\n\n            </div>\n\n        </div>\n\n    </section>\n\n    <!--=========================================\n              POURQUOI EDUCONNECT\n    ==========================================-->\n\n    <section class=\"why-us\" id=\"advantages\">\n\n        <div class=\"section-header\">\n\n            <span class=\"section-badge\">\n\n                Pourquoi EduConnect ?\n\n            </span>\n\n            <h2>\n\n                Plus qu'une plateforme,\n                un v\u00e9ritable partenaire \u00e9ducatif.\n\n            </h2>\n\n            <p>\n\n                Notre mission est d'offrir\n                un accompagnement scolaire\n                d'excellence gr\u00e2ce \u00e0 des\n                enseignants passionn\u00e9s.\n\n            </p>\n\n        </div>\n\n        <div class=\"why-grid\">\n\n            <article class=\"why-card\">\n\n                <i class=\"fa-solid fa-user-check\"></i>\n\n                <h3>\n\n                    Tuteurs certifi\u00e9s\n\n                </h3>\n\n                <p>\n\n                    Chaque enseignant est\n                    s\u00e9lectionn\u00e9 apr\u00e8s une\n                    \u00e9valuation de ses\n                    comp\u00e9tences.\n\n                </p>\n\n            </article>\n\n            <article class=\"why-card\">\n\n                <i class=\"fa-solid fa-shield-halved\"></i>\n\n                <h3>\n\n                    Fiabilit\u00e9\n\n                </h3>\n\n                <p>\n\n                    Nous v\u00e9rifions\n                    les profils,\n                    les r\u00e9f\u00e9rences\n                    et les exp\u00e9riences.\n\n                </p>\n\n            </article>\n\n            <article class=\"why-card\">\n\n                <i class=\"fa-solid fa-chart-column\"></i>\n\n                <h3>\n\n                    Suivi personnalis\u00e9\n\n                </h3>\n\n                <p>\n\n                    Des rapports r\u00e9guliers\n                    permettent de suivre\n                    l'\u00e9volution de chaque \u00e9l\u00e8ve.\n\n                </p>\n\n            </article>\n\n            <article class=\"why-card\">\n\n                <i class=\"fa-solid fa-clock\"></i>\n\n                <h3>\n\n                    Flexibilit\u00e9\n\n                </h3>\n\n                <p>\n\n                    Choisissez les horaires\n                    et le rythme\n                    qui vous conviennent.\n\n                </p>\n\n            </article>\n\n            <article class=\"why-card\">\n\n                <i class=\"fa-solid fa-headset\"></i>\n\n                <h3>\n\n                    Assistance\n\n                </h3>\n\n                <p>\n\n                    Une \u00e9quipe reste disponible\n                    pour r\u00e9pondre \u00e0 toutes\n                    vos pr\u00e9occupations.\n\n                </p>\n\n            </article>\n\n            <article class=\"why-card\">\n\n                <i class=\"fa-solid fa-award\"></i>\n\n                <h3>\n\n                    Excellence\n\n                </h3>\n\n                <p>\n\n                    Nous privil\u00e9gions\n                    la qualit\u00e9,\n                    les r\u00e9sultats\n                    et la satisfaction.\n\n                </p>\n\n            </article>\n\n        </div>\n\n    </section>\n\n    <!--=========================================\n                MATI\u00c8RES ENSEIGN\u00c9ES\n    ==========================================-->\n\n    <section class=\"subjects\" id=\"subjects\">\n\n        <div class=\"section-header\">\n\n            <span class=\"section-badge\">\n                Nos mati\u00e8res\n            </span>\n\n            <h2>\n                Un accompagnement dans toutes les disciplines\n            </h2>\n\n            <p>\n                Nos Home Tutors interviennent dans les principales mati\u00e8res\n                du primaire, du secondaire et du sup\u00e9rieur.\n            </p>\n\n        </div>\n\n        <div class=\"subjects-grid\">\n\n            <div class=\"subject-card\">\n                <i class=\"fa-solid fa-square-root-variable\"></i>\n                <h3>Math\u00e9matiques</h3>\n            </div>\n\n            <div class=\"subject-card\">\n                <i class=\"fa-solid fa-atom\"></i>\n                <h3>Physique-Chimie</h3>\n            </div>\n\n            <div class=\"subject-card\">\n                <i class=\"fa-solid fa-flask\"></i>\n                <h3>SVT</h3>\n            </div>\n\n            <div class=\"subject-card\">\n                <i class=\"fa-solid fa-language\"></i>\n                <h3>Fran\u00e7ais</h3>\n            </div>\n\n            <div class=\"subject-card\">\n                <i class=\"fa-solid fa-earth-americas\"></i>\n                <h3>Anglais</h3>\n            </div>\n\n            <div class=\"subject-card\">\n                <i class=\"fa-solid fa-laptop-code\"></i>\n                <h3>Informatique</h3>\n            </div>\n\n            <div class=\"subject-card\">\n                <i class=\"fa-solid fa-landmark\"></i>\n                <h3>Histoire-G\u00e9ographie</h3>\n            </div>\n\n            <div class=\"subject-card\">\n                <i class=\"fa-solid fa-chart-line\"></i>\n                <h3>\u00c9conomie</h3>\n            </div>\n\n        </div>\n\n    </section>\n\n    <!--=========================================\n                HOME TUTORS\n    ==========================================-->\n\n    <section class=\"tutors\" id=\"tutors\">\n\n        <div class=\"section-header\">\n\n            <span class=\"section-badge\">\n                Nos Home Tutors\n            </span>\n\n            <h2>\n                Des enseignants qualifi\u00e9s au service de votre r\u00e9ussite\n            </h2>\n\n            <p>\n                Tous nos enseignants sont s\u00e9lectionn\u00e9s selon leurs comp\u00e9tences,\n                leur p\u00e9dagogie et leur exp\u00e9rience.\n            </p>\n\n        </div>\n\n        <div class=\"tutors-grid\">\n\n            <!-- Tutor 1 -->\n\n            <article class=\"tutor-card\">\n\n                <div class=\"tutor-image\">\n\n                    <img src=\"/marketing/images/tutor1.jpg\"\n                         alt=\"Home Tutor\">\n\n                </div>\n\n                <div class=\"tutor-content\">\n\n                    <h3>Nom du Tuteur</h3>\n\n                    <span>\n                        Math\u00e9matiques \u2022 Physique\n                    </span>\n\n                    <p>\n\n                        Plus de 8 ann\u00e9es d'exp\u00e9rience\n                        dans l'accompagnement des \u00e9l\u00e8ves\n                        du coll\u00e8ge et du lyc\u00e9e.\n\n                    </p>\n\n                    <div class=\"rating\">\n\n                        <i class=\"fa-solid fa-star\"></i>\n                        <i class=\"fa-solid fa-star\"></i>\n                        <i class=\"fa-solid fa-star\"></i>\n                        <i class=\"fa-solid fa-star\"></i>\n                        <i class=\"fa-solid fa-star\"></i>\n\n                    </div>\n\n                    <a href=\"/trouver-un-tuteur\" class=\"btn-primary\">\n\n                        Voir le profil\n\n                    </a>\n\n                </div>\n\n            </article>\n\n            <!-- Tutor 2 -->\n\n            <article class=\"tutor-card\">\n\n                <div class=\"tutor-image\">\n\n                    <img src=\"/marketing/images/tutor2.jpg\"\n                         alt=\"Home Tutor\">\n\n                </div>\n\n                <div class=\"tutor-content\">\n\n                    <h3>Nom du Tuteur</h3>\n\n                    <span>\n                        Anglais \u2022 Fran\u00e7ais\n                    </span>\n\n                    <p>\n\n                        Sp\u00e9cialiste de la pr\u00e9paration\n                        aux examens nationaux\n                        et aux certifications.\n\n                    </p>\n\n                    <div class=\"rating\">\n\n                        <i class=\"fa-solid fa-star\"></i>\n                        <i class=\"fa-solid fa-star\"></i>\n                        <i class=\"fa-solid fa-star\"></i>\n                        <i class=\"fa-solid fa-star\"></i>\n                        <i class=\"fa-solid fa-star-half-stroke\"></i>\n\n                    </div>\n\n                    <a href=\"/trouver-un-tuteur\" class=\"btn-primary\">\n\n                        Voir le profil\n\n                    </a>\n\n                </div>\n\n            </article>\n\n            <!-- Tutor 3 -->\n\n            <article class=\"tutor-card\">\n\n                <div class=\"tutor-image\">\n\n                    <img src=\"/marketing/images/tutor3.jpg\"\n                         alt=\"Home Tutor\">\n\n                </div>\n\n                <div class=\"tutor-content\">\n\n                    <h3>Nom du Tuteur</h3>\n\n                    <span>\n                        SVT \u2022 Chimie\n                    </span>\n\n                    <p>\n\n                        Enseignant passionn\u00e9,\n                        reconnu pour son approche\n                        pratique et motivante.\n\n                    </p>\n\n                    <div class=\"rating\">\n\n                        <i class=\"fa-solid fa-star\"></i>\n                        <i class=\"fa-solid fa-star\"></i>\n                        <i class=\"fa-solid fa-star\"></i>\n                        <i class=\"fa-solid fa-star\"></i>\n                        <i class=\"fa-solid fa-star\"></i>\n\n                    </div>\n\n                    <a href=\"/trouver-un-tuteur\" class=\"btn-primary\">\n\n                        Voir le profil\n\n                    </a>\n\n                </div>\n\n            </article>\n\n        </div>\n\n        <div class=\"center\">\n\n            <a href=\"/trouver-un-tuteur\" class=\"btn-secondary\">\n\n                D\u00e9couvrir tous nos Home Tutors\n\n            </a>\n\n        </div>\n\n    </section>\n\n    <!-- ========================================= -->\n    <!--              TESTIMONIALS                 -->\n    <!-- ========================================= -->\n\n    <section class=\"testimonials\" id=\"testimonials\">\n\n        <div class=\"section-header\">\n\n            <span class=\"section-badge\">\n                T\u00e9moignages\n            </span>\n\n            <h2>\n                Ce que disent nos parents et nos \u00e9l\u00e8ves\n            </h2>\n\n            <p>\n                Leur r\u00e9ussite est notre plus belle r\u00e9compense.\n            </p>\n\n        </div>\n\n        <div class=\"testimonial-grid\">\n\n            <article class=\"testimonial-card\">\n\n                <div class=\"stars\">\n                    \u2605\u2605\u2605\u2605\u2605\n                </div>\n\n                <p>\n\n                    \"Gr\u00e2ce \u00e0 EduConnect, mon fils a consid\u00e9rablement\n                    am\u00e9lior\u00e9 ses r\u00e9sultats en Math\u00e9matiques.\n                    Son Home Tutor est tr\u00e8s p\u00e9dagogue.\"\n\n                </p>\n\n                <div class=\"client\">\n\n                    <img src=\"/marketing/images/parent1.jpg\" alt=\"Client\">\n\n                    <div>\n\n                        <h4>Madame Koffi</h4>\n\n                        <span>Parent d'\u00e9l\u00e8ve</span>\n\n                    </div>\n\n                </div>\n\n            </article>\n\n            <article class=\"testimonial-card\">\n\n                <div class=\"stars\">\n                    \u2605\u2605\u2605\u2605\u2605\n                </div>\n\n                <p>\n\n                    \"Les cours en ligne sont tr\u00e8s interactifs.\n                    Je recommande vivement EduConnect.\"\n\n                </p>\n\n                <div class=\"client\">\n\n                    <img src=\"/marketing/images/student1.jpg\" alt=\"Student\">\n\n                    <div>\n\n                        <h4>Yao St\u00e9phane</h4>\n\n                        <span>\u00c9l\u00e8ve en Terminale</span>\n\n                    </div>\n\n                </div>\n\n            </article>\n\n            <article class=\"testimonial-card\">\n\n                <div class=\"stars\">\n                    \u2605\u2605\u2605\u2605\u2605\n                </div>\n\n                <p>\n\n                    \"Tr\u00e8s bon suivi des \u00e9l\u00e8ves.\n                    Les rapports mensuels permettent\n                    de mesurer les progr\u00e8s.\"\n\n                </p>\n\n                <div class=\"client\">\n\n                    <img src=\"/marketing/images/parent2.jpg\" alt=\"Parent\">\n\n                    <div>\n\n                        <h4>Monsieur Coulibaly</h4>\n\n                        <span>Parent d'\u00e9l\u00e8ve</span>\n\n                    </div>\n\n                </div>\n\n            </article>\n\n        </div>\n\n    </section>\n\n    <!-- ========================================= -->\n    <!--                   FAQ                      -->\n    <!-- ========================================= -->\n\n    <section class=\"faq\" id=\"faq\">\n\n        <div class=\"section-header\">\n\n            <span class=\"section-badge\">\n                FAQ\n            </span>\n\n            <h2>\n                Questions fr\u00e9quentes\n            </h2>\n\n        </div>\n\n        <div class=\"faq-container\">\n\n            <details>\n\n                <summary>\n\n                    Comment trouver un Home Tutor ?\n\n                </summary>\n\n                <p>\n\n                    Il suffit de remplir notre formulaire.\n                    Notre \u00e9quipe s\u00e9lectionnera le meilleur enseignant.\n\n                </p>\n\n            </details>\n\n            <details>\n\n                <summary>\n\n                    Les cours sont-ils uniquement \u00e0 domicile ?\n\n                </summary>\n\n                <p>\n\n                    Non.\n                    Nous proposons \u00e9galement des cours en ligne.\n\n                </p>\n\n            </details>\n\n            <details>\n\n                <summary>\n\n                    Comment les enseignants sont-ils recrut\u00e9s ?\n\n                </summary>\n\n                <p>\n\n                    Chaque enseignant passe une s\u00e9lection,\n                    un entretien et une v\u00e9rification\n                    de ses comp\u00e9tences.\n\n                </p>\n\n            </details>\n\n            <details>\n\n                <summary>\n\n                    Puis-je choisir mon enseignant ?\n\n                </summary>\n\n                <p>\n\n                    Oui.\n                    Nous proposons plusieurs profils\n                    correspondant \u00e0 vos besoins.\n\n                </p>\n\n            </details>\n\n        </div>\n\n    </section>\n\n    <!-- ========================================= -->\n    <!--               CALL TO ACTION               -->\n    <!-- ========================================= -->\n\n    <section class=\"cta\">\n\n        <div class=\"cta-content\">\n\n            <h2>\n\n                Donnez \u00e0 votre enfant toutes les chances de r\u00e9ussir.\n\n            </h2>\n\n            <p>\n\n                Rejoignez des centaines de familles\n                qui font confiance \u00e0 EduConnect.\n\n            </p>\n\n            <div class=\"cta-buttons\">\n\n                <a href=\"/trouver-un-tuteur\" class=\"btn-primary\">\n\n                    Trouver un Home Tutor\n\n                </a>\n\n                <a href=\"/register-instructor\" class=\"btn-secondary\">\n\n                    Devenir Home Tutor\n\n                </a>\n\n            </div>\n\n        </div>\n\n    </section>\n\n    <!-- ========================================= -->\n    <!--                 CONTACT                    -->\n    <!-- ========================================= -->\n\n    <section class=\"contact\" id=\"contact\">\n\n        <div class=\"section-header\">\n\n            <span class=\"section-badge\">\n\n                Contact\n\n            </span>\n\n            <h2>\n\n                Restons en contact\n\n            </h2>\n\n        </div>\n\n        <div class=\"contact-wrapper\">\n\n            <div class=\"contact-info\">\n\n                <h3>\n\n                    EduConnect (EdCo)\n\n                </h3>\n\n                <p>\n\n                    Votre partenaire de confiance\n                    pour les cours particuliers.\n\n                </p>\n\n                <ul>\n\n                    <li>\n\n                        <i class=\"fa-solid fa-phone\"></i>\n\n                        +225 XX XX XX XX XX\n\n                    </li>\n\n                    <li>\n\n                        <i class=\"fa-solid fa-envelope\"></i>\n\n                        contact@educonnect.ci\n\n                    </li>\n\n                    <li>\n\n                        <i class=\"fa-solid fa-location-dot\"></i>\n\n                        Abidjan, C\u00f4te d'Ivoire\n\n                    </li>\n\n                </ul>\n\n            </div>\n\n            <form class=\"contact-form\">\n\n                <input\n                    type=\"text\"\n                    name=\"fullName\"\n                    placeholder=\"Nom complet\"\n                    required>\n\n                <input\n                    type=\"email\"\n                    name=\"email\"\n                    placeholder=\"Adresse e-mail\"\n                    required>\n\n                <input\n                    type=\"text\"\n                    name=\"subject\"\n                    placeholder=\"Objet\">\n\n                <textarea\n                    name=\"message\"\n                    rows=\"6\"\n                    placeholder=\"Votre message\"\n                    required></textarea>\n\n                <button\n                    type=\"submit\"\n                    class=\"btn-primary\">\n\n                    Envoyer le message\n\n                </button>\n\n                <p class=\"form-status\"></p>\n\n            </form>\n\n        </div>\n\n    </section>\n\n    <!-- ========================================= -->\n    <!--                  FOOTER                    -->\n    <!-- ========================================= -->\n\n    <footer>\n\n        <div class=\"footer-content\">\n\n            <div class=\"footer-logo\">\n\n                <div class=\"footer-logo-mark\"><img src=\"/marketing/images/logo.png\" alt=\"EduConnect\"></div>\n\n                <h3>\n\n                    EduConnect\n\n                </h3>\n\n                <span>\n\n                    EdCo\n\n                </span>\n\n                <p>\n\n                    Connecting Learners with Excellence.\n\n                </p>\n\n            </div>\n\n            <div class=\"footer-links\">\n\n                <h4>\n\n                    Navigation\n\n                </h4>\n\n                <a href=\"#home\">Accueil</a>\n\n                <a href=\"#services\">Services</a>\n\n                <a href=\"#subjects\">Mati\u00e8res</a>\n\n                <a href=\"#contact\">Contact</a>\n\n            </div>\n\n            <div class=\"footer-links\">\n\n                <h4>\n\n                    Suivez-nous\n\n                </h4>\n\n                <a href=\"#\">\n\n                    Facebook\n\n                </a>\n\n                <a href=\"#\">\n\n                    LinkedIn\n\n                </a>\n\n                <a href=\"#\">\n\n                    WhatsApp\n\n                </a>\n\n            </div>\n\n        </div>\n\n        <div class=\"copyright\">\n\n            \u00a9 2026 EduConnect (EdCo). Tous droits r\u00e9serv\u00e9s.\n\n        </div>\n\n    </footer>\n";
+export const dynamic = "force-dynamic";
 
-export default function HomePage() {
+const HOW_IT_WORKS = [
+  { title: "Parcourez les profils", desc: "Consultez les instructeurs disponibles par matière." },
+  { title: "Faites votre choix", desc: "Sélectionnez celui qui correspond aux besoins de votre enfant." },
+  { title: "On s'occupe du reste", desc: "L'équipe EduConnect organise la mise en relation." },
+];
+
+export default async function HomePage() {
+  const [instructors, approvedCount, subjectCount, doneMatchesCount] = await Promise.all([
+    prisma.instructor.findMany({
+      where: { status: "APPROVED" },
+      take: 4,
+      orderBy: { createdAt: "desc" },
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        photoUrl: true,
+        subjects: { include: { subject: true } },
+      },
+    }),
+    prisma.instructor.count({ where: { status: "APPROVED" } }),
+    prisma.subject.count(),
+    prisma.matchRequest.count({ where: { status: "DONE" } }),
+  ]);
+
   return (
-    <>
-      <MarketingStyles />
-      <SiteHeader />
-      <div
-        id="marketing-site"
-        dangerouslySetInnerHTML={{ __html: MARKETING_HTML }}
-      />
-      <Script src="/marketing/js/app.js" strategy="afterInteractive" />
-    </>
+    <div className="min-h-screen bg-white text-[#0d1b3e] overflow-hidden">
+      <SiteHeader theme="light" />
+
+      <section className="relative max-w-6xl mx-auto px-6 pt-16 pb-20 lg:pt-24 lg:pb-28">
+        <div className="grid lg:grid-cols-2 gap-16 items-center">
+          <ScrollReveal>
+            <div className="flex items-center gap-2 mb-6">
+              <span className="w-8 h-px bg-[#c9951a]" />
+              <span className="text-xs font-medium text-[#8a6510] tracking-wide">
+                Soutien scolaire, du collège à la terminale
+              </span>
+            </div>
+            <h1 className="font-[family-name:var(--font-cinzel)] text-4xl md:text-5xl lg:text-6xl leading-[1.05] mb-6">
+              Le bon tuteur,<br /><span className="text-[#c9951a]">au bon moment</span>
+            </h1>
+            <p className="text-gray-600 text-base md:text-lg max-w-md mb-9 leading-relaxed">
+              EduConnect met les familles en relation avec des instructeurs vérifiés, choisis pour leur pédagogie autant que pour leurs résultats.
+            </p>
+            <div className="flex flex-wrap gap-4">
+              <Link href="/trouver-un-tuteur" className="px-7 py-3 rounded-full bg-gradient-to-r from-[#c9951a] to-[#d4a820] text-white font-semibold shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all">
+                Trouver un tuteur
+              </Link>
+              <Link href="/register-instructor" className="px-7 py-3 rounded-full border border-[#0d1b3e]/15 text-[#0d1b3e] font-semibold hover:bg-[#0d1b3e]/5 hover:-translate-y-0.5 transition-all">
+                Devenir instructeur
+              </Link>
+            </div>
+          </ScrollReveal>
+
+          <ScrollReveal delay={150}>
+            <div className="relative max-w-sm mx-auto lg:mx-0">
+              <div className="relative bg-white border border-[#eee6d3] rounded-[2rem] p-8 shadow-[0_20px_60px_-15px_rgba(13,27,62,0.15)] -rotate-1">
+                <div className="flex items-center mb-6">
+                  {instructors.slice(0, 4).map((inst, i) => (
+                    <div
+                      key={inst.id}
+                      className="w-12 h-12 rounded-full border-2 border-white overflow-hidden bg-[#f1ecdd] -ml-3 first:ml-0"
+                      style={{ zIndex: 10 - i }}
+                    >
+                      {inst.photoUrl ? (
+                        <img src={inst.photoUrl} alt="" className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-[#c9951a] font-semibold text-sm">
+                          {inst.firstName[0]}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                  {approvedCount > 4 && (
+                    <div className="w-12 h-12 rounded-full border-2 border-white bg-[#0d1b3e] text-white text-xs font-semibold flex items-center justify-center -ml-3">
+                      +{approvedCount - 4}
+                    </div>
+                  )}
+                </div>
+
+                <div className="font-[family-name:var(--font-cinzel)] text-5xl text-[#0d1b3e] leading-none">
+                  <AnimatedCounter value={approvedCount} suffix="+" />
+                </div>
+                <p className="text-sm text-gray-500 mt-2 mb-6">instructeurs vérifiés par notre équipe</p>
+
+                <div className="flex gap-6 pt-6 border-t border-[#eee6d3] text-sm">
+                  <div>
+                    <span className="font-semibold text-[#0d1b3e]"><AnimatedCounter value={subjectCount} /></span>
+                    <span className="text-gray-500 ml-1">matières</span>
+                  </div>
+                  <div>
+                    <span className="font-semibold text-[#0d1b3e]"><AnimatedCounter value={doneMatchesCount} suffix="+" /></span>
+                    <span className="text-gray-500 ml-1">mises en relation</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="absolute -top-4 -right-4 w-14 h-14 rounded-full bg-[#c9951a] text-white flex items-center justify-center rotate-6 shadow-lg">
+                <span className="text-xl">✓</span>
+              </div>
+            </div>
+          </ScrollReveal>
+        </div>
+      </section>
+
+      <section id="instructeurs" className="py-16 bg-[#faf8f2] border-y border-[#eee6d3]">
+        <div className="max-w-6xl mx-auto px-6">
+          <ScrollReveal>
+            <div className="flex items-end justify-between mb-8 flex-wrap gap-4">
+              <div>
+                <h2 className="font-[family-name:var(--font-cinzel)] text-2xl md:text-3xl">Nos instructeurs</h2>
+                <p className="text-gray-600 text-sm mt-1">Une sélection de profils déjà valides par notre équipe.</p>
+              </div>
+              <Link href="/trouver-un-tuteur" className="text-sm font-semibold text-[#c9951a] hover:underline whitespace-nowrap">
+                Voir tous les instructeurs
+              </Link>
+            </div>
+          </ScrollReveal>
+
+          {instructors.length === 0 ? (
+            <p className="text-gray-500 text-sm">Aucun instructeur disponible pour le moment.</p>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+              {instructors.map((inst, i) => (
+                <ScrollReveal key={inst.id} delay={i * 100}>
+                  <div className="group relative aspect-[3/4] rounded-3xl overflow-hidden bg-[#f1ecdd] shadow-sm hover:shadow-xl transition-shadow duration-300">
+                    {inst.photoUrl ? (
+                      <img
+                        src={inst.photoUrl}
+                        alt={`${inst.firstName} ${inst.lastName}`}
+                        className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-[#c9951a] font-bold text-4xl">
+                        {inst.firstName[0]}{inst.lastName[0]}
+                      </div>
+                    )}
+                    <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/35 to-transparent p-4 pt-14">
+                      <h3 className="text-white font-semibold text-sm">{inst.firstName} {inst.lastName}</h3>
+                      <div className="flex flex-wrap gap-1 mt-1.5">
+                        {inst.subjects.slice(0, 2).map((s) => (
+                          <span key={s.subject.id} className="text-[10px] bg-white/20 backdrop-blur-sm text-white px-2 py-0.5 rounded-full">
+                            {s.subject.name}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </ScrollReveal>
+              ))}
+            </div>
+          )}
+        </div>
+      </section>
+
+      <section className="max-w-5xl mx-auto px-6 py-20">
+        <ScrollReveal>
+          <h2 className="font-[family-name:var(--font-cinzel)] text-2xl md:text-3xl text-center mb-14">Comment ca marche</h2>
+        </ScrollReveal>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-10">
+          {HOW_IT_WORKS.map((step, i) => (
+            <ScrollReveal key={step.title} delay={i * 150}>
+              <div className="relative text-center px-4">
+                <span className="absolute -top-8 left-1/2 -translate-x-1/2 font-[family-name:var(--font-cinzel)] text-7xl text-[#c9951a]/10 select-none pointer-events-none">
+                  {String(i + 1).padStart(2, "0")}
+                </span>
+                <div className="relative">
+                  <h3 className="font-semibold text-sm mb-1.5">{step.title}</h3>
+                  <p className="text-gray-600 text-sm">{step.desc}</p>
+                </div>
+              </div>
+            </ScrollReveal>
+          ))}
+        </div>
+      </section>
+
+      <section className="relative bg-[#0d1b3e] py-16 overflow-hidden">
+        <div
+          className="absolute inset-0 opacity-[0.07]"
+          style={{ backgroundImage: "radial-gradient(circle, #c9951a 1.5px, transparent 1.5px)", backgroundSize: "26px 26px" }}
+        />
+        <ScrollReveal>
+          <div className="relative max-w-3xl mx-auto px-6 text-center">
+            <h2 className="font-[family-name:var(--font-cinzel)] text-2xl md:text-3xl text-white mb-3">
+              Prêt à trouver le bon tuteur ?
+            </h2>
+            <p className="text-gray-300 text-sm mb-7">
+              Quelques minutes suffisent pour lancer votre demande.
+            </p>
+            <Link href="/trouver-un-tuteur" className="inline-block px-8 py-3 rounded-full bg-gradient-to-r from-[#c9951a] to-[#d4a820] text-white font-semibold hover:shadow-lg hover:-translate-y-0.5 transition-all">
+              Trouver un tuteur
+            </Link>
+          </div>
+        </ScrollReveal>
+      </section>
+
+      <footer id="contact" className="max-w-6xl mx-auto px-6 py-14">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
+          <div>
+            <div className="font-[family-name:var(--font-cinzel)] text-lg mb-2">
+              Edu<span className="text-[#c9951a]">Connect</span>
+            </div>
+            <p className="text-gray-600 text-sm">Connecting learners with excellence.</p>
+          </div>
+          <div>
+            <h4 className="text-xs font-semibold text-[#c9951a] uppercase tracking-widest mb-3">Contact</h4>
+            <ul className="text-sm text-gray-600 space-y-1.5">
+              <li>+225 07 58 52 93 23</li>
+              <li>+225 01 01 68 09 71</li>
+              <li>+225 05 75 53 52 97</li>
+              <li>jk4177234@gmail.com</li>
+            </ul>
+          </div>
+          <div>
+            <h4 className="text-xs font-semibold text-[#c9951a] uppercase tracking-widest mb-3">Suivez-nous</h4>
+            <ul className="text-sm text-gray-600 space-y-1.5">
+              <li>
+                <a href="https://www.facebook.com/profile.php?id=100090481355986" target="_blank" rel="noopener noreferrer" className="hover:text-[#c9951a]">Facebook</a>
+              </li>
+              <li>
+                <a href="https://wa.me/2250758529323" target="_blank" rel="noopener noreferrer" className="hover:text-[#c9951a]">WhatsApp</a>
+              </li>
+            </ul>
+          </div>
+        </div>
+        <div className="border-t border-[#eee6d3] mt-10 pt-6 text-center text-xs text-gray-500">
+          (c) 2026 EduConnect. Tous droits réservés.
+        </div>
+      </footer>
+    </div>
   );
 }

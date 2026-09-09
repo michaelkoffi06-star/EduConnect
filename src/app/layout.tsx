@@ -8,7 +8,7 @@ const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"]
 const cinzel = Cinzel({ variable: "--font-cinzel", subsets: ["latin"], weight: ["700"] });
 
 export const metadata: Metadata = {
-  title: "EduConnect — Trouvez votre instructeur",
+  title: "EduConnect - Trouvez votre instructeur",
   description: "Plateforme de mise en relation entre élèves et instructeurs qualifiés.",
 };
 

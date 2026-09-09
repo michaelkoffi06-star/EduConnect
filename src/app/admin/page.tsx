@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import SiteHeader from '@/components/SiteHeader';
 
 interface Subject { id: string; name: string; }
@@ -58,6 +59,7 @@ const STATUS_LABELS: Record<string, string> = {
 };
 
 export default function AdminPage() {
+  const router = useRouter();
   const [tab, setTab] = useState<AdminTab>('instructors');
 
   const [instructors, setInstructors] = useState<Instructor[]>([]);
@@ -69,6 +71,7 @@ export default function AdminPage() {
   const [requests, setRequests] = useState<MatchRequest[]>([]);
   const [requestsLoading, setRequestsLoading] = useState(true);
   const [updatingRequestId, setUpdatingRequestId] = useState<string | null>(null);
+  const [uploadingFile, setUploadingFile] = useState<string | null>(null);
 
   const fetchInstructors = async () => {
     setLoading(true);
@@ -119,6 +122,36 @@ export default function AdminPage() {
 
   const newRequestsCount = requests.filter((r) => r.status === 'NEW').length;
 
+  const handleLogout = async () => {
+    await fetch('/api/admin/logout', { method: 'POST' });
+    router.push('/admin/login');
+    router.refresh();
+  };
+
+
+  const uploadInstructorFile = async (instructorId: string, kind: 'photo' | 'cni' | 'cv', file: File) => {
+    const uploadKey = `${instructorId}:${kind}`;
+    setUploadingFile(uploadKey);
+    try {
+      const payload = new FormData();
+      payload.append(kind, file);
+      const res = await fetch(`/api/admin/instructors/${instructorId}/files`, {
+        method: 'PATCH',
+        body: payload,
+      });
+      const result = await res.json();
+      if (!res.ok) {
+        setErrorMsg(result.error || "Echec de l'upload.");
+        return;
+      }
+      setInstructors((prev) => prev.map((i) => (i.id === instructorId ? { ...i, ...result } : i)));
+    } catch {
+      setErrorMsg("Impossible de contacter le serveur pour l'upload.");
+    } finally {
+      setUploadingFile(null);
+    }
+  };
+
   const updateStatus = async (id: string, newStatus: string) => {
     setUpdatingId(id);
     try {
@@ -150,7 +183,7 @@ export default function AdminPage() {
   return (
     <div className="min-h-screen bg-[#0a1628] text-white">
 
-      <SiteHeader active="admin" />
+      <SiteHeader active="admin" theme="dark" />
 
       <div className="bg-[#0d1f38] border-b border-[#2a4a6e] px-6 py-3">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
@@ -168,6 +201,12 @@ export default function AdminPage() {
                 <span className="text-xs text-gray-400 ml-1.5">nouvelle{newRequestsCount > 1 ? 's' : ''} demande{newRequestsCount > 1 ? 's' : ''}</span>
               </>
             )}
+            <button
+              onClick={handleLogout}
+              className="ml-4 px-3 py-1.5 text-xs font-semibold border border-[#2a4a6e] hover:border-red-500/50 hover:text-red-300 text-gray-400 rounded-lg transition"
+            >
+              Déconnexion
+            </button>
           </div>
         </div>
       </div>
@@ -279,31 +318,32 @@ export default function AdminPage() {
                       </div>
                     </td>
                     <td className="px-4 py-3 align-top">
-                      <div className="flex flex-col gap-1 text-xs">
-                        {inst.cniUrl ? (
-                          
-                            href={`/api/admin/instructors/${inst.id}/document?type=cni`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-[#c9951a] hover:underline"
-                          >
-                            Voir la CNI
-                          </a>
-                        ) : (
-                          <span className="text-gray-500">CNI manquante</span>
-                        )}
-                        {inst.cvUrl ? (
-                          
-                            href={`/api/admin/instructors/${inst.id}/document?type=cv`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-[#c9951a] hover:underline"
-                          >
-                            Voir le CV
-                          </a>
-                        ) : (
-                          <span className="text-gray-500">CV manquant</span>
-                        )}
+                      <div className="flex flex-col gap-2 text-xs w-40">
+
+                        <div className="flex items-center gap-2">
+                          {inst.photoUrl ? (<a href={inst.photoUrl} target="_blank" rel="noopener noreferrer" className="text-[#c9951a] hover:underline">Photo</a>) : (<span className="text-gray-500">Photo manquante</span>)}
+                          <label className="text-gray-400 hover:text-white cursor-pointer">
+                            {uploadingFile === `${inst.id}:photo` ? '...' : '(changer)'}
+                            <input type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadInstructorFile(inst.id, 'photo', f); e.target.value = ''; }} />
+                          </label>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          {inst.cniUrl ? (<a href={`/api/admin/instructors/${inst.id}/document?type=cni`} target="_blank" rel="noopener noreferrer" className="text-[#c9951a] hover:underline">Voir la CNI</a>) : (<span className="text-gray-500">CNI manquante</span>)}
+                          <label className="text-gray-400 hover:text-white cursor-pointer">
+                            {uploadingFile === `${inst.id}:cni` ? '...' : '(changer)'}
+                            <input type="file" accept="image/jpeg,image/png,application/pdf" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadInstructorFile(inst.id, 'cni', f); e.target.value = ''; }} />
+                          </label>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          {inst.cvUrl ? (<a href={`/api/admin/instructors/${inst.id}/document?type=cv`} target="_blank" rel="noopener noreferrer" className="text-[#c9951a] hover:underline">Voir le CV</a>) : (<span className="text-gray-500">CV manquant</span>)}
+                          <label className="text-gray-400 hover:text-white cursor-pointer">
+                            {uploadingFile === `${inst.id}:cv` ? '...' : '(changer)'}
+                            <input type="file" accept="image/jpeg,image/png,application/pdf" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadInstructorFile(inst.id, 'cv', f); e.target.value = ''; }} />
+                          </label>
+                        </div>
+
                       </div>
                     </td>
                     <td className="px-4 py-3 align-top">
