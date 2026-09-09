@@ -13,6 +13,8 @@ const NAV_LINKS = [
   { href: "/#instructeurs", label: "Nos instructeurs" },
   { href: "/trouver-un-tuteur", label: "Trouver un tuteur" },
   { href: "/register-instructor", label: "Devenir instructeur" },
+  { href: "/suggestions", label: "Suggestions" },
+  { href: "/soutenir", label: "Soutenir le projet" },
   { href: "/#contact", label: "Contact" },
 ];
 

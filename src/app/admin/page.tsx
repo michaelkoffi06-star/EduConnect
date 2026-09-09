@@ -31,8 +31,16 @@ interface MatchRequest {
   createdAt: string;
 }
 
+interface Feedback {
+  id: string;
+  message: string;
+  email: string | null;
+  status: 'NEW' | 'READ' | 'ARCHIVED';
+  createdAt: string;
+}
+
 type FilterOption = 'ALL' | 'PENDING' | 'APPROVED' | 'SUSPENDED';
-type AdminTab = 'instructors' | 'requests';
+type AdminTab = 'instructors' | 'requests' | 'feedback';
 
 const REQUEST_STATUS_STYLES: Record<string, string> = {
   NEW:       'bg-amber-900/40 text-amber-300 border-amber-500/40',
@@ -44,6 +52,18 @@ const REQUEST_STATUS_LABELS: Record<string, string> = {
   NEW:       'Nouvelle',
   CONTACTED: 'Contacté',
   DONE:      'Terminé',
+};
+
+const FEEDBACK_STATUS_STYLES: Record<string, string> = {
+  NEW:      'bg-amber-900/40 text-amber-300 border-amber-500/40',
+  READ:     'bg-sky-900/40 text-sky-300 border-sky-500/40',
+  ARCHIVED: 'bg-gray-700/40 text-gray-400 border-gray-500/40',
+};
+
+const FEEDBACK_STATUS_LABELS: Record<string, string> = {
+  NEW:      'Nouvelle',
+  READ:     'Lue',
+  ARCHIVED: 'Archivée',
 };
 
 const STATUS_STYLES: Record<string, string> = {
@@ -73,6 +93,10 @@ export default function AdminPage() {
   const [updatingRequestId, setUpdatingRequestId] = useState<string | null>(null);
   const [uploadingFile, setUploadingFile] = useState<string | null>(null);
 
+  const [feedbackList, setFeedbackList] = useState<Feedback[]>([]);
+  const [feedbackLoading, setFeedbackLoading] = useState(true);
+  const [updatingFeedbackId, setUpdatingFeedbackId] = useState<string | null>(null);
+
   const fetchInstructors = async () => {
     setLoading(true);
     setErrorMsg('');
@@ -100,7 +124,20 @@ export default function AdminPage() {
     }
   };
 
-  useEffect(() => { fetchInstructors(); fetchRequests(); }, []);
+  const fetchFeedback = async () => {
+    setFeedbackLoading(true);
+    try {
+      const res = await fetch('/api/admin/feedback');
+      if (!res.ok) throw new Error();
+      setFeedbackList(await res.json());
+    } catch {
+      setErrorMsg("Impossible de charger les suggestions.");
+    } finally {
+      setFeedbackLoading(false);
+    }
+  };
+
+  useEffect(() => { fetchInstructors(); fetchRequests(); fetchFeedback(); }, []);
 
   const updateRequestStatus = async (id: string, newStatus: string) => {
     setUpdatingRequestId(id);
@@ -120,7 +157,26 @@ export default function AdminPage() {
     }
   };
 
+  const updateFeedbackStatus = async (id: string, newStatus: string) => {
+    setUpdatingFeedbackId(id);
+    try {
+      const res = await fetch(`/api/admin/feedback/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus }),
+      });
+      if (!res.ok) throw new Error();
+      const updated = await res.json();
+      setFeedbackList((prev) => prev.map((f) => (f.id === id ? updated : f)));
+    } catch {
+      setErrorMsg("Impossible de mettre à jour la suggestion.");
+    } finally {
+      setUpdatingFeedbackId(null);
+    }
+  };
+
   const newRequestsCount = requests.filter((r) => r.status === 'NEW').length;
+  const newFeedbackCount = feedbackList.filter((f) => f.status === 'NEW').length;
 
   const handleLogout = async () => {
     await fetch('/api/admin/logout', { method: 'POST' });
@@ -229,6 +285,14 @@ export default function AdminPage() {
             }`}
           >
             Demandes {newRequestsCount > 0 && `(${newRequestsCount})`}
+          </button>
+          <button
+            onClick={() => setTab('feedback')}
+            className={`px-4 py-2.5 text-sm font-semibold border-b-2 -mb-px transition ${
+              tab === 'feedback' ? 'border-[#c9951a] text-[#c9951a]' : 'border-transparent text-gray-400 hover:text-white'
+            }`}
+          >
+            Suggestions {newFeedbackCount > 0 && `(${newFeedbackCount})`}
           </button>
         </div>
 
@@ -452,6 +516,77 @@ export default function AdminPage() {
                               className="px-3 py-1.5 text-xs font-semibold bg-[#c9951a] hover:bg-[#d4a820] disabled:opacity-50 text-[#0a1628] rounded-lg transition"
                             >
                               Marquer terminé
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )
+        )}
+        {tab === 'feedback' && (
+          feedbackLoading ? (
+            <div className="flex justify-center py-20">
+              <div className="animate-spin rounded-full h-8 w-8 border-4 border-[#c9951a] border-t-transparent"></div>
+            </div>
+          ) : feedbackList.length === 0 ? (
+            <div className="text-center py-16 bg-[#112240] rounded-2xl border border-[#2a4a6e]">
+              <p className="text-gray-500">Aucune suggestion pour le moment.</p>
+            </div>
+          ) : (
+            <div className="bg-[#112240] rounded-2xl border border-[#2a4a6e] overflow-hidden">
+              <table className="w-full text-sm">
+                <thead className="border-b border-[#2a4a6e]">
+                  <tr className="text-xs text-gray-400 uppercase tracking-wide">
+                    <th className="text-left px-4 py-3 font-semibold">Message</th>
+                    <th className="text-left px-4 py-3 font-semibold">Contact</th>
+                    <th className="text-left px-4 py-3 font-semibold">Reçue le</th>
+                    <th className="text-left px-4 py-3 font-semibold">Statut</th>
+                    <th className="text-right px-4 py-3 font-semibold">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#1e3a5f]">
+                  {feedbackList.map((fb) => (
+                    <tr key={fb.id} className="hover:bg-[#0d1f38] transition align-top">
+                      <td className="px-4 py-3 text-gray-300 max-w-md">
+                        <p className="whitespace-pre-wrap">{fb.message}</p>
+                      </td>
+                      <td className="px-4 py-3">
+                        {fb.email ? (
+                          <a href={`mailto:${fb.email}`} className="text-[#c9951a] hover:underline">{fb.email}</a>
+                        ) : (
+                          <span className="text-gray-500 text-xs">Anonyme</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-gray-400 text-xs whitespace-nowrap">
+                        {new Date(fb.createdAt).toLocaleString('fr-FR')}
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className={`inline-block text-xs font-semibold px-2.5 py-1 rounded-full border ${FEEDBACK_STATUS_STYLES[fb.status]}`}>
+                          {FEEDBACK_STATUS_LABELS[fb.status]}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex justify-end gap-2 flex-wrap">
+                          {fb.status !== 'READ' && (
+                            <button
+                              disabled={updatingFeedbackId === fb.id}
+                              onClick={() => updateFeedbackStatus(fb.id, 'READ')}
+                              className="px-3 py-1.5 text-xs font-semibold bg-sky-600/80 hover:bg-sky-500 disabled:opacity-50 text-white rounded-lg transition"
+                            >
+                              Marquer lue
+                            </button>
+                          )}
+                          {fb.status !== 'ARCHIVED' && (
+                            <button
+                              disabled={updatingFeedbackId === fb.id}
+                              onClick={() => updateFeedbackStatus(fb.id, 'ARCHIVED')}
+                              className="px-3 py-1.5 text-xs font-semibold bg-transparent border border-[#2a4a6e] hover:bg-[#0d1f38] disabled:opacity-50 text-gray-300 rounded-lg transition"
+                            >
+                              Archiver
                             </button>
                           )}
                         </div>

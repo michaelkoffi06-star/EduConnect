@@ -111,3 +111,12 @@ model MatchRequest {
 
   instructor     Instructor  @relation(fields: [instructorId], references: [id], onDelete: Cascade)
 }
+
+// 11. Suggestions / retours des utilisateurs sur la plateforme
+model Feedback {
+  id        String        @id @default(uuid())
+  message   String        @db.Text
+  email     String?
+  status    ContactStatus @default(NEW)
+  createdAt DateTime      @default(now())
+}

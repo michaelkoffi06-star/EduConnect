@@ -234,6 +234,12 @@ export default async function HomePage() {
               <li>
                 <a href="https://wa.me/2250000000000" target="_blank" rel="noopener noreferrer" className="hover:text-[#c9951a]">WhatsApp</a>
               </li>
+              <li>
+                <a href="/suggestions" className="hover:text-[#c9951a]">Suggestions</a>
+              </li>
+              <li>
+                <a href="/soutenir" className="hover:text-[#c9951a]">Soutenir le projet</a>
+              </li>
             </ul>
           </div>
         </div>
