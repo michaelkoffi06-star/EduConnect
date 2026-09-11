@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import SiteHeader from '@/components/SiteHeader';
+import { getImageDimensionsFromFile } from '@/lib/image-utils';
 
 interface Subject { id: string; name: string; }
 interface InstructorSubject { subject: Subject; }
@@ -189,14 +190,42 @@ export default function AdminPage() {
     const uploadKey = `${instructorId}:${kind}`;
     setUploadingFile(uploadKey);
     try {
-      const payload = new FormData();
-      payload.append(kind, file);
-      const res = await fetch(`/api/admin/instructors/${instructorId}/files`, {
-        method: 'PATCH',
-        body: payload,
+      if (kind === 'photo') {
+        const dimensions = await getImageDimensionsFromFile(file);
+        if (!dimensions || dimensions.width < 800 || dimensions.height < 800) {
+          setErrorMsg(`Photo trop petite${dimensions ? ` (${dimensions.width}x${dimensions.height}px)` : ''}, minimum 800x800px.`);
+          return;
+        }
+      }
+
+      const presignRes = await fetch(`/api/admin/instructors/${instructorId}/files/presign`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ kind, contentType: file.type }),
       });
-      const result = await res.json();
-      if (!res.ok) {
+      const presignData = await presignRes.json();
+      if (!presignRes.ok) {
+        setErrorMsg(presignData.error || 'Échec de la présignature.');
+        return;
+      }
+
+      const putRes = await fetch(presignData.uploadUrl, {
+        method: 'PUT',
+        headers: { 'Content-Type': file.type },
+        body: file,
+      });
+      if (!putRes.ok) {
+        setErrorMsg("Échec de l'envoi du fichier vers le stockage.");
+        return;
+      }
+
+      const finalizeRes = await fetch(`/api/admin/instructors/${instructorId}/files`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ [`${kind}Type`]: file.type }),
+      });
+      const result = await finalizeRes.json();
+      if (!finalizeRes.ok) {
         setErrorMsg(result.error || "Echec de l'upload.");
         return;
       }

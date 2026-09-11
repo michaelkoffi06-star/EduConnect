@@ -2,6 +2,8 @@
 
 import { useEffect, useState, use } from 'react';
 import SiteHeader from '@/components/SiteHeader';
+import FileDropzone from '@/components/FileDropzone';
+import { getImageDimensionsFromFile } from '@/lib/image-utils';
 
 interface Subject { id: string; name: string; }
 interface InstructorData {
@@ -12,6 +14,7 @@ interface InstructorData {
   type: string;
   levels: string;
   status: string;
+  photoUrl?: string | null;
   subjects: { subject: Subject }[];
 }
 
@@ -20,6 +23,23 @@ type SubmitState = 'idle' | 'loading' | 'success' | 'error';
 
 const MAX_PHOTO_SIZE = 5 * 1024 * 1024;
 const MAX_DOC_SIZE = 10 * 1024 * 1024;
+
+async function uploadDirect(token: string, kind: 'photo' | 'cni' | 'cv', file: File) {
+  const presignRes = await fetch(`/api/instructors/edit/${token}/files/presign`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ kind, contentType: file.type }),
+  });
+  const presignData = await presignRes.json();
+  if (!presignRes.ok) throw new Error(presignData.error || `Échec de la présignature (${kind}).`);
+
+  const putRes = await fetch(presignData.uploadUrl, {
+    method: 'PUT',
+    headers: { 'Content-Type': file.type },
+    body: file,
+  });
+  if (!putRes.ok) throw new Error(`Échec de l'envoi du fichier (${kind}).`);
+}
 
 export default function EditProfile({ params }: { params: Promise<{ token: string }> }) {
   const { token } = use(params);
@@ -36,6 +56,7 @@ export default function EditProfile({ params }: { params: Promise<{ token: strin
   const [bio, setBio] = useState('');
   const [type, setType] = useState('ETUDIANT');
   const [levels, setLevels] = useState('ALL');
+  const [currentPhotoUrl, setCurrentPhotoUrl] = useState<string | null>(null);
 
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [cniFile, setCniFile] = useState<File | null>(null);
@@ -63,6 +84,7 @@ export default function EditProfile({ params }: { params: Promise<{ token: strin
         setBio(profile.bio || '');
         setType(profile.type);
         setLevels(profile.levels);
+        setCurrentPhotoUrl(profile.photoUrl || null);
         setSelectedSubjects(profile.subjects.map((s) => s.subject.id));
         setAllSubjects(Array.isArray(subjectsList) ? subjectsList : []);
         setLoadState('ready');
@@ -110,6 +132,15 @@ export default function EditProfile({ params }: { params: Promise<{ token: strin
       return;
     }
 
+    if (photoFile) {
+      const dimensions = await getImageDimensionsFromFile(photoFile);
+      if (!dimensions || dimensions.width < 800 || dimensions.height < 800) {
+        setErrorMsg(`Photo trop petite${dimensions ? ` (${dimensions.width}x${dimensions.height}px)` : ''}, minimum 800x800px.`);
+        setSubmitState('error');
+        return;
+      }
+    }
+
     try {
       const res = await fetch(`/api/instructors/edit/${token}`, {
         method: 'PATCH',
@@ -124,18 +155,30 @@ export default function EditProfile({ params }: { params: Promise<{ token: strin
       }
 
       if (photoFile || cniFile || cvFile) {
-        const filesForm = new FormData();
-        if (photoFile) filesForm.append('photo', photoFile);
-        if (cniFile) filesForm.append('cni', cniFile);
-        if (cvFile) filesForm.append('cv', cvFile);
+        try {
+          await Promise.all([
+            photoFile ? uploadDirect(token, 'photo', photoFile) : Promise.resolve(),
+            cniFile ? uploadDirect(token, 'cni', cniFile) : Promise.resolve(),
+            cvFile ? uploadDirect(token, 'cv', cvFile) : Promise.resolve(),
+          ]);
 
-        const filesRes = await fetch(`/api/instructors/edit/${token}/files`, {
-          method: 'PATCH',
-          body: filesForm,
-        });
-        const filesResult = await filesRes.json();
-        if (!filesRes.ok) {
-          setErrorMsg(filesResult.error || "Les infos ont été enregistrées, mais l'envoi des fichiers a échoué. Réessaie juste l'envoi des fichiers.");
+          const finalizeRes = await fetch(`/api/instructors/edit/${token}/files`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              photoType: photoFile ? photoFile.type : undefined,
+              cniType: cniFile ? cniFile.type : undefined,
+              cvType: cvFile ? cvFile.type : undefined,
+            }),
+          });
+          const finalizeResult = await finalizeRes.json();
+          if (!finalizeRes.ok) {
+            setErrorMsg(finalizeResult.error || "Les infos ont été enregistrées, mais l'envoi des fichiers a échoué. Réessaie juste l'envoi des fichiers.");
+            setSubmitState('error');
+            return;
+          }
+        } catch (uploadError: any) {
+          setErrorMsg(uploadError.message || "Les infos ont été enregistrées, mais l'envoi des fichiers a échoué. Réessaie juste l'envoi des fichiers.");
           setSubmitState('error');
           return;
         }
@@ -148,11 +191,10 @@ export default function EditProfile({ params }: { params: Promise<{ token: strin
     }
   };
 
-  const inputClass = "w-full rounded-lg px-4 py-2.5 text-sm text-white bg-[#112240] border border-[#2a4a6e] placeholder-gray-400 focus:outline-none focus:border-[#c9951a] focus:ring-1 focus:ring-[#c9951a] transition";
-  const selectClass = "w-full rounded-lg px-4 py-2.5 text-sm text-white bg-[#112240] border border-[#2a4a6e] focus:outline-none focus:border-[#c9951a] focus:ring-1 focus:ring-[#c9951a] transition";
-  const cardClass = "bg-[#112240] rounded-2xl border border-[#2a4a6e] p-6 space-y-4";
+  const inputClass = "w-full rounded-lg px-4 py-2.5 text-sm text-[#0d1b3e] bg-white border border-gray-300 placeholder-gray-400 focus:outline-none focus:border-[#c9951a] focus:ring-1 focus:ring-[#c9951a] transition";
+  const selectClass = "w-full rounded-lg px-4 py-2.5 text-sm text-[#0d1b3e] bg-white border border-gray-300 focus:outline-none focus:border-[#c9951a] focus:ring-1 focus:ring-[#c9951a] transition";
+  const cardClass = "bg-white rounded-3xl border border-[#eee6d3] shadow-sm p-6 space-y-4";
   const labelClass = "block text-sm font-medium text-gray-700 mb-1";
-  const fileInputClass = "w-full text-sm text-gray-300 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-[#c9951a] file:text-[#0a1628] hover:file:brightness-105 file:cursor-pointer cursor-pointer";
 
   if (loadState === 'loading') {
     return (
@@ -179,8 +221,8 @@ export default function EditProfile({ params }: { params: Promise<{ token: strin
     return (
       <div className="min-h-screen bg-white flex items-center justify-center px-4">
         <div className="max-w-md text-center">
-          <div className="w-16 h-16 bg-[#c9951a]/20 border border-[#c9951a]/40 rounded-full flex items-center justify-center mx-auto mb-6">
-            <span className="text-3xl">✓</span>
+          <div className="w-16 h-16 bg-[#c9951a]/10 border border-[#c9951a]/40 rounded-full flex items-center justify-center mx-auto mb-6">
+            <span className="text-3xl text-[#c9951a]">✓</span>
           </div>
           <h1 className="text-2xl font-bold text-[#0d1b3e] mb-3">Profil mis à jour !</h1>
           <p className="text-gray-600 text-sm leading-relaxed">
@@ -194,17 +236,32 @@ export default function EditProfile({ params }: { params: Promise<{ token: strin
 
   return (
     <div className="min-h-screen bg-white">
-      <SiteHeader />
+      <SiteHeader theme="light" />
 
       <div className="max-w-2xl mx-auto py-10 px-4">
         <div className="text-center mb-8">
-          <h1 className="font-[family-name:var(--font-cinzel)] text-3xl text-white">Modifier mon profil</h1>
-          <p className="text-gray-400 mt-2 text-sm">
+          <div className="flex items-center justify-center gap-2 mb-4">
+            <span className="w-8 h-px bg-[#c9951a]" />
+            <span className="text-xs font-medium text-[#8a6510] tracking-wide">Espace instructeur</span>
+            <span className="w-8 h-px bg-[#c9951a]" />
+          </div>
+          <h1 className="font-[family-name:var(--font-cinzel)] text-3xl text-[#0d1b3e]">Modifier mon profil</h1>
+          <p className="text-gray-600 mt-2 text-sm">
             Toute modification repasse ton profil en attente de validation par l'équipe.
           </p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
+
+          {currentPhotoUrl && (
+            <div className="flex justify-center -mb-2">
+              <img
+                src={currentPhotoUrl}
+                alt="Photo actuelle"
+                className="w-20 h-20 rounded-full object-cover border-4 border-white shadow-md ring-1 ring-[#eee6d3]"
+              />
+            </div>
+          )}
 
           <div className={cardClass}>
             <h2 className="text-xs font-semibold text-[#c9951a] uppercase tracking-widest">Identité</h2>
@@ -272,8 +329,8 @@ export default function EditProfile({ params }: { params: Promise<{ token: strin
                   onClick={() => toggleSubject(subject.id)}
                   className={
                     selectedSubjects.includes(subject.id)
-                      ? "px-3 py-1.5 rounded-lg text-xs font-semibold border bg-[#c9951a] text-[#0a1628] border-[#c9951a] transition"
-                      : "px-3 py-1.5 rounded-lg text-xs font-semibold border bg-transparent text-gray-300 border-[#2a4a6e] hover:border-[#c9951a]/60 hover:text-white transition"
+                      ? "px-3 py-1.5 rounded-lg text-xs font-semibold border bg-[#c9951a] text-white border-[#c9951a] transition"
+                      : "px-3 py-1.5 rounded-lg text-xs font-semibold border bg-transparent text-gray-600 border-gray-300 hover:border-[#c9951a]/60 hover:text-[#0d1b3e] transition"
                   }
                 >
                   {subject.name}
@@ -284,36 +341,37 @@ export default function EditProfile({ params }: { params: Promise<{ token: strin
 
           <div className={cardClass}>
             <h2 className="text-xs font-semibold text-[#c9951a] uppercase tracking-widest">Fichiers</h2>
-            <p className="text-xs text-gray-400 -mt-2">
+            <p className="text-xs text-gray-500 -mt-2">
               Laisse un champ vide pour garder le fichier actuel. Renseigne-le uniquement si tu veux le remplacer.
             </p>
-            <div>
-              <label className={labelClass}>Photo de profil <span className="text-gray-500 font-normal normal-case">(JPEG/PNG/WebP, min. 800×800px, 5 Mo max)</span></label>
-              <input
-                type="file"
-                accept="image/jpeg,image/png,image/webp"
-                onChange={(e) => setPhotoFile(e.target.files?.[0] || null)}
-                className={fileInputClass}
-              />
-            </div>
-            <div>
-              <label className={labelClass}>CNI <span className="text-gray-500 font-normal normal-case">(JPEG/PNG/PDF, 10 Mo max)</span></label>
-              <input
-                type="file"
-                accept="image/jpeg,image/png,application/pdf"
-                onChange={(e) => setCniFile(e.target.files?.[0] || null)}
-                className={fileInputClass}
-              />
-            </div>
-            <div>
-              <label className={labelClass}>CV <span className="text-gray-500 font-normal normal-case">(JPEG/PNG/PDF, 10 Mo max)</span></label>
-              <input
-                type="file"
-                accept="image/jpeg,image/png,application/pdf"
-                onChange={(e) => setCvFile(e.target.files?.[0] || null)}
-                className={fileInputClass}
-              />
-            </div>
+
+            <FileDropzone
+              label="Photo de profil (JPEG/PNG/WebP, min. 800×800px, 5 Mo max)"
+              hint="Laisse vide pour garder la photo actuelle"
+              accept="image/jpeg,image/png,image/webp"
+              file={photoFile}
+              onChange={setPhotoFile}
+              showImagePreview
+              emptyLabel="Cliquez ou glissez pour remplacer la photo"
+            />
+
+            <FileDropzone
+              label="CNI (JPEG/PNG/PDF, 10 Mo max)"
+              hint="Laisse vide pour garder le fichier actuel"
+              accept="image/jpeg,image/png,application/pdf"
+              file={cniFile}
+              onChange={setCniFile}
+              emptyLabel="Cliquez ou glissez pour remplacer la CNI"
+            />
+
+            <FileDropzone
+              label="CV (JPEG/PNG/PDF, 10 Mo max)"
+              hint="Laisse vide pour garder le fichier actuel"
+              accept="image/jpeg,image/png,application/pdf"
+              file={cvFile}
+              onChange={setCvFile}
+              emptyLabel="Cliquez ou glissez pour remplacer le CV"
+            />
           </div>
 
           {submitState === 'error' && errorMsg && (

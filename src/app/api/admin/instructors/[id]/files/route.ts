@@ -1,137 +1,84 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { uploadToR2, deleteFromR2, BUCKET_PHOTOS, BUCKET_PRIVATE, photoKey, privateKey, photoPublicUrl } from '@/lib/r2';
+import {
+  BUCKET_PHOTOS, BUCKET_PRIVATE, photoKey, privateKey, photoPublicUrl,
+  extFromMime, objectExists, deleteFromR2,
+} from '@/lib/r2';
 
-const MAX_PHOTO_SIZE = 5 * 1024 * 1024;
-const MAX_DOC_SIZE = 10 * 1024 * 1024;
-const MIN_PHOTO_DIMENSION = 800;
 const ALLOWED_PHOTO_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 const ALLOWED_DOC_TYPES = ['image/jpeg', 'image/png', 'application/pdf'];
 
-function extFromMime(mime: string) {
-  if (mime === 'application/pdf') return 'pdf';
-  if (mime === 'image/png') return 'png';
-  if (mime === 'image/webp') return 'webp';
-  return 'jpg';
-}
-
-function getImageDimensions(buffer: Buffer, mimeType: string): { width: number; height: number } | null {
-  try {
-    if (mimeType === 'image/png') {
-      if (buffer.length < 24) return null;
-      return { width: buffer.readUInt32BE(16), height: buffer.readUInt32BE(20) };
-    }
-    if (mimeType === 'image/jpeg') {
-      let offset = 2;
-      while (offset < buffer.length - 8) {
-        if (buffer[offset] !== 0xff) { offset++; continue; }
-        const marker = buffer[offset + 1];
-        const isSOF = marker >= 0xc0 && marker <= 0xcf && marker !== 0xc4 && marker !== 0xc8 && marker !== 0xcc;
-        if (isSOF) return { height: buffer.readUInt16BE(offset + 5), width: buffer.readUInt16BE(offset + 7) };
-        const segmentLength = buffer.readUInt16BE(offset + 2);
-        offset += 2 + segmentLength;
-      }
-      return null;
-    }
-    if (mimeType === 'image/webp') {
-      const fourCC = buffer.toString('ascii', 12, 16);
-      if (fourCC === 'VP8 ') return { width: buffer.readUInt16LE(26) & 0x3fff, height: buffer.readUInt16LE(28) & 0x3fff };
-      if (fourCC === 'VP8L') {
-        const bits = buffer.readUInt32LE(21);
-        return { width: (bits & 0x3fff) + 1, height: ((bits >> 14) & 0x3fff) + 1 };
-      }
-      if (fourCC === 'VP8X') {
-        const width = (buffer[24] | (buffer[25] << 8) | (buffer[26] << 16)) + 1;
-        const height = (buffer[27] | (buffer[28] << 8) | (buffer[29] << 16)) + 1;
-        return { width, height };
-      }
-      return null;
-    }
-    return null;
-  } catch {
-    return null;
-  }
-}
-
+// PATCH /api/admin/instructors/[id]/files
+// Le fichier a déjà été uploadé directement vers R2 via /files/presign.
+// Cette route vérifie son existence puis met à jour la fiche instructeur.
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await params;
-
     const instructor = await prisma.instructor.findUnique({ where: { id } });
     if (!instructor) {
       return NextResponse.json({ error: 'Instructeur introuvable.' }, { status: 404 });
     }
 
-    const formData = await req.formData();
-    const photo = formData.get('photo') as File | null;
-    const cni = formData.get('cni') as File | null;
-    const cv = formData.get('cv') as File | null;
+    const { photoType, cniType, cvType } = await req.json();
 
-    if (!photo && !cni && !cv) {
+    if (!photoType && !cniType && !cvType) {
       return NextResponse.json({ error: 'Aucun fichier fourni.' }, { status: 400 });
     }
 
     const updateData: Record<string, string> = {};
 
-    if (photo) {
-      if (!ALLOWED_PHOTO_TYPES.includes(photo.type) || photo.size > MAX_PHOTO_SIZE) {
-        return NextResponse.json({ error: 'Photo invalide (JPEG/PNG/WebP, 5 Mo max).' }, { status: 400 });
+    if (photoType) {
+      if (!ALLOWED_PHOTO_TYPES.includes(photoType)) {
+        return NextResponse.json({ error: 'Type de photo invalide.' }, { status: 400 });
       }
-      const photoBuffer = Buffer.from(await photo.arrayBuffer());
-      const dimensions = getImageDimensions(photoBuffer, photo.type);
-      if (!dimensions || dimensions.width < MIN_PHOTO_DIMENSION || dimensions.height < MIN_PHOTO_DIMENSION) {
-        return NextResponse.json({
-          error: `Photo trop petite${dimensions ? ` : ${dimensions.width}x${dimensions.height}px` : ''}, minimum ${MIN_PHOTO_DIMENSION}x${MIN_PHOTO_DIMENSION}px.`
-        }, { status: 400 });
-      }
-
-      // Supprime l'ancienne photo si son extension diffère (sinon la nouvelle écrase l'ancienne clé)
-      const newExt = extFromMime(photo.type);
+      const newExt = extFromMime(photoType);
       const newKey = photoKey(id, newExt);
+      if (!(await objectExists(BUCKET_PHOTOS, newKey))) {
+        return NextResponse.json({ error: "L'upload de la photo n'a pas fini. Réessaie." }, { status: 400 });
+      }
       if (instructor.photoUrl && !instructor.photoUrl.endsWith(`${id}.${newExt}`)) {
         const oldExt = instructor.photoUrl.split('.').pop();
         if (oldExt) await deleteFromR2(BUCKET_PHOTOS, photoKey(id, oldExt));
       }
-      await uploadToR2(BUCKET_PHOTOS, newKey, photoBuffer, photo.type);
       updateData.photoUrl = photoPublicUrl(newKey);
     }
 
-    if (cni) {
-      if (!ALLOWED_DOC_TYPES.includes(cni.type) || cni.size > MAX_DOC_SIZE) {
-        return NextResponse.json({ error: 'CNI invalide (JPEG/PNG/PDF, 10 Mo max).' }, { status: 400 });
+    if (cniType) {
+      if (!ALLOWED_DOC_TYPES.includes(cniType)) {
+        return NextResponse.json({ error: 'Type de CNI invalide.' }, { status: 400 });
       }
-      const cniBuffer = Buffer.from(await cni.arrayBuffer());
-      const cniExt = extFromMime(cni.type);
-      if (instructor.cniUrl && instructor.cniUrl !== `cni.${cniExt}`) {
+      const newExt = extFromMime(cniType);
+      const newKey = privateKey(id, 'cni', newExt);
+      if (!(await objectExists(BUCKET_PRIVATE, newKey))) {
+        return NextResponse.json({ error: "L'upload de la CNI n'a pas fini. Réessaie." }, { status: 400 });
+      }
+      if (instructor.cniUrl && instructor.cniUrl !== `cni.${newExt}`) {
         const oldExt = instructor.cniUrl.split('.').pop();
         if (oldExt) await deleteFromR2(BUCKET_PRIVATE, privateKey(id, 'cni', oldExt));
       }
-      await uploadToR2(BUCKET_PRIVATE, privateKey(id, 'cni', cniExt), cniBuffer, cni.type);
-      updateData.cniUrl = `cni.${cniExt}`;
+      updateData.cniUrl = `cni.${newExt}`;
     }
 
-    if (cv) {
-      if (!ALLOWED_DOC_TYPES.includes(cv.type) || cv.size > MAX_DOC_SIZE) {
-        return NextResponse.json({ error: 'CV invalide (JPEG/PNG/PDF, 10 Mo max).' }, { status: 400 });
+    if (cvType) {
+      if (!ALLOWED_DOC_TYPES.includes(cvType)) {
+        return NextResponse.json({ error: 'Type de CV invalide.' }, { status: 400 });
       }
-      const cvBuffer = Buffer.from(await cv.arrayBuffer());
-      const cvExt = extFromMime(cv.type);
-      if (instructor.cvUrl && instructor.cvUrl !== `cv.${cvExt}`) {
+      const newExt = extFromMime(cvType);
+      const newKey = privateKey(id, 'cv', newExt);
+      if (!(await objectExists(BUCKET_PRIVATE, newKey))) {
+        return NextResponse.json({ error: "L'upload du CV n'a pas fini. Réessaie." }, { status: 400 });
+      }
+      if (instructor.cvUrl && instructor.cvUrl !== `cv.${newExt}`) {
         const oldExt = instructor.cvUrl.split('.').pop();
         if (oldExt) await deleteFromR2(BUCKET_PRIVATE, privateKey(id, 'cv', oldExt));
       }
-      await uploadToR2(BUCKET_PRIVATE, privateKey(id, 'cv', cvExt), cvBuffer, cv.type);
-      updateData.cvUrl = `cv.${cvExt}`;
+      updateData.cvUrl = `cv.${newExt}`;
     }
 
-    const updated = await prisma.instructor.update({
-      where: { id },
-      data: updateData,
-    });
-
+    const updated = await prisma.instructor.update({ where: { id }, data: updateData });
     return NextResponse.json(updated, { status: 200 });
 
   } catch (error: any) {
