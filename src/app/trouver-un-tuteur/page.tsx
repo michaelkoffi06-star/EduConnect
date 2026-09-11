@@ -132,7 +132,7 @@ export default function Home() {
             Trouvez votre Instructeur Ideal
           </h1>
           <p className="text-gray-600 max-w-2xl mx-auto leading-relaxed">
-            Accompagnement personnalise du college a la terminale par des encadreurs
+            Accompagnement personnalise du primaire a la terminale par des encadreurs
             rigoureusement selectionnes.
           </p>
         </ScrollReveal>
@@ -168,17 +168,18 @@ export default function Home() {
             <p className="text-gray-500 text-lg">Aucun instructeur dans cette matiere.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-stretch">
             {instructors.map((instructor, index) => (
-              <ScrollReveal key={instructor.id} delay={Math.min(index * 80, 400)}>
-                <div className="bg-white rounded-3xl border border-[#eee6d3] shadow-sm overflow-hidden flex flex-col transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:border-[#c9951a]/50">
-                  <div className="w-full h-80 overflow-hidden bg-[#faf8f2] relative group">
+              <ScrollReveal key={instructor.id} delay={Math.min(index * 80, 400)} className="h-full">
+                <div className="h-full flex flex-col bg-white rounded-3xl border border-[#eee6d3] shadow-sm overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:border-[#c9951a]/50">
+                  <div className="w-full aspect-[4/5] shrink-0 overflow-hidden bg-[#faf8f2] relative group">
                     {instructor.photoUrl ? (
                       <a href={instructor.photoUrl} target="_blank" rel="noopener noreferrer" title="Voir la photo en grand">
                         <img
                           src={instructor.photoUrl}
                           alt={`${instructor.firstName} ${instructor.lastName}`}
-                          className="w-full h-full object-cover object-top transition-transform duration-500 group-hover:scale-105"
+                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                          style={{ objectPosition: "center 20%" }}
                           loading="lazy"
                         />
                       </a>
@@ -188,36 +189,39 @@ export default function Home() {
                         {instructor.lastName[0]}
                       </div>
                     )}
-                  </div>
-                  <div className="p-5 border-b border-[#eee6d3]">
-                    <h3 className="font-[family-name:var(--font-cinzel)] text-base">
-                      {instructor.firstName} {instructor.lastName}
-                    </h3>
+                    <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent p-4 pt-10">
+                      <h3 className="font-[family-name:var(--font-cinzel)] text-white text-base drop-shadow">
+                        {instructor.firstName} {instructor.lastName}
+                      </h3>
+                    </div>
                   </div>
 
-                  <div className="p-5 flex-grow flex flex-col justify-between">
-                    <div>
-                      <p className={`text-gray-600 text-sm leading-relaxed mb-1 ${expandedBioId === instructor.id ? "" : "line-clamp-3"}`}>
-                        {instructor.bio || "Aucune biographie renseignee."}
-                      </p>
-                      {instructor.bio && instructor.bio.length > 120 && (
-                        <button type="button" onClick={() => toggleBio(instructor.id)} className="text-xs font-semibold text-[#c9951a] hover:underline mb-4 block">
-                          {expandedBioId === instructor.id ? "Voir moins" : "Lire plus"}
-                        </button>
-                      )}
-                      <div className="flex flex-wrap gap-1.5 mb-5">
-                        {instructor.subjects.map((sub, idx) => (
+                  <div className="p-5 flex flex-col flex-grow">
+                    <div className="flex flex-wrap gap-1.5 mb-3">
+                      {instructor.subjects.length === 0 ? (
+                        <span className="text-xs text-gray-400 italic">Matiere non renseignee</span>
+                      ) : (
+                        instructor.subjects.map((sub, idx) => (
                           <span
                             key={sub.id || idx}
-                            className="bg-[#c9951a]/10 text-[#8a6510] text-xs px-2.5 py-1 rounded-md font-medium border border-[#c9951a]/30"
+                            className="bg-[#c9951a]/12 text-[#8a6510] text-xs px-2.5 py-1 rounded-md font-semibold border border-[#c9951a]/30"
                           >
                             {sub.name}
                           </span>
-                        ))}
-                      </div>
+                        ))
+                      )}
                     </div>
 
-                    <div className="grid grid-cols-1 gap-2 mt-auto">
+                    <p className={`text-gray-600 text-sm leading-relaxed mb-1 ${expandedBioId === instructor.id ? "" : "line-clamp-3"}`}>
+                      {instructor.bio || "Aucune biographie renseignee."}
+                    </p>
+                    {instructor.bio && instructor.bio.length > 120 && (
+                      <button type="button" onClick={() => toggleBio(instructor.id)} className="text-xs font-semibold text-[#c9951a] hover:underline mb-2 block self-start">
+                        {expandedBioId === instructor.id ? "Voir moins" : "Lire plus"}
+                      </button>
+                    )}
+
+                    <div className="grid grid-cols-1 gap-2 mt-auto pt-4">
                       <button
                         onClick={() => openModal(instructor)}
                         className="w-full bg-gradient-to-r from-[#c9951a] to-[#d4a820] hover:brightness-105 text-white font-bold py-2.5 rounded-lg text-sm transition"
