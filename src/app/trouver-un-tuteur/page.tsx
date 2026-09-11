@@ -20,7 +20,7 @@ interface Instructor {
   subjects: Subject[];
 }
 
-const ADMIN_WHATSAPP = "2250000000000";
+const ADMIN_WHATSAPP = "2250758529323";
 
 export default function Home() {
   const [instructors, setInstructors] = useState<Instructor[]>([]);
