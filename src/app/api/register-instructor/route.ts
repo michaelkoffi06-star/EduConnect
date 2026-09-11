@@ -1,134 +1,76 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { Resend } from 'resend';
-import { randomUUID } from 'crypto';
 import type { InstructorType, AcademicLevel } from '@prisma/client';
-import { uploadToR2, BUCKET_PHOTOS, BUCKET_PRIVATE, photoKey, privateKey, photoPublicUrl } from '@/lib/r2';
+import {
+  BUCKET_PHOTOS,
+  BUCKET_PRIVATE,
+  photoKey,
+  privateKey,
+  photoPublicUrl,
+  extFromMime,
+  objectExists,
+} from '@/lib/r2';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-const MAX_PHOTO_SIZE = 5 * 1024 * 1024;  // 5 Mo
-const MAX_DOC_SIZE = 10 * 1024 * 1024;   // 10 Mo
-const MIN_PHOTO_DIMENSION = 800;         // px, largeur ET hauteur minimales
 const ALLOWED_PHOTO_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 const ALLOWED_DOC_TYPES = ['image/jpeg', 'image/png', 'application/pdf'];
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-function extFromMime(mime: string) {
-  if (mime === 'application/pdf') return 'pdf';
-  if (mime === 'image/png') return 'png';
-  if (mime === 'image/webp') return 'webp';
-  return 'jpg';
-}
-
-function getImageDimensions(buffer: Buffer, mimeType: string): { width: number; height: number } | null {
-  try {
-    if (mimeType === 'image/png') {
-      if (buffer.length < 24) return null;
-      return { width: buffer.readUInt32BE(16), height: buffer.readUInt32BE(20) };
-    }
-
-    if (mimeType === 'image/jpeg') {
-      let offset = 2;
-      while (offset < buffer.length - 8) {
-        if (buffer[offset] !== 0xff) { offset++; continue; }
-        const marker = buffer[offset + 1];
-        const isSOF = marker >= 0xc0 && marker <= 0xcf && marker !== 0xc4 && marker !== 0xc8 && marker !== 0xcc;
-        if (isSOF) {
-          return { height: buffer.readUInt16BE(offset + 5), width: buffer.readUInt16BE(offset + 7) };
-        }
-        const segmentLength = buffer.readUInt16BE(offset + 2);
-        offset += 2 + segmentLength;
-      }
-      return null;
-    }
-
-    if (mimeType === 'image/webp') {
-      const fourCC = buffer.toString('ascii', 12, 16);
-      if (fourCC === 'VP8 ') {
-        return { width: buffer.readUInt16LE(26) & 0x3fff, height: buffer.readUInt16LE(28) & 0x3fff };
-      }
-      if (fourCC === 'VP8L') {
-        const bits = buffer.readUInt32LE(21);
-        return { width: (bits & 0x3fff) + 1, height: ((bits >> 14) & 0x3fff) + 1 };
-      }
-      if (fourCC === 'VP8X') {
-        const width = (buffer[24] | (buffer[25] << 8) | (buffer[26] << 16)) + 1;
-        const height = (buffer[27] | (buffer[28] << 8) | (buffer[29] << 16)) + 1;
-        return { width, height };
-      }
-      return null;
-    }
-
-    return null;
-  } catch {
-    return null;
-  }
-}
-
+// Les fichiers sont désormais uploadés directement vers R2 par le navigateur
+// (voir /api/register-instructor/presign), AVANT cet appel. Cette route se contente
+// de vérifier que les fichiers existent bien sur R2, puis crée la fiche instructeur.
 export async function POST(req: NextRequest) {
   try {
-    const formData = await req.formData();
+    const body = await req.json();
+    const {
+      instructorId,
+      firstName,
+      lastName,
+      email,
+      whatsapp,
+      bio,
+      type,
+      levels,
+      subjects,
+      photoType,
+      cniType,
+      cvType,
+    } = body;
 
-    const firstName = formData.get('firstName') as string;
-    const lastName = formData.get('lastName') as string;
-    const email = formData.get('email') as string;
-    const whatsapp = formData.get('whatsapp') as string;
-    const bio = formData.get('bio') as string;
-    const type = formData.get('type') as string;
-    const levels = formData.get('levels') as string;
-    const subjectsRaw = formData.get('subjects') as string;
-    const subjects: string[] = subjectsRaw ? JSON.parse(subjectsRaw) : [];
+    if (!UUID_RE.test(instructorId || '')) {
+      return NextResponse.json({ error: 'Identifiant invalide.' }, { status: 400 });
+    }
 
-    const photo = formData.get('photo') as File | null;
-    const cni = formData.get('cni') as File | null;
-    const cv = formData.get('cv') as File | null;
-
-    if (!firstName || !lastName || !email || !whatsapp || !bio || !bio.trim() || subjects.length === 0) {
+    if (!firstName || !lastName || !email || !whatsapp || !bio || !bio.trim() || !Array.isArray(subjects) || subjects.length === 0) {
       return NextResponse.json({ error: 'Champs obligatoires manquants (dont la bio).' }, { status: 400 });
     }
 
-    if (!photo || !cni || !cv) {
-      return NextResponse.json({ error: 'Photo, CNI et CV sont tous les trois obligatoires.' }, { status: 400 });
+    if (!ALLOWED_PHOTO_TYPES.includes(photoType) || !ALLOWED_DOC_TYPES.includes(cniType) || !ALLOWED_DOC_TYPES.includes(cvType)) {
+      return NextResponse.json({ error: 'Type de fichier invalide.' }, { status: 400 });
     }
 
-    if (!ALLOWED_PHOTO_TYPES.includes(photo.type) || photo.size > MAX_PHOTO_SIZE) {
-      return NextResponse.json({ error: 'Photo invalide (JPEG/PNG/WebP, 5 Mo max).' }, { status: 400 });
-    }
-    if (!ALLOWED_DOC_TYPES.includes(cni.type) || cni.size > MAX_DOC_SIZE) {
-      return NextResponse.json({ error: 'CNI invalide (JPEG/PNG/PDF, 10 Mo max).' }, { status: 400 });
-    }
-    if (!ALLOWED_DOC_TYPES.includes(cv.type) || cv.size > MAX_DOC_SIZE) {
-      return NextResponse.json({ error: 'CV invalide (JPEG/PNG/PDF, 10 Mo max).' }, { status: 400 });
-    }
+    const photoExt = extFromMime(photoType);
+    const cniExt = extFromMime(cniType);
+    const cvExt = extFromMime(cvType);
 
-    const photoBuffer = Buffer.from(await photo.arrayBuffer());
-    const dimensions = getImageDimensions(photoBuffer, photo.type);
-
-    if (!dimensions) {
-      return NextResponse.json({ error: "Impossible de lire les dimensions de la photo. Réessaie avec un autre fichier." }, { status: 400 });
-    }
-    if (dimensions.width < MIN_PHOTO_DIMENSION || dimensions.height < MIN_PHOTO_DIMENSION) {
-      return NextResponse.json({
-        error: `Photo trop petite : ${dimensions.width}×${dimensions.height}px reçus, minimum ${MIN_PHOTO_DIMENSION}×${MIN_PHOTO_DIMENSION}px requis.`
-      }, { status: 400 });
-    }
-
-    const cniBuffer = Buffer.from(await cni.arrayBuffer());
-    const cvBuffer = Buffer.from(await cv.arrayBuffer());
-
-    const instructorId = randomUUID();
-
-    const photoExt = extFromMime(photo.type);
     const pKey = photoKey(instructorId, photoExt);
-    await uploadToR2(BUCKET_PHOTOS, pKey, photoBuffer, photo.type);
-    const photoUrl = photoPublicUrl(pKey);
+    const cniKey = privateKey(instructorId, 'cni', cniExt);
+    const cvKey = privateKey(instructorId, 'cv', cvExt);
 
-    const cniExt = extFromMime(cni.type);
-    const cvExt = extFromMime(cv.type);
-    const cniFileName = `cni.${cniExt}`;
-    const cvFileName = `cv.${cvExt}`;
-    await uploadToR2(BUCKET_PRIVATE, privateKey(instructorId, 'cni', cniExt), cniBuffer, cni.type);
-    await uploadToR2(BUCKET_PRIVATE, privateKey(instructorId, 'cv', cvExt), cvBuffer, cv.type);
+    const [photoOk, cniOk, cvOk] = await Promise.all([
+      objectExists(BUCKET_PHOTOS, pKey),
+      objectExists(BUCKET_PRIVATE, cniKey),
+      objectExists(BUCKET_PRIVATE, cvKey),
+    ]);
+
+    if (!photoOk || !cniOk || !cvOk) {
+      return NextResponse.json(
+        { error: "Un ou plusieurs fichiers n'ont pas fini d'être envoyés. Réessaie." },
+        { status: 400 }
+      );
+    }
 
     const newInstructor = await prisma.instructor.create({
       data: {
@@ -141,9 +83,9 @@ export async function POST(req: NextRequest) {
         type: (type || 'ETUDIANT') as InstructorType,
         levels: (levels || 'ALL') as AcademicLevel,
         status: 'PENDING',
-        photoUrl,
-        cniUrl: cniFileName,
-        cvUrl: cvFileName,
+        photoUrl: photoPublicUrl(pKey),
+        cniUrl: `cni.${cniExt}`,
+        cvUrl: `cv.${cvExt}`,
         subjects: {
           create: subjects.map((subjectId: string) => ({ subjectId })),
         },
@@ -196,7 +138,7 @@ export async function POST(req: NextRequest) {
         `,
       });
     } catch (emailError) {
-      console.error("Info : email de confirmation instructeur non envoyé (normal tant que le domaine Resend n'est pas vérifié) :", emailError);
+      console.error("Info : email de confirmation instructeur non envoyé :", emailError);
     }
 
     return NextResponse.json({ ...newInstructor, editLink }, { status: 201 });

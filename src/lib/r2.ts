@@ -55,3 +55,36 @@ export function privateKey(instructorId: string, baseName: string, ext: string) 
 export function photoPublicUrl(key: string) {
   return `${PUBLIC_URL_PHOTOS}/${key}`;
 }
+
+// --- Upload direct depuis le navigateur (URLs présignées) ---
+// Contourne la limite de 4,5 Mo des fonctions serverless Vercel : le fichier
+// est envoyé directement du navigateur vers R2, sans passer par notre API.
+
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+import { HeadObjectCommand } from '@aws-sdk/client-s3';
+
+export function extFromMime(mime: string) {
+  if (mime === 'application/pdf') return 'pdf';
+  if (mime === 'image/png') return 'png';
+  if (mime === 'image/webp') return 'webp';
+  return 'jpg';
+}
+
+export async function getPresignedUploadUrl(
+  bucket: string,
+  key: string,
+  contentType: string,
+  expiresIn = 300
+) {
+  const command = new PutObjectCommand({ Bucket: bucket, Key: key, ContentType: contentType });
+  return getSignedUrl(r2Client, command, { expiresIn });
+}
+
+export async function objectExists(bucket: string, key: string): Promise<boolean> {
+  try {
+    await r2Client.send(new HeadObjectCommand({ Bucket: bucket, Key: key }));
+    return true;
+  } catch {
+    return false;
+  }
+}

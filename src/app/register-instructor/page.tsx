@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import SiteHeader from '@/components/SiteHeader';
 import FileDropzone from '@/components/FileDropzone';
+import { getImageDimensionsFromFile } from '@/lib/image-utils';
 
 interface Subject {
   id: string;
@@ -10,6 +11,27 @@ interface Subject {
 }
 
 type SubmitState = 'idle' | 'loading' | 'success' | 'error';
+
+const MIN_PHOTO_DIMENSION = 800;
+const MAX_PHOTO_SIZE = 5 * 1024 * 1024;
+const MAX_DOC_SIZE = 10 * 1024 * 1024;
+
+async function uploadDirect(instructorId: string, kind: 'photo' | 'cni' | 'cv', file: File) {
+  const presignRes = await fetch('/api/register-instructor/presign', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ kind, contentType: file.type, instructorId }),
+  });
+  const presignData = await presignRes.json();
+  if (!presignRes.ok) throw new Error(presignData.error || `Échec de la présignature (${kind}).`);
+
+  const putRes = await fetch(presignData.uploadUrl, {
+    method: 'PUT',
+    headers: { 'Content-Type': file.type },
+    body: file,
+  });
+  if (!putRes.ok) throw new Error(`Échec de l'envoi du fichier (${kind}). Vérifie ta connexion et réessaie.`);
+}
 
 export default function RegisterInstructor() {
   const [subjects, setSubjects] = useState<Subject[]>([]);
@@ -41,13 +63,31 @@ export default function RegisterInstructor() {
     setErrorMsg('');
 
     if (selectedSubjects.length === 0) {
-      setErrorMsg('Veuillez selectionner au moins une matiere.');
+      setErrorMsg('Veuillez sélectionner au moins une matière.');
+      setSubmitState('error');
+      return;
+    }
+    if (!photoFile || !cniFile || !cvFile) {
+      setErrorMsg('Photo, CNI et CV sont tous les trois obligatoires.');
+      setSubmitState('error');
+      return;
+    }
+    if (photoFile.size > MAX_PHOTO_SIZE) {
+      setErrorMsg('Photo trop lourde (5 Mo max).');
+      setSubmitState('error');
+      return;
+    }
+    if (cniFile.size > MAX_DOC_SIZE || cvFile.size > MAX_DOC_SIZE) {
+      setErrorMsg('CNI ou CV trop lourd (10 Mo max chacun).');
       setSubmitState('error');
       return;
     }
 
-    if (!photoFile || !cniFile || !cvFile) {
-      setErrorMsg('Photo, CNI et CV sont tous les trois obligatoires.');
+    const dimensions = await getImageDimensionsFromFile(photoFile);
+    if (!dimensions || dimensions.width < MIN_PHOTO_DIMENSION || dimensions.height < MIN_PHOTO_DIMENSION) {
+      setErrorMsg(
+        `Photo trop petite${dimensions ? ` (${dimensions.width}×${dimensions.height}px)` : ''}, minimum ${MIN_PHOTO_DIMENSION}×${MIN_PHOTO_DIMENSION}px requis.`
+      );
       setSubmitState('error');
       return;
     }
@@ -60,23 +100,38 @@ export default function RegisterInstructor() {
       return;
     }
 
-    const payload = new FormData();
-    payload.append('firstName', formValues.get('firstName') as string);
-    payload.append('lastName', formValues.get('lastName') as string);
-    payload.append('email', formValues.get('email') as string);
-    payload.append('whatsapp', formValues.get('whatsapp') as string);
-    payload.append('bio', bioValue);
-    payload.append('type', formValues.get('type') as string);
-    payload.append('levels', formValues.get('levels') as string);
-    payload.append('subjects', JSON.stringify(selectedSubjects));
-    payload.append('photo', photoFile);
-    payload.append('cni', cniFile);
-    payload.append('cv', cvFile);
+    const instructorId = crypto.randomUUID();
+
+    try {
+      await Promise.all([
+        uploadDirect(instructorId, 'photo', photoFile),
+        uploadDirect(instructorId, 'cni', cniFile),
+        uploadDirect(instructorId, 'cv', cvFile),
+      ]);
+    } catch (uploadError: any) {
+      setErrorMsg(uploadError.message || "Échec de l'envoi des fichiers. Vérifie ta connexion et réessaie.");
+      setSubmitState('error');
+      return;
+    }
 
     try {
       const res = await fetch('/api/register-instructor', {
         method: 'POST',
-        body: payload,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          instructorId,
+          firstName: formValues.get('firstName'),
+          lastName: formValues.get('lastName'),
+          email: formValues.get('email'),
+          whatsapp: formValues.get('whatsapp'),
+          bio: bioValue,
+          type: formValues.get('type'),
+          levels: formValues.get('levels'),
+          subjects: selectedSubjects,
+          photoType: photoFile.type,
+          cniType: cniFile.type,
+          cvType: cvFile.type,
+        }),
       });
       const result = await res.json();
       if (!res.ok) {
@@ -87,7 +142,7 @@ export default function RegisterInstructor() {
       setEditLink(result.editLink || '');
       setSubmitState('success');
     } catch {
-      setErrorMsg('Impossible de contacter le serveur. Reessaie.');
+      setErrorMsg('Impossible de contacter le serveur. Réessaie.');
       setSubmitState('error');
     }
   };
@@ -116,9 +171,9 @@ export default function RegisterInstructor() {
             <div className="w-16 h-16 bg-[#c9951a]/10 border border-[#c9951a]/40 rounded-full flex items-center justify-center mx-auto mb-6">
               <span className="text-3xl text-[#c9951a]">✓</span>
             </div>
-            <h1 className="text-2xl font-bold text-[#0d1b3e] mb-3">Candidature envoyee !</h1>
+            <h1 className="text-2xl font-bold text-[#0d1b3e] mb-3">Candidature envoyée !</h1>
             <p className="text-gray-600 text-sm leading-relaxed">
-              Votre profil est <span className="font-semibold text-[#c9951a]">en attente de validation</span> par notre equipe. Vous serez contacte par WhatsApp sous 48h.
+              Votre profil est <span className="font-semibold text-[#c9951a]">en attente de validation</span> par notre équipe. Vous serez contacté par WhatsApp sous 48h.
             </p>
             {editLink && (
               <div className="mt-6 bg-[#faf8f2] border border-[#eee6d3] rounded-2xl p-4 text-left">
@@ -139,11 +194,12 @@ export default function RegisterInstructor() {
                       copied ? 'bg-emerald-500 text-white' : 'bg-[#c9951a] hover:bg-[#d4a820] text-white'
                     }`}
                   >
-                    {copied ? '✓ Copie !' : 'Copier'}
+                    {copied ? '✓ Copié !' : 'Copier'}
                   </button>
                 </div>
 
-                <a
+                
+                  <a
                   href={editLink}
                   target="_blank"
                   rel="noopener noreferrer"
@@ -155,11 +211,12 @@ export default function RegisterInstructor() {
             )}
 
             <div className="mt-8 flex flex-col gap-2">
-              <a
+              
+                <a
                 href="/"
                 className="w-full inline-block py-2.5 bg-gradient-to-r from-[#c9951a] to-[#d4a820] hover:brightness-105 text-white font-bold rounded-xl transition text-sm text-center"
               >
-                Retour a l'accueil
+                Retour à l'accueil
               </a>
               <button
                 type="button"
@@ -191,7 +248,7 @@ export default function RegisterInstructor() {
         <div className="text-center mb-8">
           <div className="flex items-center justify-center gap-2 mb-4">
             <span className="w-8 h-px bg-[#c9951a]" />
-            <span className="text-xs font-medium text-[#8a6510] tracking-wide">Rejoindre le reseau</span>
+            <span className="text-xs font-medium text-[#8a6510] tracking-wide">Rejoindre le réseau</span>
             <span className="w-8 h-px bg-[#c9951a]" />
           </div>
           <h1 className="font-[family-name:var(--font-cinzel)] text-3xl text-[#0d1b3e]">Devenir Instructeur</h1>
@@ -203,10 +260,10 @@ export default function RegisterInstructor() {
         <form onSubmit={handleSubmit} className="space-y-6">
 
           <div className={cardClass}>
-            <h2 className="text-xs font-semibold text-[#c9951a] uppercase tracking-widest">Identite</h2>
+            <h2 className="text-xs font-semibold text-[#c9951a] uppercase tracking-widest">Identité</h2>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className={labelClass}>Prenom *</label>
+                <label className={labelClass}>Prénom *</label>
                 <input name="firstName" required placeholder="Marie" className={inputClass} />
               </div>
               <div>
@@ -229,7 +286,7 @@ export default function RegisterInstructor() {
                   required
                   placeholder="ex : 2250708091011"
                   pattern="[0-9+ ]{8,15}"
-                  title="Indicatif pays + numero, sans le 0 initial (ex : 225 pour la Cote d'Ivoire)"
+                  title="Indicatif pays + numéro, sans le 0 initial (ex : 225 pour la Côte d'Ivoire)"
                   className={inputClass}
                 />
               </div>
@@ -237,32 +294,32 @@ export default function RegisterInstructor() {
           </div>
 
           <div className={cardClass}>
-            <h2 className="text-xs font-semibold text-[#c9951a] uppercase tracking-widest">Profil pedagogique</h2>
+            <h2 className="text-xs font-semibold text-[#c9951a] uppercase tracking-widest">Profil pédagogique</h2>
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className={labelClass}>Type d'instructeur *</label>
                 <select name="type" required className={selectClass}>
-                  <option value="ETUDIANT">Etudiant</option>
-                  <option value="PROF_COLLEGE">Professeur (College)</option>
-                  <option value="PROF_LYCEE">Professeur (Lycee)</option>
+                  <option value="ETUDIANT">Étudiant</option>
+                  <option value="PROF_COLLEGE">Professeur (Collège)</option>
+                  <option value="PROF_LYCEE">Professeur (Lycée)</option>
                 </select>
               </div>
               <div>
-                <label className={labelClass}>Niveaux enseignes *</label>
+                <label className={labelClass}>Niveaux enseignés *</label>
                 <select name="levels" required className={selectClass}>
-                  <option value="COLLEGE">College</option>
-                  <option value="LYCEE">Lycee</option>
-                  <option value="ALL">College &amp; Lycee</option>
+                  <option value="COLLEGE">Collège</option>
+                  <option value="LYCEE">Lycée</option>
+                  <option value="ALL">Collège &amp; Lycée</option>
                 </select>
               </div>
             </div>
             <div>
-              <label className={labelClass}>Bio / Presentation *</label>
+              <label className={labelClass}>Bio / Présentation *</label>
               <textarea
                 name="bio"
                 rows={4}
                 required
-                placeholder="Parlez de votre experience, votre approche pedagogique..."
+                placeholder="Parlez de votre expérience, votre approche pédagogique..."
                 className={`${inputClass} resize-none`}
               />
             </div>
