@@ -59,6 +59,7 @@ export default function RegisterInstructor() {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    const form = e.currentTarget; // capturé avant tout `await` : e.currentTarget devient null après
     setSubmitState('loading');
     setErrorMsg('');
 
@@ -92,7 +93,7 @@ export default function RegisterInstructor() {
       return;
     }
 
-    const formValues = new FormData(e.currentTarget);
+    const formValues = new FormData(form);
     const bioValue = formValues.get('bio') as string;
     if (!bioValue || !bioValue.trim()) {
       setErrorMsg('La bio est obligatoire.');
