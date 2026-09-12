@@ -350,7 +350,8 @@ export default function RegisterInstructor() {
             <h2 className="text-xs font-semibold text-[#c9951a] uppercase tracking-widest">Documents *</h2>
             <p className="text-xs text-gray-500 -mt-2">
               Ta photo sera visible publiquement sur ton profil. La CNI et le CV servent uniquement
-              de justificatifs pour la validation de ton compte, ils ne sont jamais rendus publics.
+              de justificatifs pour la validation de ton compte, ils ne sont jamais rendus publics.{' '}
+              <a href="/confidentialite" className="text-[#c9951a] hover:underline">En savoir plus</a>.
             </p>
 
             <FileDropzone

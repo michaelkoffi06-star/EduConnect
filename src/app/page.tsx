@@ -240,6 +240,9 @@ export default async function HomePage() {
               <li>
                 <a href="/soutenir" className="hover:text-[#c9951a]">Soutenir le projet</a>
               </li>
+              <li>
+                <a href="/confidentialite" className="hover:text-[#c9951a]">Confidentialité</a>
+              </li>
             </ul>
           </div>
         </div>
