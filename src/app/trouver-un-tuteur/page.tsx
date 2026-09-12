@@ -29,6 +29,7 @@ const ADMIN_WHATSAPP = "2250758529323";
 export default function Home() {
   const [instructors, setInstructors] = useState<Instructor[]>([]);
   const [selectedSubject, setSelectedSubject] = useState<string>("");
+  const [selectedLevel, setSelectedLevel] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(true);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [activeInstructor, setActiveInstructor] = useState<Instructor | null>(null);
@@ -39,6 +40,12 @@ export default function Home() {
   const toggleBio = (id: string) => {
     setExpandedBioId((prev) => (prev === id ? null : id));
   };
+
+  const levelOptions = [
+    { name: "Tous niveaux", value: "" },
+    { name: "Collège", value: "COLLEGE" },
+    { name: "Lycée", value: "LYCEE" },
+  ];
 
   const disciplines = [
     { name: "Tous les instructeurs", slug: "" },
@@ -60,9 +67,10 @@ export default function Home() {
     async function fetchInstructors() {
       setLoading(true);
       try {
-        const url = selectedSubject
-          ? `/api/instructors?subject=${selectedSubject}`
-          : "/api/instructors";
+        const params = new URLSearchParams();
+        if (selectedSubject) params.set("subject", selectedSubject);
+        if (selectedLevel) params.set("level", selectedLevel);
+        const url = params.toString() ? `/api/instructors?${params.toString()}` : "/api/instructors";
         const res = await fetch(url);
         if (res.ok) setInstructors(await res.json());
       } catch (error) {
@@ -72,7 +80,7 @@ export default function Home() {
       }
     }
     fetchInstructors();
-  }, [selectedSubject]);
+  }, [selectedSubject, selectedLevel]);
 
   const openModal = (instructor: Instructor) => {
     setActiveInstructor(instructor);
@@ -143,8 +151,8 @@ export default function Home() {
       </section>
 
       <div className="sticky top-[57px] z-40 bg-white/90 backdrop-blur-sm border-b border-[#eee6d3]">
-        <div className="max-w-7xl mx-auto px-4 py-4 overflow-x-auto">
-          <div className="flex gap-2 w-max">
+        <div className="max-w-7xl mx-auto px-4 py-4 space-y-3">
+          <div className="flex gap-2 overflow-x-auto">
             {disciplines.map((dis) => (
               <button
                 key={dis.slug === "" ? "all" : dis.slug}
@@ -156,6 +164,21 @@ export default function Home() {
                 }
               >
                 {dis.name}
+              </button>
+            ))}
+          </div>
+          <div className="flex gap-2 overflow-x-auto">
+            {levelOptions.map((lvl) => (
+              <button
+                key={lvl.value === "" ? "all-levels" : lvl.value}
+                onClick={() => setSelectedLevel(lvl.value)}
+                className={
+                  selectedLevel === lvl.value
+                    ? "px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap border border-[#c9951a] bg-[#c9951a]/10 text-[#8a6510] transition"
+                    : "px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap border border-[#eee6d3] bg-white text-gray-500 hover:border-[#c9951a]/60 hover:text-[#0d1b3e] transition"
+                }
+              >
+                {lvl.name}
               </button>
             ))}
           </div>

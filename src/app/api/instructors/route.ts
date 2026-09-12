@@ -5,8 +5,8 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const subjectSlug = searchParams.get('subject');
+    const level = searchParams.get('level'); // 'COLLEGE' | 'LYCEE' | null
 
-    // Requête réelle à la base de données
     const instructors = await prisma.instructor.findMany({
       where: {
         status: 'APPROVED',
@@ -17,6 +17,10 @@ export async function GET(request: NextRequest) {
               subject: { slug: subjectSlug.toLowerCase() }
             }
           }
+        }),
+        // Un instructeur en 'ALL' correspond aux deux niveaux ; sinon filtrage strict
+        ...((level === 'COLLEGE' || level === 'LYCEE') && {
+          levels: { in: [level, 'ALL'] }
         })
       },
       // Sélection explicite : route publique, jamais cniUrl/cvUrl/email/whatsapp
