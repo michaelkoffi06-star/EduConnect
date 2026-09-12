@@ -120,3 +120,12 @@ model Feedback {
   status    ContactStatus @default(NEW)
   createdAt DateTime      @default(now())
 }
+
+// 12. Journal des tentatives de connexion admin échouées (protection anti-bruteforce)
+model LoginAttempt {
+  id        String   @id @default(uuid())
+  ip        String
+  createdAt DateTime @default(now())
+
+  @@index([ip, createdAt])
+}

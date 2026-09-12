@@ -101,7 +101,7 @@ export default function Home() {
         }),
       });
       if (response.ok) {
-        alert("Votre demande a ete transmise a l'equipe EduConnect !");
+        alert("Votre demande a été transmise à l'équipe EduConnect !");
         closeModal();
       } else {
         alert("Une erreur est survenue.");
@@ -113,7 +113,7 @@ export default function Home() {
 
   const getWhatsAppLink = (instructorFullName: string) => {
     const msg = encodeURIComponent(
-      `Bonjour EduConnect, je suis interesse(e) par l'instructeur ${instructorFullName}.`
+      `Bonjour EduConnect, je suis intéressé(e) par l'instructeur ${instructorFullName}.`
     );
     return `https://wa.me/${ADMIN_WHATSAPP}?text=${msg}`;
   };
@@ -128,7 +128,7 @@ export default function Home() {
           <div className="flex items-center justify-center gap-2 mb-5">
             <span className="w-8 h-px bg-[#c9951a]" />
             <span className="text-xs font-medium text-[#8a6510] tracking-wide">
-              Soutien scolaire de haute qualite
+              Soutien scolaire de haute qualité
             </span>
             <span className="w-8 h-px bg-[#c9951a]" />
           </div>
@@ -136,8 +136,8 @@ export default function Home() {
             Trouvez votre Instructeur Ideal
           </h1>
           <p className="text-gray-600 max-w-2xl mx-auto leading-relaxed">
-            Accompagnement personnalise du primaire a la terminale par des encadreurs
-            rigoureusement selectionnes.
+            Accompagnement personnalisé du primaire à la terminale par des encadreurs
+            rigoureusement sélectionnés.
           </p>
         </ScrollReveal>
       </section>
@@ -169,7 +169,7 @@ export default function Home() {
           </div>
         ) : instructors.length === 0 ? (
           <div className="text-center py-16 bg-[#faf8f2] rounded-3xl border border-[#eee6d3]">
-            <p className="text-gray-500 text-lg">Aucun instructeur dans cette matiere.</p>
+            <p className="text-gray-500 text-lg">Aucun instructeur dans cette matière.</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-start">
@@ -203,7 +203,7 @@ export default function Home() {
                   <div className="p-5 flex flex-col flex-grow">
                     <div className="flex flex-wrap gap-1.5 mb-3">
                       {instructor.subjects.length === 0 ? (
-                        <span className="text-xs text-gray-400 italic">Matiere non renseignee</span>
+                        <span className="text-xs text-gray-400 italic">Matière non renseignée</span>
                       ) : (
                         instructor.subjects.map((item, idx) => (
                           <span
@@ -217,7 +217,7 @@ export default function Home() {
                     </div>
 
                     <p className={`text-gray-600 text-sm leading-relaxed mb-1 ${expandedBioId === instructor.id ? "" : "line-clamp-3"}`}>
-                      {instructor.bio || "Aucune biographie renseignee."}
+                      {instructor.bio || "Aucune biographie renseignée."}
                     </p>
                     {instructor.bio && instructor.bio.length > 120 && (
                       <button type="button" onClick={() => toggleBio(instructor.id)} className="text-xs font-semibold text-[#c9951a] hover:underline mb-2 block self-start">
@@ -261,7 +261,7 @@ export default function Home() {
             </div>
             <form onSubmit={handleFormSubmit} className="p-6 space-y-4">
               <p className="text-xs text-gray-500 -mt-1">
-                Votre demande sera transmise a l&apos;equipe EduConnect, qui fera l&apos;intermediaire avec l&apos;instructeur.
+                Votre demande sera transmise à l&apos;équipe EduConnect, qui fera l&apos;intermédiaire avec l&apos;instructeur.
               </p>
               <div>
                 <label className="block text-xs font-bold text-gray-500 uppercase mb-1">
@@ -278,7 +278,7 @@ export default function Home() {
               </div>
               <div>
                 <label className="block text-xs font-bold text-gray-500 uppercase mb-1">
-                  Details de la demande
+                  Détails de la demande
                 </label>
                 <textarea
                   rows={4}
