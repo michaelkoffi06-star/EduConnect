@@ -10,6 +10,10 @@ interface Subject {
   slug: string;
 }
 
+interface InstructorSubject {
+  subject: Subject;
+}
+
 interface Instructor {
   id: string;
   firstName: string;
@@ -17,7 +21,7 @@ interface Instructor {
   bio: string;
   status: string;
   photoUrl?: string | null;
-  subjects: Subject[];
+  subjects: InstructorSubject[];
 }
 
 const ADMIN_WHATSAPP = "2250758529323";
@@ -168,10 +172,10 @@ export default function Home() {
             <p className="text-gray-500 text-lg">Aucun instructeur dans cette matiere.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-stretch">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-start">
             {instructors.map((instructor, index) => (
-              <ScrollReveal key={instructor.id} delay={Math.min(index * 80, 400)} className="h-full">
-                <div className="h-full flex flex-col bg-white rounded-3xl border border-[#eee6d3] shadow-sm overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:border-[#c9951a]/50">
+              <ScrollReveal key={instructor.id} delay={Math.min(index * 80, 400)}>
+                <div className="min-h-[560px] flex flex-col bg-white rounded-3xl border border-[#eee6d3] shadow-sm overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:border-[#c9951a]/50">
                   <div className="w-full aspect-[4/5] shrink-0 overflow-hidden bg-[#faf8f2] relative group">
                     {instructor.photoUrl ? (
                       <a href={instructor.photoUrl} target="_blank" rel="noopener noreferrer" title="Voir la photo en grand">
@@ -201,12 +205,12 @@ export default function Home() {
                       {instructor.subjects.length === 0 ? (
                         <span className="text-xs text-gray-400 italic">Matiere non renseignee</span>
                       ) : (
-                        instructor.subjects.map((sub, idx) => (
+                        instructor.subjects.map((item, idx) => (
                           <span
-                            key={sub.id || idx}
+                            key={item.subject?.id || idx}
                             className="bg-[#c9951a]/12 text-[#8a6510] text-xs px-2.5 py-1 rounded-md font-semibold border border-[#c9951a]/30"
                           >
-                            {sub.name}
+                            {item.subject?.name}
                           </span>
                         ))
                       )}
