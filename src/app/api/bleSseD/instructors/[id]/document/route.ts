@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getFromR2, BUCKET_PRIVATE, privateKey } from '@/lib/r2';
 
-// Protégée par le middleware (voir §7bis de la doc) : /api/admin/** exige une session admin valide.
+// Protégée par le middleware (voir §7bis de la doc) : /api/bleSseD/** exige une session admin valide.
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }

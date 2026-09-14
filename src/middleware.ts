@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifySessionToken, SESSION_COOKIE_NAME } from '@/lib/admin-auth';
+import { verifySessionToken, SESSION_COOKIE_NAME } from '@/lib/bleSseD-auth';
 
 // S'applique à toutes les routes sauf les fichiers statiques Next.js et le dossier marketing
 // (logo, assets de l'ancienne vitrine), pour que la page de maintenance puisse afficher le logo.
@@ -9,12 +9,12 @@ export const config = {
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  const isAdminPath = pathname.startsWith('/admin') || pathname.startsWith('/api/admin');
+  const isAdminPath = pathname.startsWith('/bleSseD') || pathname.startsWith('/api/bleSseD');
 
-  // --- Auth admin (inchangé) : /admin/** et /api/admin/** restent protégés,
+  // --- Auth admin (inchangé) : /bleSseD/** et /api/bleSseD/** restent protégés,
   // et restent accessibles même en mode maintenance.
   if (isAdminPath) {
-    if (pathname === '/admin/login' || pathname === '/api/admin/login') {
+    if (pathname === '/bleSseD/login' || pathname === '/api/bleSseD/login') {
       return NextResponse.next();
     }
 
@@ -25,7 +25,7 @@ export async function middleware(request: NextRequest) {
       if (pathname.startsWith('/api/')) {
         return NextResponse.json({ error: 'Non authentifié.' }, { status: 401 });
       }
-      return NextResponse.redirect(new URL('/admin/login', request.url));
+      return NextResponse.redirect(new URL('/bleSseD/login', request.url));
     }
 
     return NextResponse.next();

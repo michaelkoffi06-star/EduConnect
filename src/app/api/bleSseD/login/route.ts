@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { scrypt, timingSafeEqual } from 'crypto';
 import { promisify } from 'util';
-import { createSessionToken, SESSION_COOKIE_NAME } from '@/lib/admin-auth';
+import { createSessionToken, SESSION_COOKIE_NAME } from '@/lib/bleSseD-auth';
 import { prisma } from '@/lib/prisma';
 
 const scryptAsync = promisify(scrypt);

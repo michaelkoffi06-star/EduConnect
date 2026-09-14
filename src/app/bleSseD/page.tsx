@@ -102,7 +102,7 @@ export default function AdminPage() {
     setLoading(true);
     setErrorMsg('');
     try {
-      const res = await fetch('/api/admin/instructors');
+      const res = await fetch('/api/bleSseD/instructors');
       if (!res.ok) throw new Error();
       setInstructors(await res.json());
     } catch {
@@ -115,7 +115,7 @@ export default function AdminPage() {
   const fetchRequests = async () => {
     setRequestsLoading(true);
     try {
-      const res = await fetch('/api/admin/match-requests');
+      const res = await fetch('/api/bleSseD/match-requests');
       if (!res.ok) throw new Error();
       setRequests(await res.json());
     } catch {
@@ -128,7 +128,7 @@ export default function AdminPage() {
   const fetchFeedback = async () => {
     setFeedbackLoading(true);
     try {
-      const res = await fetch('/api/admin/feedback');
+      const res = await fetch('/api/bleSseD/feedback');
       if (!res.ok) throw new Error();
       setFeedbackList(await res.json());
     } catch {
@@ -143,7 +143,7 @@ export default function AdminPage() {
   const updateRequestStatus = async (id: string, newStatus: string) => {
     setUpdatingRequestId(id);
     try {
-      const res = await fetch(`/api/admin/match-requests/${id}`, {
+      const res = await fetch(`/api/bleSseD/match-requests/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: newStatus }),
@@ -161,7 +161,7 @@ export default function AdminPage() {
   const updateFeedbackStatus = async (id: string, newStatus: string) => {
     setUpdatingFeedbackId(id);
     try {
-      const res = await fetch(`/api/admin/feedback/${id}`, {
+      const res = await fetch(`/api/bleSseD/feedback/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: newStatus }),
@@ -180,8 +180,8 @@ export default function AdminPage() {
   const newFeedbackCount = feedbackList.filter((f) => f.status === 'NEW').length;
 
   const handleLogout = async () => {
-    await fetch('/api/admin/logout', { method: 'POST' });
-    router.push('/admin/login');
+    await fetch('/api/bleSseD/logout', { method: 'POST' });
+    router.push('/bleSseD/login');
     router.refresh();
   };
 
@@ -198,7 +198,7 @@ export default function AdminPage() {
         }
       }
 
-      const presignRes = await fetch(`/api/admin/instructors/${instructorId}/files/presign`, {
+      const presignRes = await fetch(`/api/bleSseD/instructors/${instructorId}/files/presign`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ kind, contentType: file.type }),
@@ -219,7 +219,7 @@ export default function AdminPage() {
         return;
       }
 
-      const finalizeRes = await fetch(`/api/admin/instructors/${instructorId}/files`, {
+      const finalizeRes = await fetch(`/api/bleSseD/instructors/${instructorId}/files`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ [`${kind}Type`]: file.type }),
@@ -240,7 +240,7 @@ export default function AdminPage() {
   const updateStatus = async (id: string, newStatus: string) => {
     setUpdatingId(id);
     try {
-      const res = await fetch(`/api/admin/instructors/${id}`, {
+      const res = await fetch(`/api/bleSseD/instructors/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: newStatus }),
@@ -422,7 +422,7 @@ export default function AdminPage() {
                         </div>
 
                         <div className="flex items-center gap-2">
-                          {inst.cniUrl ? (<a href={`/api/admin/instructors/${inst.id}/document?type=cni`} target="_blank" rel="noopener noreferrer" className="text-[#c9951a] hover:underline">Voir la CNI</a>) : (<span className="text-gray-500">CNI manquante</span>)}
+                          {inst.cniUrl ? (<a href={`/api/bleSseD/instructors/${inst.id}/document?type=cni`} target="_blank" rel="noopener noreferrer" className="text-[#c9951a] hover:underline">Voir la CNI</a>) : (<span className="text-gray-500">CNI manquante</span>)}
                           <label className="text-gray-400 hover:text-white cursor-pointer">
                             {uploadingFile === `${inst.id}:cni` ? '...' : '(changer)'}
                             <input type="file" accept="image/jpeg,image/png,application/pdf" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadInstructorFile(inst.id, 'cni', f); e.target.value = ''; }} />
@@ -430,7 +430,7 @@ export default function AdminPage() {
                         </div>
 
                         <div className="flex items-center gap-2">
-                          {inst.cvUrl ? (<a href={`/api/admin/instructors/${inst.id}/document?type=cv`} target="_blank" rel="noopener noreferrer" className="text-[#c9951a] hover:underline">Voir le CV</a>) : (<span className="text-gray-500">CV manquant</span>)}
+                          {inst.cvUrl ? (<a href={`/api/bleSseD/instructors/${inst.id}/document?type=cv`} target="_blank" rel="noopener noreferrer" className="text-[#c9951a] hover:underline">Voir le CV</a>) : (<span className="text-gray-500">CV manquant</span>)}
                           <label className="text-gray-400 hover:text-white cursor-pointer">
                             {uploadingFile === `${inst.id}:cv` ? '...' : '(changer)'}
                             <input type="file" accept="image/jpeg,image/png,application/pdf" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadInstructorFile(inst.id, 'cv', f); e.target.value = ''; }} />

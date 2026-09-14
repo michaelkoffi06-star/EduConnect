@@ -8,7 +8,7 @@ import {
 const ALLOWED_PHOTO_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 const ALLOWED_DOC_TYPES = ['image/jpeg', 'image/png', 'application/pdf'];
 
-// PATCH /api/admin/instructors/[id]/files
+// PATCH /api/bleSseD/instructors/[id]/files
 // Le fichier a déjà été uploadé directement vers R2 via /files/presign.
 // Cette route vérifie son existence puis met à jour la fiche instructeur.
 export async function PATCH(

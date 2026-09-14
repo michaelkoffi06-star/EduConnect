@@ -11,7 +11,7 @@ import {
 const ALLOWED_PHOTO_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 const ALLOWED_DOC_TYPES = ['image/jpeg', 'image/png', 'application/pdf'];
 
-// POST /api/admin/instructors/[id]/files/presign — protégé par le middleware (§7bis)
+// POST /api/bleSseD/instructors/[id]/files/presign — protégé par le middleware (§7bis)
 export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }

@@ -14,7 +14,7 @@ export default function AdminLoginPage() {
     setLoading(true);
     setError('');
     try {
-      const res = await fetch('/api/admin/login', {
+      const res = await fetch('/api/bleSseD/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ password }),
@@ -24,7 +24,7 @@ export default function AdminLoginPage() {
         setError(data.error || 'Mot de passe incorrect.');
         return;
       }
-      router.push('/admin');
+      router.push('/bleSseD');
       router.refresh();
     } catch {
       setError('Impossible de contacter le serveur.');

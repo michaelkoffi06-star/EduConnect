@@ -2,7 +2,7 @@ export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
-// GET /api/admin/instructors
+// GET /api/bleSseD/instructors
 // Récupère TOUS les instructeurs (peu importe leur statut), pour la page Admin
 export async function GET() {
   try {

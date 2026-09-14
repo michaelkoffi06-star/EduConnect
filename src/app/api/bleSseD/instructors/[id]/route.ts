@@ -5,7 +5,7 @@ import { Resend } from 'resend';
 const resend = new Resend(process.env.RESEND_API_KEY);
 const VALID_STATUSES = ['PENDING', 'APPROVED', 'SUSPENDED'];
 
-// PATCH /api/admin/instructors/[id]
+// PATCH /api/bleSseD/instructors/[id]
 // Body attendu : { "status": "APPROVED" }
 export async function PATCH(
   request: NextRequest,
