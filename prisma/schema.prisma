@@ -2,7 +2,7 @@
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
-  provider   = "prisma-client-js"
+  provider = "prisma-client-js"
 }
 
 datasource db {
@@ -63,9 +63,9 @@ model Instructor {
 
 // 6. Table des Disciplines (Maths, Physique...)
 model Subject {
-  id          String   @id @default(uuid())
-  name        String   @unique
-  slug        String   @unique
+  id   String @id @default(uuid())
+  name String @unique
+  slug String @unique
 
   instructors InstructorSubject[]
 }
@@ -75,8 +75,8 @@ model InstructorSubject {
   instructorId String
   subjectId    String
 
-  instructor   Instructor @relation(fields: [instructorId], references: [id], onDelete: Cascade)
-  subject      Subject    @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  instructor Instructor @relation(fields: [instructorId], references: [id], onDelete: Cascade)
+  subject    Subject    @relation(fields: [subjectId], references: [id], onDelete: Cascade)
 
   @@id([instructorId, subjectId])
 }
@@ -109,7 +109,7 @@ model MatchRequest {
   status         MatchStatus @default(NEW)
   createdAt      DateTime    @default(now())
 
-  instructor     Instructor  @relation(fields: [instructorId], references: [id], onDelete: Cascade)
+  instructor Instructor @relation(fields: [instructorId], references: [id], onDelete: Cascade)
 }
 
 // 11. Suggestions / retours des utilisateurs sur la plateforme
@@ -128,4 +128,13 @@ model LoginAttempt {
   createdAt DateTime @default(now())
 
   @@index([ip, createdAt])
+}
+
+model WaitlistEntry {
+  id        String   @id @default(uuid())
+  email     String
+  subjectId String
+  createdAt DateTime @default(now())
+
+  @@index([subjectId])
 }

@@ -36,6 +36,8 @@ export default function Home() {
   const [studentEmail, setStudentEmail] = useState<string>("");
   const [studentMessage, setStudentMessage] = useState<string>("");
   const [expandedBioId, setExpandedBioId] = useState<string | null>(null);
+  const [waitlistEmail, setWaitlistEmail] = useState<string>("");
+  const [waitlistStatus, setWaitlistStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
 
   const toggleBio = (id: string) => {
     setExpandedBioId((prev) => (prev === id ? null : id));
@@ -64,6 +66,8 @@ export default function Home() {
   ];
 
   useEffect(() => {
+    setWaitlistStatus("idle");
+    setWaitlistEmail("");
     async function fetchInstructors() {
       setLoading(true);
       try {
@@ -116,6 +120,30 @@ export default function Home() {
       }
     } catch (error) {
       console.error(error);
+    }
+  };
+
+  const handleWaitlistSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedSubject) return;
+    setWaitlistStatus("loading");
+    try {
+      const response = await fetch("/api/waitlist", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: waitlistEmail,
+          subjectSlug: selectedSubject,
+        }),
+      });
+      if (response.ok) {
+        setWaitlistStatus("success");
+      } else {
+        setWaitlistStatus("error");
+      }
+    } catch (error) {
+      console.error(error);
+      setWaitlistStatus("error");
     }
   };
 
@@ -191,8 +219,38 @@ export default function Home() {
             <div className="animate-spin rounded-full h-10 w-10 border-4 border-[#c9951a] border-t-transparent"></div>
           </div>
         ) : instructors.length === 0 ? (
-          <div className="text-center py-16 bg-[#faf8f2] rounded-3xl border border-[#eee6d3]">
-            <p className="text-gray-500 text-lg">Aucun instructeur dans cette matière.</p>
+          <div className="text-center py-16 bg-[#faf8f2] rounded-3xl border border-[#eee6d3] px-4">
+            <p className="text-gray-500 text-lg mb-6">Aucun instructeur dans cette matière pour le moment.</p>
+            {selectedSubject && (
+              <div className="max-w-sm mx-auto">
+                {waitlistStatus === "success" ? (
+                  <p className="text-emerald-600 font-semibold text-sm">
+                    Merci ! Nous vous préviendrons dès qu&apos;un instructeur sera disponible.
+                  </p>
+                ) : (
+                  <form onSubmit={handleWaitlistSubmit} className="flex flex-col sm:flex-row gap-2">
+                    <input
+                      type="email"
+                      required
+                      value={waitlistEmail}
+                      onChange={(e) => setWaitlistEmail(e.target.value)}
+                      placeholder="Votre e-mail"
+                      className="flex-1 px-3 py-2.5 bg-white border border-gray-300 text-[#0d1b3e] rounded-lg text-sm focus:outline-none focus:border-[#c9951a]"
+                    />
+                    <button
+                      type="submit"
+                      disabled={waitlistStatus === "loading"}
+                      className="bg-gradient-to-r from-[#c9951a] to-[#d4a820] hover:brightness-105 text-white font-bold py-2.5 px-4 rounded-lg text-sm transition disabled:opacity-60"
+                    >
+                      {waitlistStatus === "loading" ? "Envoi..." : "Être alerté(e)"}
+                    </button>
+                  </form>
+                )}
+                {waitlistStatus === "error" && (
+                  <p className="text-red-500 text-xs mt-2">Une erreur est survenue, réessayez.</p>
+                )}
+              </div>
+            )}
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-start">

@@ -40,8 +40,15 @@ interface Feedback {
   createdAt: string;
 }
 
+interface WaitlistEntry {
+  id: string;
+  email: string;
+  createdAt: string;
+  subject: { id: string; name: string; slug: string } | null;
+}
+
 type FilterOption = 'ALL' | 'PENDING' | 'APPROVED' | 'SUSPENDED';
-type AdminTab = 'instructors' | 'requests' | 'feedback';
+type AdminTab = 'instructors' | 'requests' | 'feedback' | 'waitlist';
 
 const REQUEST_STATUS_STYLES: Record<string, string> = {
   NEW:       'bg-amber-900/40 text-amber-300 border-amber-500/40',
@@ -98,6 +105,9 @@ export default function AdminPage() {
   const [feedbackLoading, setFeedbackLoading] = useState(true);
   const [updatingFeedbackId, setUpdatingFeedbackId] = useState<string | null>(null);
 
+  const [waitlistEntries, setWaitlistEntries] = useState<WaitlistEntry[]>([]);
+  const [waitlistLoading, setWaitlistLoading] = useState(true);
+
   const fetchInstructors = async () => {
     setLoading(true);
     setErrorMsg('');
@@ -138,7 +148,20 @@ export default function AdminPage() {
     }
   };
 
-  useEffect(() => { fetchInstructors(); fetchRequests(); fetchFeedback(); }, []);
+  const fetchWaitlist = async () => {
+    setWaitlistLoading(true);
+    try {
+      const res = await fetch('/api/bleSseD/waitlist');
+      if (!res.ok) throw new Error();
+      setWaitlistEntries(await res.json());
+    } catch {
+      setErrorMsg("Impossible de charger la liste d'attente.");
+    } finally {
+      setWaitlistLoading(false);
+    }
+  };
+
+  useEffect(() => { fetchInstructors(); fetchRequests(); fetchFeedback(); fetchWaitlist(); }, []);
 
   const updateRequestStatus = async (id: string, newStatus: string) => {
     setUpdatingRequestId(id);
@@ -322,6 +345,14 @@ export default function AdminPage() {
             }`}
           >
             Suggestions {newFeedbackCount > 0 && `(${newFeedbackCount})`}
+          </button>
+          <button
+            onClick={() => setTab('waitlist')}
+            className={`px-4 py-2.5 text-sm font-semibold border-b-2 -mb-px transition ${
+              tab === 'waitlist' ? 'border-[#c9951a] text-[#c9951a]' : 'border-transparent text-gray-400 hover:text-white'
+            }`}
+          >
+            Liste d&apos;attente {waitlistEntries.length > 0 && `(${waitlistEntries.length})`}
           </button>
         </div>
 
@@ -619,6 +650,44 @@ export default function AdminPage() {
                             </button>
                           )}
                         </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )
+        )}
+        {tab === 'waitlist' && (
+          waitlistLoading ? (
+            <div className="flex justify-center py-20">
+              <div className="animate-spin rounded-full h-8 w-8 border-4 border-[#c9951a] border-t-transparent"></div>
+            </div>
+          ) : waitlistEntries.length === 0 ? (
+            <div className="text-center py-16 bg-[#112240] rounded-2xl border border-[#2a4a6e]">
+              <p className="text-gray-500">Aucune inscription en liste d&apos;attente pour le moment.</p>
+            </div>
+          ) : (
+            <div className="bg-[#112240] rounded-2xl border border-[#2a4a6e] overflow-hidden">
+              <table className="w-full text-sm">
+                <thead className="border-b border-[#2a4a6e]">
+                  <tr className="text-xs text-gray-400 uppercase tracking-wide">
+                    <th className="text-left px-4 py-3 font-semibold">Matière recherchée</th>
+                    <th className="text-left px-4 py-3 font-semibold">Contact</th>
+                    <th className="text-left px-4 py-3 font-semibold">Inscrit le</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#1e3a5f]">
+                  {waitlistEntries.map((entry) => (
+                    <tr key={entry.id} className="hover:bg-[#0d1f38] transition align-top">
+                      <td className="px-4 py-3 text-gray-300 font-semibold">
+                        {entry.subject ? entry.subject.name : <span className="text-gray-500 italic">Matière supprimée</span>}
+                      </td>
+                      <td className="px-4 py-3">
+                        <a href={`mailto:${entry.email}`} className="text-[#c9951a] hover:underline">{entry.email}</a>
+                      </td>
+                      <td className="px-4 py-3 text-gray-400 text-xs whitespace-nowrap">
+                        {new Date(entry.createdAt).toLocaleString('fr-FR')}
                       </td>
                     </tr>
                   ))}
