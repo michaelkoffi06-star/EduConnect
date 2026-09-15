@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { Resend } from 'resend';
+import { getResendClient } from '@/lib/resend';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
 const VALID_STATUSES = ['PENDING', 'APPROVED', 'SUSPENDED'];
 
 // PATCH /api/bleSseD/instructors/[id]
@@ -42,7 +41,7 @@ export async function PATCH(
     // Email de notification uniquement lors du passage EN APPROVED (pas si déjà approuvé avant)
     if (status === 'APPROVED' && !wasApproved) {
       try {
-        await resend.emails.send({
+        await getResendClient().emails.send({
           from: 'EduConnect <notifications@educonnect-ci.org>',
           to: [updatedInstructor.email],
           subject: '🎉 Votre profil EduConnect a été validé !',

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { Resend } from 'resend';
+import { getResendClient } from '@/lib/resend';
 import type { InstructorType, AcademicLevel } from '@prisma/client';
 import {
   BUCKET_PHOTOS,
@@ -12,7 +12,6 @@ import {
   objectExists,
 } from '@/lib/r2';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
 
 const ALLOWED_PHOTO_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 const ALLOWED_DOC_TYPES = ['image/jpeg', 'image/png', 'application/pdf'];
@@ -101,7 +100,7 @@ export async function POST(req: NextRequest) {
         const MAX_ATTEMPTS = 3;
         let lastError = null;
         for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
-          const { data, error } = await resend.emails.send({
+          const { data, error } = await getResendClient().emails.send({
             from: 'EduConnect <notifications@educonnect-ci.org>',
             to: [process.env.ADMIN_NOTIFICATION_EMAIL],
             subject: '🎓 Nouvelle candidature instructeur reçue !',
@@ -123,7 +122,7 @@ export async function POST(req: NextRequest) {
     }
 
     try {
-      await resend.emails.send({
+      await getResendClient().emails.send({
         from: 'EduConnect <notifications@educonnect-ci.org>',
         to: [email],
         subject: '✅ Votre candidature EduConnect a bien été reçue',

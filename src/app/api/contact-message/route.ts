@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { Resend } from 'resend';
+import { getResendClient } from '@/lib/resend';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function POST(request: NextRequest) {
   try {
@@ -28,7 +27,7 @@ export async function POST(request: NextRequest) {
         const MAX_ATTEMPTS = 3;
         let lastError = null;
         for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
-          const { data, error } = await resend.emails.send({
+          const { data, error } = await getResendClient().emails.send({
             from: 'EduConnect <onboarding@resend.dev>',
             to: [process.env.ADMIN_NOTIFICATION_EMAIL],
             replyTo: email,

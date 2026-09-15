@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { Resend } from 'resend';
+import { getResendClient } from '@/lib/resend';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
 
 // POST /api/feedback — formulaire public de suggestions, sans authentification
 export async function POST(req: NextRequest) {
@@ -23,7 +22,7 @@ export async function POST(req: NextRequest) {
 
     try {
       if (process.env.ADMIN_NOTIFICATION_EMAIL) {
-        await resend.emails.send({
+        await getResendClient().emails.send({
           from: 'EduConnect <notifications@educonnect-ci.org>',
           to: [process.env.ADMIN_NOTIFICATION_EMAIL],
           subject: '💡 Nouvelle suggestion reçue',
