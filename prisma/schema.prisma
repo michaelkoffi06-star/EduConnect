@@ -80,6 +80,7 @@ model Subject {
   slug String @unique
 
   instructors InstructorSubject[]
+  resources   Resource[]
 }
 
 // 7. Table de liaison explicite Many-to-Many
@@ -147,6 +148,31 @@ model WaitlistEntry {
   email     String
   subjectId String
   createdAt DateTime @default(now())
+
+  @@index([subjectId])
+}
+
+// 14. Type de contenu pédagogique de la bibliothèque
+enum ResourceType {
+  DOCUMENT
+  VIDEO
+  EXERCICE
+  LIEN
+}
+
+// 15. Bibliothèque de contenus éducatifs (documents, vidéos, exercices, liens)
+model Resource {
+  id          String        @id @default(uuid())
+  title       String
+  description String?       @db.Text
+  type        ResourceType
+  subjectId   String
+  level       AcademicLevel @default(ALL)
+  fileUrl     String? // DOCUMENT / EXERCICE : fichier hébergé sur R2
+  externalUrl String? // VIDEO / LIEN : URL externe (YouTube, Vimeo, etc.)
+  createdAt   DateTime      @default(now())
+
+  subject Subject @relation(fields: [subjectId], references: [id], onDelete: Cascade)
 
   @@index([subjectId])
 }

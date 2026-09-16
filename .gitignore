@@ -40,3 +40,5 @@ yarn-error.log*
 # fichiers uploadés par les utilisateurs (photos, CNI, CV)
 /private-uploads/
 /public/uploads/
+instructeurs-liens.csv
+export-instructeurs.js

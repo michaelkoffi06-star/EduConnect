@@ -56,6 +56,11 @@ export function photoPublicUrl(key: string) {
   return `${PUBLIC_URL_PHOTOS}/${key}`;
 }
 
+// Clé d'un fichier de la bibliothèque de ressources : "resources/<resourceId>.<ext>"
+export function resourceKey(resourceId: string, ext: string) {
+  return `resources/${resourceId}.${ext}`;
+}
+
 // --- Upload direct depuis le navigateur (URLs présignées) ---
 // Contourne la limite de 4,5 Mo des fonctions serverless Vercel : le fichier
 // est envoyé directement du navigateur vers R2, sans passer par notre API.
