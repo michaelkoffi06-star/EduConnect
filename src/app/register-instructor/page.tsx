@@ -33,6 +33,12 @@ async function uploadDirect(instructorId: string, kind: 'photo' | 'cni' | 'cv', 
   if (!putRes.ok) throw new Error(`Échec de l'envoi du fichier (${kind}). Vérifie ta connexion et réessaie.`);
 }
 
+const COMMUNES = [
+  'Abobo', 'Adjamé', 'Attécoubé', 'Cocody', 'Koumassi', 'Marcory',
+  'Plateau', 'Port-Bouët', 'Treichville', 'Yopougon', 'Bingerville',
+  'Anyama', 'Songon', 'Autre',
+];
+
 export default function RegisterInstructor() {
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [selectedSubjects, setSelectedSubjects] = useState<string[]>([]);
@@ -41,6 +47,8 @@ export default function RegisterInstructor() {
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [cniFile, setCniFile] = useState<File | null>(null);
   const [cvFile, setCvFile] = useState<File | null>(null);
+  const [selectedCommune, setSelectedCommune] = useState('');
+  const [customCommune, setCustomCommune] = useState('');
   const [editLink, setEditLink] = useState('');
   const [copied, setCopied] = useState(false);
 
@@ -128,6 +136,9 @@ export default function RegisterInstructor() {
           bio: bioValue,
           type: formValues.get('type'),
           levels: formValues.get('levels'),
+          mode: formValues.get('mode'),
+          city: formValues.get('city'),
+          commune: selectedCommune === 'Autre' ? customCommune : selectedCommune,
           subjects: selectedSubjects,
           photoType: photoFile.type,
           cniType: cniFile.type,
@@ -303,16 +314,62 @@ export default function RegisterInstructor() {
                   <option value="ETUDIANT">Étudiant</option>
                   <option value="PROF_COLLEGE">Professeur (Collège)</option>
                   <option value="PROF_LYCEE">Professeur (Lycée)</option>
+                  <option value="REPETITEUR_PROFESSIONNEL">Répétiteur professionnel</option>
                 </select>
               </div>
               <div>
                 <label className={labelClass}>Niveaux enseignés *</label>
                 <select name="levels" required className={selectClass}>
+                  <option value="PRIMAIRE">Primaire</option>
                   <option value="COLLEGE">Collège</option>
                   <option value="LYCEE">Lycée</option>
                   <option value="ALL">Collège &amp; Lycée</option>
                 </select>
               </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className={labelClass}>Mode d'enseignement *</label>
+                <select name="mode" required className={selectClass}>
+                  <option value="DOMICILE">À domicile</option>
+                  <option value="EN_LIGNE">En ligne</option>
+                  <option value="LES_DEUX">À domicile &amp; en ligne</option>
+                </select>
+              </div>
+              <div>
+                <label className={labelClass}>Ville *</label>
+                <input name="city" required placeholder="Abidjan" className={inputClass} />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className={labelClass}>Commune *</label>
+                <select
+                  name="commune"
+                  required
+                  value={selectedCommune}
+                  onChange={(e) => setSelectedCommune(e.target.value)}
+                  className={selectClass}
+                >
+                  <option value="" disabled>Choisir une commune</option>
+                  {COMMUNES.map((c) => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                </select>
+              </div>
+              {selectedCommune === 'Autre' && (
+                <div>
+                  <label className={labelClass}>Précisez la commune *</label>
+                  <input
+                    name="customCommune"
+                    required
+                    value={customCommune}
+                    onChange={(e) => setCustomCommune(e.target.value)}
+                    placeholder="Nom de la commune"
+                    className={inputClass}
+                  />
+                </div>
+              )}
             </div>
             <div>
               <label className={labelClass}>Bio / Présentation *</label>

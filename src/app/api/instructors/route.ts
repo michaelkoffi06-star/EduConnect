@@ -5,7 +5,10 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const subjectSlug = searchParams.get('subject');
-    const level = searchParams.get('level'); // 'COLLEGE' | 'LYCEE' | null
+    const level = searchParams.get('level'); // 'PRIMAIRE' | 'COLLEGE' | 'LYCEE' | null
+    const mode = searchParams.get('mode'); // 'DOMICILE' | 'EN_LIGNE' | null
+    const city = searchParams.get('city');
+    const commune = searchParams.get('commune');
 
     const instructors = await prisma.instructor.findMany({
       where: {
@@ -19,8 +22,18 @@ export async function GET(request: NextRequest) {
           }
         }),
         // Un instructeur en 'ALL' correspond aux deux niveaux ; sinon filtrage strict
-        ...((level === 'COLLEGE' || level === 'LYCEE') && {
+        ...((level === 'PRIMAIRE' || level === 'COLLEGE' || level === 'LYCEE') && {
           levels: { in: [level, 'ALL'] }
+        }),
+        // Un instructeur en 'LES_DEUX' correspond aux deux modes ; sinon filtrage strict
+        ...((mode === 'DOMICILE' || mode === 'EN_LIGNE') && {
+          mode: { in: [mode, 'LES_DEUX'] }
+        }),
+        ...(city && {
+          city: { equals: city, mode: 'insensitive' }
+        }),
+        ...(commune && {
+          commune: { equals: commune, mode: 'insensitive' }
         })
       },
       // Sélection explicite : route publique, jamais cniUrl/cvUrl/email/whatsapp
@@ -32,6 +45,9 @@ export async function GET(request: NextRequest) {
         type: true,
         status: true,
         levels: true,
+        mode: true,
+        city: true,
+        commune: true,
         photoUrl: true,
         rating: true,
         ratingCount: true,

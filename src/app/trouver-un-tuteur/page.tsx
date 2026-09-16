@@ -21,8 +21,17 @@ interface Instructor {
   bio: string;
   status: string;
   photoUrl?: string | null;
+  mode?: "DOMICILE" | "EN_LIGNE" | "LES_DEUX";
+  city?: string | null;
+  commune?: string | null;
   subjects: InstructorSubject[];
 }
+
+const MODE_LABELS: Record<string, string> = {
+  DOMICILE: "À domicile",
+  EN_LIGNE: "En ligne",
+  LES_DEUX: "Domicile & en ligne",
+};
 
 const ADMIN_WHATSAPP = "2250758529323";
 
@@ -30,6 +39,9 @@ export default function Home() {
   const [instructors, setInstructors] = useState<Instructor[]>([]);
   const [selectedSubject, setSelectedSubject] = useState<string>("");
   const [selectedLevel, setSelectedLevel] = useState<string>("");
+  const [selectedMode, setSelectedMode] = useState<string>("");
+  const [selectedCity, setSelectedCity] = useState<string>("");
+  const [selectedCommune, setSelectedCommune] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(true);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [activeInstructor, setActiveInstructor] = useState<Instructor | null>(null);
@@ -45,8 +57,21 @@ export default function Home() {
 
   const levelOptions = [
     { name: "Tous niveaux", value: "" },
+    { name: "Primaire", value: "PRIMAIRE" },
     { name: "Collège", value: "COLLEGE" },
     { name: "Lycée", value: "LYCEE" },
+  ];
+
+  const modeOptions = [
+    { name: "Tous modes", value: "" },
+    { name: "À domicile", value: "DOMICILE" },
+    { name: "En ligne", value: "EN_LIGNE" },
+  ];
+
+  const communeOptions = [
+    "", "Abobo", "Adjamé", "Attécoubé", "Cocody", "Koumassi", "Marcory",
+    "Plateau", "Port-Bouët", "Treichville", "Yopougon", "Bingerville",
+    "Anyama", "Songon",
   ];
 
   const disciplines = [
@@ -74,6 +99,9 @@ export default function Home() {
         const params = new URLSearchParams();
         if (selectedSubject) params.set("subject", selectedSubject);
         if (selectedLevel) params.set("level", selectedLevel);
+        if (selectedMode) params.set("mode", selectedMode);
+        if (selectedCity.trim()) params.set("city", selectedCity.trim());
+        if (selectedCommune) params.set("commune", selectedCommune);
         const url = params.toString() ? `/api/instructors?${params.toString()}` : "/api/instructors";
         const res = await fetch(url);
         if (res.ok) setInstructors(await res.json());
@@ -84,7 +112,7 @@ export default function Home() {
       }
     }
     fetchInstructors();
-  }, [selectedSubject, selectedLevel]);
+  }, [selectedSubject, selectedLevel, selectedMode, selectedCity, selectedCommune]);
 
   const openModal = (instructor: Instructor) => {
     setActiveInstructor(instructor);
@@ -210,6 +238,40 @@ export default function Home() {
               </button>
             ))}
           </div>
+          <div className="flex flex-wrap gap-2 items-center">
+            <div className="flex gap-2 overflow-x-auto">
+              {modeOptions.map((m) => (
+                <button
+                  key={m.value === "" ? "all-modes" : m.value}
+                  onClick={() => setSelectedMode(m.value)}
+                  className={
+                    selectedMode === m.value
+                      ? "px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap border border-[#c9951a] bg-[#c9951a]/10 text-[#8a6510] transition"
+                      : "px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap border border-[#eee6d3] bg-white text-gray-500 hover:border-[#c9951a]/60 hover:text-[#0d1b3e] transition"
+                  }
+                >
+                  {m.name}
+                </button>
+              ))}
+            </div>
+            <input
+              type="text"
+              value={selectedCity}
+              onChange={(e) => setSelectedCity(e.target.value)}
+              placeholder="Filtrer par ville..."
+              className="px-4 py-1.5 rounded-full text-xs border border-[#eee6d3] bg-white text-gray-600 placeholder-gray-400 focus:outline-none focus:border-[#c9951a] transition w-40"
+            />
+            <select
+              value={selectedCommune}
+              onChange={(e) => setSelectedCommune(e.target.value)}
+              className="px-4 py-1.5 rounded-full text-xs border border-[#eee6d3] bg-white text-gray-600 focus:outline-none focus:border-[#c9951a] transition"
+            >
+              <option value="">Toutes communes</option>
+              {communeOptions.filter((c) => c !== "").map((c) => (
+                <option key={c} value={c}>{c}</option>
+              ))}
+            </select>
+          </div>
         </div>
       </div>
 
@@ -282,7 +344,7 @@ export default function Home() {
                   </div>
 
                   <div className="p-5 flex flex-col flex-grow">
-                    <div className="flex flex-wrap gap-1.5 mb-3">
+                    <div className="flex flex-wrap gap-1.5 mb-2">
                       {instructor.subjects.length === 0 ? (
                         <span className="text-xs text-gray-400 italic">Matière non renseignée</span>
                       ) : (
@@ -296,6 +358,21 @@ export default function Home() {
                         ))
                       )}
                     </div>
+
+                    {(instructor.city || instructor.commune || instructor.mode) && (
+                      <div className="flex flex-wrap gap-1.5 mb-3">
+                        {(instructor.commune || instructor.city) && (
+                          <span className="text-xs text-gray-500 bg-[#faf8f2] px-2 py-0.5 rounded-md border border-[#eee6d3]">
+                            📍 {instructor.commune ? `${instructor.commune}, ${instructor.city}` : instructor.city}
+                          </span>
+                        )}
+                        {instructor.mode && (
+                          <span className="text-xs text-gray-500 bg-[#faf8f2] px-2 py-0.5 rounded-md border border-[#eee6d3]">
+                            {MODE_LABELS[instructor.mode]}
+                          </span>
+                        )}
+                      </div>
+                    )}
 
                     <p className={`text-gray-600 text-sm leading-relaxed mb-1 ${expandedBioId === instructor.id ? "" : "line-clamp-3"}`}>
                       {instructor.bio || "Aucune biographie renseignée."}

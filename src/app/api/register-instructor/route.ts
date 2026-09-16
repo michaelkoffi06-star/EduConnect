@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getResendClient } from '@/lib/resend';
-import type { InstructorType, AcademicLevel } from '@prisma/client';
+import type { InstructorType, AcademicLevel, TeachingMode } from '@prisma/client';
 import {
   BUCKET_PHOTOS,
   BUCKET_PRIVATE,
@@ -32,6 +32,9 @@ export async function POST(req: NextRequest) {
       bio,
       type,
       levels,
+      mode,
+      city,
+      commune,
       subjects,
       photoType,
       cniType,
@@ -42,8 +45,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Identifiant invalide.' }, { status: 400 });
     }
 
-    if (!firstName || !lastName || !email || !whatsapp || !bio || !bio.trim() || !Array.isArray(subjects) || subjects.length === 0) {
-      return NextResponse.json({ error: 'Champs obligatoires manquants (dont la bio).' }, { status: 400 });
+    if (!firstName || !lastName || !email || !whatsapp || !bio || !bio.trim() || !city || !city.trim() || !commune || !commune.trim() || !Array.isArray(subjects) || subjects.length === 0) {
+      return NextResponse.json({ error: 'Champs obligatoires manquants (dont la bio, la ville et la commune).' }, { status: 400 });
     }
 
     if (!ALLOWED_PHOTO_TYPES.includes(photoType) || !ALLOWED_DOC_TYPES.includes(cniType) || !ALLOWED_DOC_TYPES.includes(cvType)) {
@@ -81,6 +84,9 @@ export async function POST(req: NextRequest) {
         bio,
         type: (type || 'ETUDIANT') as InstructorType,
         levels: (levels || 'ALL') as AcademicLevel,
+        mode: (mode || 'DOMICILE') as TeachingMode,
+        city,
+        commune,
         status: 'PENDING',
         photoUrl: photoPublicUrl(pKey),
         cniUrl: `cni.${cniExt}`,

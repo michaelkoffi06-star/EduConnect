@@ -14,6 +14,7 @@ enum InstructorType {
   ETUDIANT
   PROF_COLLEGE
   PROF_LYCEE
+  REPETITEUR_PROFESSIONNEL
 }
 
 // 2. Statut pour la modération des inscriptions
@@ -25,9 +26,17 @@ enum ProfileStatus {
 
 // 3. Niveaux d'enseignement pris en charge
 enum AcademicLevel {
+  PRIMAIRE
   COLLEGE
   LYCEE
   ALL
+}
+
+// 3bis. Mode d'enseignement proposé par l'instructeur
+enum TeachingMode {
+  DOMICILE
+  EN_LIGNE
+  LES_DEUX
 }
 
 // 4. Statut de traitement des messages de contact du site
@@ -45,6 +54,9 @@ model Instructor {
   type        InstructorType @default(ETUDIANT)
   status      ProfileStatus  @default(PENDING)
   levels      AcademicLevel  @default(ALL)
+  mode        TeachingMode   @default(DOMICILE)
+  city        String?
+  commune     String?
   bio         String?        @db.Text
   photoUrl    String?
   cniUrl      String?

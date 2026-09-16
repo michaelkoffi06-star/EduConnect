@@ -13,10 +13,19 @@ interface InstructorData {
   bio: string;
   type: string;
   levels: string;
+  mode: string;
+  city: string | null;
+  commune: string | null;
   status: string;
   photoUrl?: string | null;
   subjects: { subject: Subject }[];
 }
+
+const COMMUNES = [
+  'Abobo', 'Adjamé', 'Attécoubé', 'Cocody', 'Koumassi', 'Marcory',
+  'Plateau', 'Port-Bouët', 'Treichville', 'Yopougon', 'Bingerville',
+  'Anyama', 'Songon', 'Autre',
+];
 
 type LoadState = 'loading' | 'ready' | 'not-found';
 type SubmitState = 'idle' | 'loading' | 'success' | 'error';
@@ -56,6 +65,10 @@ export default function EditProfile({ params }: { params: Promise<{ token: strin
   const [bio, setBio] = useState('');
   const [type, setType] = useState('ETUDIANT');
   const [levels, setLevels] = useState('ALL');
+  const [mode, setMode] = useState('DOMICILE');
+  const [city, setCity] = useState('');
+  const [selectedCommune, setSelectedCommune] = useState('');
+  const [customCommune, setCustomCommune] = useState('');
   const [currentPhotoUrl, setCurrentPhotoUrl] = useState<string | null>(null);
 
   const [photoFile, setPhotoFile] = useState<File | null>(null);
@@ -84,6 +97,11 @@ export default function EditProfile({ params }: { params: Promise<{ token: strin
         setBio(profile.bio || '');
         setType(profile.type);
         setLevels(profile.levels);
+        setMode(profile.mode || 'DOMICILE');
+        setCity(profile.city || '');
+        const knownCommune = COMMUNES.includes(profile.commune || '') ? (profile.commune as string) : (profile.commune ? 'Autre' : '');
+        setSelectedCommune(knownCommune);
+        if (profile.commune && knownCommune === 'Autre') setCustomCommune(profile.commune);
         setCurrentPhotoUrl(profile.photoUrl || null);
         setSelectedSubjects(profile.subjects.map((s) => s.subject.id));
         setAllSubjects(Array.isArray(subjectsList) ? subjectsList : []);
@@ -145,7 +163,11 @@ export default function EditProfile({ params }: { params: Promise<{ token: strin
       const res = await fetch(`/api/instructors/edit/${token}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ firstName, lastName, whatsapp, bio, type, levels, subjects: selectedSubjects }),
+        body: JSON.stringify({
+          firstName, lastName, whatsapp, bio, type, levels, subjects: selectedSubjects,
+          mode, city,
+          commune: selectedCommune === 'Autre' ? customCommune : selectedCommune,
+        }),
       });
       const result = await res.json();
       if (!res.ok) {
@@ -296,16 +318,60 @@ export default function EditProfile({ params }: { params: Promise<{ token: strin
                   <option value="ETUDIANT">Étudiant</option>
                   <option value="PROF_COLLEGE">Professeur (Collège)</option>
                   <option value="PROF_LYCEE">Professeur (Lycée)</option>
+                  <option value="REPETITEUR_PROFESSIONNEL">Répétiteur professionnel</option>
                 </select>
               </div>
               <div>
                 <label className={labelClass}>Niveaux enseignés *</label>
                 <select value={levels} onChange={(e) => setLevels(e.target.value)} required className={selectClass}>
+                  <option value="PRIMAIRE">Primaire</option>
                   <option value="COLLEGE">Collège</option>
                   <option value="LYCEE">Lycée</option>
                   <option value="ALL">Collège &amp; Lycée</option>
                 </select>
               </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className={labelClass}>Mode d'enseignement *</label>
+                <select value={mode} onChange={(e) => setMode(e.target.value)} required className={selectClass}>
+                  <option value="DOMICILE">À domicile</option>
+                  <option value="EN_LIGNE">En ligne</option>
+                  <option value="LES_DEUX">À domicile &amp; en ligne</option>
+                </select>
+              </div>
+              <div>
+                <label className={labelClass}>Ville *</label>
+                <input value={city} onChange={(e) => setCity(e.target.value)} required placeholder="Abidjan" className={inputClass} />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className={labelClass}>Commune *</label>
+                <select
+                  value={selectedCommune}
+                  onChange={(e) => setSelectedCommune(e.target.value)}
+                  required
+                  className={selectClass}
+                >
+                  <option value="" disabled>Choisir une commune</option>
+                  {COMMUNES.map((c) => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                </select>
+              </div>
+              {selectedCommune === 'Autre' && (
+                <div>
+                  <label className={labelClass}>Précisez la commune *</label>
+                  <input
+                    value={customCommune}
+                    onChange={(e) => setCustomCommune(e.target.value)}
+                    required
+                    placeholder="Nom de la commune"
+                    className={inputClass}
+                  />
+                </div>
+              )}
             </div>
             <div>
               <label className={labelClass}>Bio / Présentation *</label>
