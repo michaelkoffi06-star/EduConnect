@@ -33,6 +33,15 @@ body {
   animation: fadeInUp 0.5s ease both;
 }
 
+@keyframes float {
+  0%, 100% { transform: rotate(-1deg) translateY(0); }
+  50% { transform: rotate(-1deg) translateY(-14px); }
+}
+
+.animate-float {
+  animation: float 4s ease-in-out infinite;
+}
+
 /* Systeme de theme clair/sombre pour les pages publiques */
 :root {
   --ec-bg: #ffffff;

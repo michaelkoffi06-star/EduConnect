@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import SiteHeader from '@/components/SiteHeader';
+import ScrollReveal from '@/components/ScrollReveal';
 import FileDropzone from '@/components/FileDropzone';
 import { getImageDimensionsFromFile } from '@/lib/image-utils';
 
@@ -255,9 +256,13 @@ export default function RegisterInstructor() {
     <div className="min-h-screen bg-white">
       <SiteHeader active="register" />
 
-      <div className="max-w-2xl mx-auto py-10 px-4">
-
-        <div className="text-center mb-8">
+      <section className="relative overflow-hidden">
+        <div
+          className="absolute inset-0 bg-cover bg-center"
+          style={{ backgroundImage: "url('/images/hero/devenir-instructeur.png')" }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-white/20 via-white/55 to-white" />
+        <ScrollReveal className="relative z-10 max-w-2xl mx-auto pt-10 pb-6 px-4 text-center">
           <div className="flex items-center justify-center gap-2 mb-4">
             <span className="w-8 h-px bg-[#c9951a]" />
             <span className="text-xs font-medium text-[#8a6510] tracking-wide">Rejoindre le réseau</span>
@@ -267,7 +272,10 @@ export default function RegisterInstructor() {
           <p className="text-gray-600 mt-2 text-sm">
             Rejoignez notre réseau d'instructeurs. Votre profil sera examiné sous 48h.
           </p>
-        </div>
+        </ScrollReveal>
+      </section>
+
+      <div className="max-w-2xl mx-auto pb-10 px-4">
 
         <form onSubmit={handleSubmit} className="space-y-6">
 

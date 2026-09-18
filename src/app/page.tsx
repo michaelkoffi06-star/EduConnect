@@ -41,8 +41,13 @@ export default async function HomePage() {
     <div className="min-h-screen bg-white text-[#0d1b3e] overflow-hidden">
       <SiteHeader theme="light" />
 
-      <section className="relative max-w-6xl mx-auto px-6 pt-16 pb-20 lg:pt-24 lg:pb-28">
-        <div className="grid lg:grid-cols-2 gap-16 items-center">
+      <section className="relative overflow-hidden">
+        <div
+          className="absolute inset-0 bg-cover bg-center"
+          style={{ backgroundImage: "url('/images/hero/accueil.jpeg')" }}
+        />
+        <div className="absolute inset-0 bg-white/45" />
+        <div className="relative z-10 max-w-6xl mx-auto px-6 pt-16 pb-20 lg:pt-24 lg:pb-28 grid lg:grid-cols-2 gap-16 items-center">
           <ScrollReveal>
             <div className="flex items-center gap-2 mb-6">
               <span className="w-8 h-px bg-[#c9951a]" />
@@ -68,7 +73,7 @@ export default async function HomePage() {
 
           <ScrollReveal delay={150}>
             <div className="relative max-w-sm mx-auto lg:mx-0">
-              <div className="relative bg-white border border-[#eee6d3] rounded-[2rem] p-8 shadow-[0_20px_60px_-15px_rgba(13,27,62,0.15)] -rotate-1">
+              <div className="relative bg-white border border-[#eee6d3] rounded-[2rem] p-8 shadow-[0_20px_60px_-15px_rgba(13,27,62,0.15)] animate-float">
                 <div className="flex items-center mb-6">
                   {instructors.slice(0, 4).map((inst, i) => (
                     <div

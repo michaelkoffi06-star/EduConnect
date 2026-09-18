@@ -187,8 +187,13 @@ export default function Home() {
 
       <SiteHeader active="finder" />
 
-      <section className="bg-[#faf8f2] border-b border-[#eee6d3] py-16 px-4">
-        <ScrollReveal className="max-w-4xl mx-auto text-center">
+      <section className="relative border-b border-[#eee6d3] py-16 px-4 overflow-hidden">
+        <div
+          className="absolute inset-0 bg-cover bg-center"
+          style={{ backgroundImage: "url('/images/hero/trouver_instructeur.jpeg')" }}
+        />
+        <div className="absolute inset-0 bg-[#faf8f2]/45" />
+        <ScrollReveal className="relative z-10 max-w-4xl mx-auto text-center">
           <div className="flex items-center justify-center gap-2 mb-5">
             <span className="w-8 h-px bg-[#c9951a]" />
             <span className="text-xs font-medium text-[#8a6510] tracking-wide">
