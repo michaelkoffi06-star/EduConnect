@@ -54,6 +54,9 @@ export const metadata: Metadata = {
     shortcut: "/marketing/images/logo-light.png?v=2",
     apple: "/marketing/images/logo-light.png?v=2",
   },
+  other: {
+    "msvalidate.01": "5E263431EF1F40B6170D0BF052B9DE84",
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
