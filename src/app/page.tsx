@@ -37,8 +37,30 @@ export default async function HomePage() {
     prisma.matchRequest.count({ where: { status: "DONE" } }),
   ]);
 
+  const organizationJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "EducationalOrganization",
+    name: "EduConnect CI",
+    alternateName: "EduConnect",
+    url: "https://educonnect-ci.org",
+    logo: "https://educonnect-ci.org/marketing/images/logo-light.png",
+    description:
+      "Plateforme de mise en relation entre familles et instructeurs particuliers vérifiés, du primaire à la terminale, en Côte d'Ivoire.",
+    areaServed: {
+      "@type": "Country",
+      name: "Côte d'Ivoire",
+    },
+    sameAs: [
+      "https://www.facebook.com/profile.php?id=100090481355986",
+    ],
+  };
+
   return (
     <div className="min-h-screen bg-white text-[#0d1b3e] overflow-hidden">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
+      />
       <SiteHeader theme="light" />
 
       <section className="relative overflow-hidden">
