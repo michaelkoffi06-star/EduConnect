@@ -50,9 +50,9 @@ export const metadata: Metadata = {
     images: ["/marketing/images/logo-light.png"],
   },
   icons: {
-    icon: [{ url: "/marketing/images/logo-light.png?v=2", type: "image/png" }],
-    shortcut: "/marketing/images/logo-light.png?v=2",
-    apple: "/marketing/images/logo-light.png?v=2",
+    icon: [{ url: "/marketing/images/logo-light.png?v=3", type: "image/png" }],
+    shortcut: "/marketing/images/logo-light.png?v=3",
+    apple: "/marketing/images/logo-light.png?v=3",
   },
   other: {
     "msvalidate.01": "5E263431EF1F40B6170D0BF052B9DE84",
