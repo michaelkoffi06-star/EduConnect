@@ -1,9 +1,12 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { requireRole } from '@/lib/admin-permissions';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const denied = requireRole(request, ['SUPER_ADMIN', 'ADMINISTRATIF']);
+  if (denied) return denied;
   try {
     const requests = await prisma.matchRequest.findMany({
       orderBy: { createdAt: 'desc' },

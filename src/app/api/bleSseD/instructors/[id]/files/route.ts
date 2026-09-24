@@ -4,6 +4,7 @@ import {
   BUCKET_PHOTOS, BUCKET_PRIVATE, photoKey, privateKey, photoPublicUrl,
   extFromMime, objectExists, deleteFromR2,
 } from '@/lib/r2';
+import { requireRole } from '@/lib/admin-permissions';
 
 const ALLOWED_PHOTO_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 const ALLOWED_DOC_TYPES = ['image/jpeg', 'image/png', 'application/pdf'];
@@ -15,6 +16,8 @@ export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const denied = requireRole(req, ['SUPER_ADMIN', 'PEDAGOGIE']);
+  if (denied) return denied;
   try {
     const { id } = await params;
     const instructor = await prisma.instructor.findUnique({ where: { id } });

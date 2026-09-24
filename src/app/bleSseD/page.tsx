@@ -67,7 +67,14 @@ interface WaitlistEntry {
 }
 
 type FilterOption = 'ALL' | 'PENDING' | 'APPROVED' | 'SUSPENDED';
-type AdminTab = 'instructors' | 'requests' | 'feedback' | 'waitlist' | 'resources';
+type AdminTab = 'instructors' | 'requests' | 'feedback' | 'waitlist' | 'resources' | 'accounts';
+
+interface AdminAccount {
+  id: string;
+  username: string;
+  role: 'SUPER_ADMIN' | 'PEDAGOGIE' | 'ADMINISTRATIF';
+  createdAt: string;
+}
 
 const REQUEST_STATUS_STYLES: Record<string, string> = {
   NEW:       'bg-amber-900/40 text-amber-300 border-amber-500/40',
@@ -141,6 +148,27 @@ export default function AdminPage() {
   const [resFile, setResFile] = useState<File | null>(null);
   const [resSubmitting, setResSubmitting] = useState(false);
   const [resFormError, setResFormError] = useState('');
+
+  const [showAccountPanel, setShowAccountPanel] = useState(false);
+  const [accCurrentPassword, setAccCurrentPassword] = useState('');
+  const [accNewUsername, setAccNewUsername] = useState('');
+  const [accNewPassword, setAccNewPassword] = useState('');
+  const [accSubmitting, setAccSubmitting] = useState(false);
+  const [accMessage, setAccMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  const [adminUsers, setAdminUsers] = useState<AdminAccount[]>([]);
+  const [adminUsersLoading, setAdminUsersLoading] = useState(true);
+  const [newAccUsername, setNewAccUsername] = useState('');
+  const [newAccPassword, setNewAccPassword] = useState('');
+  const [newAccRole, setNewAccRole] = useState<'SUPER_ADMIN' | 'PEDAGOGIE' | 'ADMINISTRATIF'>('PEDAGOGIE');
+  const [creatingAccount, setCreatingAccount] = useState(false);
+  const [accountFormError, setAccountFormError] = useState('');
+  const [deletingAccountId, setDeletingAccountId] = useState<string | null>(null);
+  const [editingAccountId, setEditingAccountId] = useState<string | null>(null);
+  const [editUsername, setEditUsername] = useState('');
+  const [editPassword, setEditPassword] = useState('');
+  const [editRole, setEditRole] = useState<'SUPER_ADMIN' | 'PEDAGOGIE' | 'ADMINISTRATIF'>('PEDAGOGIE');
+  const [savingEdit, setSavingEdit] = useState(false);
 
   const fetchInstructors = async () => {
     setLoading(true);
@@ -218,7 +246,20 @@ export default function AdminPage() {
     }
   };
 
-  useEffect(() => { fetchInstructors(); fetchRequests(); fetchFeedback(); fetchWaitlist(); fetchResources(); fetchSubjectsList(); }, []);
+  const fetchAdminUsers = async () => {
+    setAdminUsersLoading(true);
+    try {
+      const res = await fetch('/api/bleSseD/admin-users');
+      if (!res.ok) throw new Error();
+      setAdminUsers(await res.json());
+    } catch {
+      setErrorMsg('Impossible de charger les comptes.');
+    } finally {
+      setAdminUsersLoading(false);
+    }
+  };
+
+  useEffect(() => { fetchInstructors(); fetchRequests(); fetchFeedback(); fetchWaitlist(); fetchResources(); fetchSubjectsList(); fetchAdminUsers(); }, []);
 
   const updateRequestStatus = async (id: string, newStatus: string) => {
     setUpdatingRequestId(id);
@@ -351,6 +392,103 @@ export default function AdminPage() {
 
   const newFeedbackCount = feedbackList.filter((f) => f.status === 'NEW').length;
 
+  const handleAccountUpdate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setAccMessage(null);
+    setAccSubmitting(true);
+    try {
+      const res = await fetch('/api/account', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          currentPassword: accCurrentPassword,
+          newUsername: accNewUsername.trim() || undefined,
+          newPassword: accNewPassword || undefined,
+        }),
+      });
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error || 'Erreur lors de la mise à jour.');
+      setAccMessage({ type: 'success', text: 'Compte mis à jour avec succès.' });
+      setAccCurrentPassword('');
+      setAccNewUsername('');
+      setAccNewPassword('');
+    } catch (err: any) {
+      setAccMessage({ type: 'error', text: err.message || 'Une erreur est survenue.' });
+    } finally {
+      setAccSubmitting(false);
+    }
+  };
+
+  const handleCreateAccount = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setAccountFormError('');
+    if (!newAccUsername.trim() || !newAccPassword) {
+      setAccountFormError('Identifiant et mot de passe sont obligatoires.');
+      return;
+    }
+    setCreatingAccount(true);
+    try {
+      const res = await fetch('/api/bleSseD/admin-users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: newAccUsername.trim(), password: newAccPassword, role: newAccRole }),
+      });
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error || 'Erreur lors de la création.');
+      setAdminUsers((prev) => [...prev, result]);
+      setNewAccUsername('');
+      setNewAccPassword('');
+      setNewAccRole('PEDAGOGIE');
+    } catch (err: any) {
+      setAccountFormError(err.message || 'Une erreur est survenue.');
+    } finally {
+      setCreatingAccount(false);
+    }
+  };
+
+  const startEditAccount = (acc: AdminAccount) => {
+    setEditingAccountId(acc.id);
+    setEditUsername(acc.username);
+    setEditPassword('');
+    setEditRole(acc.role);
+  };
+
+  const handleSaveAccountEdit = async (id: string) => {
+    setSavingEdit(true);
+    try {
+      const res = await fetch(`/api/bleSseD/admin-users/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          username: editUsername.trim() || undefined,
+          password: editPassword || undefined,
+          role: editRole,
+        }),
+      });
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error || 'Erreur lors de la mise à jour.');
+      setAdminUsers((prev) => prev.map((a) => (a.id === id ? result : a)));
+      setEditingAccountId(null);
+    } catch (err: any) {
+      setErrorMsg(err.message || 'Impossible de mettre à jour ce compte.');
+    } finally {
+      setSavingEdit(false);
+    }
+  };
+
+  const handleDeleteAccount = async (id: string) => {
+    setDeletingAccountId(id);
+    try {
+      const res = await fetch(`/api/bleSseD/admin-users/${id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error();
+      setAdminUsers((prev) => prev.filter((a) => a.id !== id));
+    } catch {
+      setErrorMsg('Impossible de supprimer ce compte.');
+    } finally {
+      setDeletingAccountId(null);
+    }
+  };
+
   const handleLogout = async () => {
     await fetch('/api/bleSseD/logout', { method: 'POST' });
     router.push('/bleSseD/login');
@@ -459,14 +597,75 @@ export default function AdminPage() {
               </>
             )}
             <button
+              onClick={() => setShowAccountPanel((v) => !v)}
+              className="ml-4 px-3 py-1.5 text-xs font-semibold border border-[#2a4a6e] hover:border-[#c9951a]/50 hover:text-[#c9951a] text-gray-400 rounded-lg transition"
+            >
+              Mon compte
+            </button>
+            <button
               onClick={handleLogout}
-              className="ml-4 px-3 py-1.5 text-xs font-semibold border border-[#2a4a6e] hover:border-red-500/50 hover:text-red-300 text-gray-400 rounded-lg transition"
+              className="ml-2 px-3 py-1.5 text-xs font-semibold border border-[#2a4a6e] hover:border-red-500/50 hover:text-red-300 text-gray-400 rounded-lg transition"
             >
               Déconnexion
             </button>
           </div>
         </div>
       </div>
+
+      {showAccountPanel && (
+        <div className="max-w-6xl mx-auto px-6 pt-6">
+          <div className="bg-[#112240] border border-[#2a4a6e] rounded-2xl p-5 max-w-md">
+            <h3 className="text-sm font-semibold text-white mb-4">Modifier mon compte</h3>
+            <form onSubmit={handleAccountUpdate} className="space-y-3">
+              <div>
+                <label className="block text-xs text-gray-400 mb-1">Mot de passe actuel *</label>
+                <input
+                  type="password"
+                  value={accCurrentPassword}
+                  onChange={(e) => setAccCurrentPassword(e.target.value)}
+                  required
+                  className="w-full px-3 py-2 bg-[#0d1f38] border border-[#2a4a6e] rounded-lg text-sm text-white focus:outline-none focus:border-[#c9951a]"
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-gray-400 mb-1">Nouvel identifiant (optionnel)</label>
+                <input
+                  value={accNewUsername}
+                  onChange={(e) => setAccNewUsername(e.target.value)}
+                  className="w-full px-3 py-2 bg-[#0d1f38] border border-[#2a4a6e] rounded-lg text-sm text-white focus:outline-none focus:border-[#c9951a]"
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-gray-400 mb-1">Nouveau mot de passe (optionnel, 6 caractères min.)</label>
+                <input
+                  type="password"
+                  value={accNewPassword}
+                  onChange={(e) => setAccNewPassword(e.target.value)}
+                  className="w-full px-3 py-2 bg-[#0d1f38] border border-[#2a4a6e] rounded-lg text-sm text-white focus:outline-none focus:border-[#c9951a]"
+                />
+              </div>
+              {accMessage && (
+                <div
+                  className={`p-2.5 rounded-lg text-xs border ${
+                    accMessage.type === 'success'
+                      ? 'bg-emerald-900/30 border-emerald-500/40 text-emerald-300'
+                      : 'bg-red-900/30 border-red-500/40 text-red-300'
+                  }`}
+                >
+                  {accMessage.text}
+                </div>
+              )}
+              <button
+                type="submit"
+                disabled={accSubmitting}
+                className="px-4 py-2 bg-[#c9951a] hover:bg-[#d4a820] disabled:opacity-50 text-white text-sm font-semibold rounded-lg transition"
+              >
+                {accSubmitting ? 'Enregistrement...' : 'Enregistrer'}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
 
       <main className="max-w-6xl mx-auto px-6 py-8">
 
@@ -510,6 +709,14 @@ export default function AdminPage() {
             }`}
           >
             Bibliothèque {resourcesList.length > 0 && `(${resourcesList.length})`}
+          </button>
+          <button
+            onClick={() => setTab('accounts')}
+            className={`px-4 py-2.5 text-sm font-semibold border-b-2 -mb-px transition ${
+              tab === 'accounts' ? 'border-[#c9951a] text-[#c9951a]' : 'border-transparent text-gray-400 hover:text-white'
+            }`}
+          >
+            Comptes
           </button>
         </div>
 
@@ -1012,6 +1219,155 @@ export default function AdminPage() {
                             </button>
                           </div>
                         </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
+        {tab === 'accounts' && (
+          <div className="space-y-6">
+            <div className="bg-[#112240] rounded-2xl border border-[#2a4a6e] p-5">
+              <h3 className="text-sm font-semibold text-white mb-4">Créer un compte</h3>
+              <form onSubmit={handleCreateAccount} className="grid grid-cols-3 gap-3 items-end">
+                <div>
+                  <label className="block text-xs text-gray-400 mb-1">Identifiant *</label>
+                  <input
+                    value={newAccUsername}
+                    onChange={(e) => setNewAccUsername(e.target.value)}
+                    className="w-full px-3 py-2 bg-[#0d1f38] border border-[#2a4a6e] rounded-lg text-sm text-white focus:outline-none focus:border-[#c9951a]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-400 mb-1">Mot de passe * (6 car. min.)</label>
+                  <input
+                    type="password"
+                    value={newAccPassword}
+                    onChange={(e) => setNewAccPassword(e.target.value)}
+                    className="w-full px-3 py-2 bg-[#0d1f38] border border-[#2a4a6e] rounded-lg text-sm text-white focus:outline-none focus:border-[#c9951a]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-400 mb-1">Rôle</label>
+                  <select
+                    value={newAccRole}
+                    onChange={(e) => setNewAccRole(e.target.value as typeof newAccRole)}
+                    className="w-full px-3 py-2 bg-[#0d1f38] border border-[#2a4a6e] rounded-lg text-sm text-white focus:outline-none focus:border-[#c9951a]"
+                  >
+                    <option value="PEDAGOGIE">Pédagogie</option>
+                    <option value="ADMINISTRATIF">Administratif</option>
+                    <option value="SUPER_ADMIN">Super-admin</option>
+                  </select>
+                </div>
+                {accountFormError && (
+                  <div className="col-span-3 p-2.5 bg-red-900/30 border border-red-500/40 rounded-lg text-xs text-red-300">
+                    {accountFormError}
+                  </div>
+                )}
+                <button
+                  type="submit"
+                  disabled={creatingAccount}
+                  className="col-span-3 px-4 py-2.5 bg-[#c9951a] hover:bg-[#d4a820] disabled:opacity-50 text-white text-sm font-semibold rounded-lg transition"
+                >
+                  {creatingAccount ? 'Création...' : 'Créer le compte'}
+                </button>
+              </form>
+            </div>
+
+            {adminUsersLoading ? (
+              <div className="flex justify-center py-20">
+                <div className="animate-spin rounded-full h-8 w-8 border-4 border-[#c9951a] border-t-transparent"></div>
+              </div>
+            ) : (
+              <div className="bg-[#112240] rounded-2xl border border-[#2a4a6e] overflow-hidden">
+                <table className="w-full text-sm">
+                  <thead className="border-b border-[#2a4a6e]">
+                    <tr className="text-xs text-gray-400 uppercase tracking-wide">
+                      <th className="text-left px-4 py-3 font-semibold">Identifiant</th>
+                      <th className="text-left px-4 py-3 font-semibold">Rôle</th>
+                      <th className="text-left px-4 py-3 font-semibold">Créé le</th>
+                      <th className="text-right px-4 py-3 font-semibold">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#1e3a5f]">
+                    {adminUsers.map((acc) => (
+                      <tr key={acc.id} className="hover:bg-[#0d1f38] transition align-top">
+                        {editingAccountId === acc.id ? (
+                          <>
+                            <td className="px-4 py-3">
+                              <input
+                                value={editUsername}
+                                onChange={(e) => setEditUsername(e.target.value)}
+                                className="w-full px-2 py-1.5 bg-[#0d1f38] border border-[#2a4a6e] rounded-lg text-xs text-white focus:outline-none focus:border-[#c9951a]"
+                              />
+                              <input
+                                type="password"
+                                placeholder="Nouveau mot de passe (optionnel)"
+                                value={editPassword}
+                                onChange={(e) => setEditPassword(e.target.value)}
+                                className="w-full mt-1.5 px-2 py-1.5 bg-[#0d1f38] border border-[#2a4a6e] rounded-lg text-xs text-white focus:outline-none focus:border-[#c9951a]"
+                              />
+                            </td>
+                            <td className="px-4 py-3">
+                              <select
+                                value={editRole}
+                                onChange={(e) => setEditRole(e.target.value as typeof editRole)}
+                                className="w-full px-2 py-1.5 bg-[#0d1f38] border border-[#2a4a6e] rounded-lg text-xs text-white focus:outline-none focus:border-[#c9951a]"
+                              >
+                                <option value="PEDAGOGIE">Pédagogie</option>
+                                <option value="ADMINISTRATIF">Administratif</option>
+                                <option value="SUPER_ADMIN">Super-admin</option>
+                              </select>
+                            </td>
+                            <td className="px-4 py-3 text-gray-400 text-xs">
+                              {new Date(acc.createdAt).toLocaleDateString('fr-FR')}
+                            </td>
+                            <td className="px-4 py-3">
+                              <div className="flex justify-end gap-2">
+                                <button
+                                  disabled={savingEdit}
+                                  onClick={() => handleSaveAccountEdit(acc.id)}
+                                  className="px-3 py-1.5 text-xs font-semibold bg-emerald-600/80 hover:bg-emerald-500 disabled:opacity-50 text-white rounded-lg transition"
+                                >
+                                  Enregistrer
+                                </button>
+                                <button
+                                  onClick={() => setEditingAccountId(null)}
+                                  className="px-3 py-1.5 text-xs font-semibold bg-transparent border border-[#2a4a6e] hover:bg-[#0d1f38] text-gray-300 rounded-lg transition"
+                                >
+                                  Annuler
+                                </button>
+                              </div>
+                            </td>
+                          </>
+                        ) : (
+                          <>
+                            <td className="px-4 py-3 text-white font-medium">{acc.username}</td>
+                            <td className="px-4 py-3 text-gray-400 text-xs">{acc.role}</td>
+                            <td className="px-4 py-3 text-gray-400 text-xs">
+                              {new Date(acc.createdAt).toLocaleDateString('fr-FR')}
+                            </td>
+                            <td className="px-4 py-3">
+                              <div className="flex justify-end gap-2">
+                                <button
+                                  onClick={() => startEditAccount(acc)}
+                                  className="px-3 py-1.5 text-xs font-semibold bg-[#0d1f38] hover:bg-[#1a2f4d] border border-[#2a4a6e] text-white rounded-lg transition"
+                                >
+                                  Modifier
+                                </button>
+                                <button
+                                  disabled={deletingAccountId === acc.id}
+                                  onClick={() => handleDeleteAccount(acc.id)}
+                                  className="px-3 py-1.5 text-xs font-semibold bg-red-900/40 hover:bg-red-900/70 disabled:opacity-50 text-red-300 rounded-lg transition"
+                                >
+                                  Supprimer
+                                </button>
+                              </div>
+                            </td>
+                          </>
+                        )}
                       </tr>
                     ))}
                   </tbody>

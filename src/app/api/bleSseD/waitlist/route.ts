@@ -1,9 +1,12 @@
 export const dynamic = 'force-dynamic';
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { requireRole } from '@/lib/admin-permissions';
 
 // GET /api/bleSseD/waitlist — protégé par le middleware (voir §7bis)
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const denied = requireRole(request, ['SUPER_ADMIN']);
+  if (denied) return denied;
   try {
     const entries = await prisma.waitlistEntry.findMany({
       orderBy: { createdAt: 'desc' },

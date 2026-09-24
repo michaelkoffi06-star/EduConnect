@@ -5,11 +5,14 @@ import {
   resourceKey,
   BUCKET_PHOTOS,
 } from '@/lib/r2';
+import { requireRole } from '@/lib/admin-permissions';
 
 const ALLOWED_TYPES = ['application/pdf', 'image/jpeg', 'image/png'];
 
 // POST /api/bleSseD/resources/presign — protégé par le middleware (voir §7bis)
 export async function POST(req: NextRequest) {
+  const denied = requireRole(req, ['SUPER_ADMIN', 'PEDAGOGIE']);
+  if (denied) return denied;
   try {
     const { resourceId, contentType } = await req.json();
 

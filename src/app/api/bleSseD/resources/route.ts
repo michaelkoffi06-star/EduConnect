@@ -3,9 +3,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { objectExists, resourceKey, extFromMime, BUCKET_PHOTOS, photoPublicUrl } from '@/lib/r2';
 import type { ResourceType, AcademicLevel } from '@prisma/client';
+import { requireRole } from '@/lib/admin-permissions';
 
 // GET /api/bleSseD/resources — protégé par le middleware (voir §7bis)
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const denied = requireRole(request, ['SUPER_ADMIN', 'PEDAGOGIE', 'ADMINISTRATIF']);
+  if (denied) return denied;
   try {
     const resources = await prisma.resource.findMany({
       include: { subject: true },
@@ -20,6 +23,8 @@ export async function GET() {
 
 // POST /api/bleSseD/resources — création après upload (si fichier) ou directe (si lien)
 export async function POST(req: NextRequest) {
+  const denied = requireRole(req, ['SUPER_ADMIN', 'PEDAGOGIE']);
+  if (denied) return denied;
   try {
     const body = await req.json();
     const { resourceId, title, description, type, subjectId, level, contentType, externalUrl } = body;

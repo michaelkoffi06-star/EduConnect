@@ -42,3 +42,4 @@ yarn-error.log*
 /public/uploads/
 instructeurs-liens.csv
 export-instructeurs.js
+create-admin-user.js

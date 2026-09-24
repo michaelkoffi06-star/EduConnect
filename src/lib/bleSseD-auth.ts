@@ -43,25 +43,42 @@ function constantTimeEqual(a: string, b: string): boolean {
   return diff === 0;
 }
 
-export async function createSessionToken(): Promise<string> {
-  const payload = JSON.stringify({ exp: Date.now() + SESSION_DURATION_MS });
+export type AdminRole = 'SUPER_ADMIN' | 'PEDAGOGIE' | 'ADMINISTRATIF';
+
+export interface SessionPayload {
+  sub: string;
+  username: string;
+  role: AdminRole;
+  exp: number;
+}
+
+export async function createSessionToken(user: { id: string; username: string; role: AdminRole }): Promise<string> {
+  const payload = JSON.stringify({
+    sub: user.id,
+    username: user.username,
+    role: user.role,
+    exp: Date.now() + SESSION_DURATION_MS,
+  });
   const payloadB64 = bytesToBase64Url(new TextEncoder().encode(payload));
   const signature = await hmacSign(payloadB64);
   return `${payloadB64}.${signature}`;
 }
 
-export async function verifySessionToken(token: string | undefined | null): Promise<boolean> {
-  if (!token) return false;
+// Retourne le contenu de la session (sub, username, role) si le jeton est valide, sinon null.
+export async function verifySessionToken(token: string | undefined | null): Promise<SessionPayload | null> {
+  if (!token) return null;
   const [payloadB64, signature] = token.split('.');
-  if (!payloadB64 || !signature) return false;
+  if (!payloadB64 || !signature) return null;
 
   const expectedSignature = await hmacSign(payloadB64);
-  if (!constantTimeEqual(signature, expectedSignature)) return false;
+  if (!constantTimeEqual(signature, expectedSignature)) return null;
 
   try {
     const payload = JSON.parse(new TextDecoder().decode(base64UrlToBytes(payloadB64)));
-    return typeof payload.exp === 'number' && payload.exp > Date.now();
+    if (typeof payload.exp !== 'number' || payload.exp <= Date.now()) return null;
+    if (typeof payload.sub !== 'string' || typeof payload.role !== 'string') return null;
+    return payload as SessionPayload;
   } catch {
-    return false;
+    return null;
   }
 }

@@ -71,6 +71,7 @@ model Instructor {
 
   subjects      InstructorSubject[]
   matchRequests MatchRequest[]
+  contracts     Contract[]
 }
 
 // 6. Table des Disciplines (Maths, Physique...)
@@ -81,6 +82,7 @@ model Subject {
 
   instructors InstructorSubject[]
   resources   Resource[]
+  contracts   Contract[]
 }
 
 // 7. Table de liaison explicite Many-to-Many
@@ -175,4 +177,50 @@ model Resource {
   subject Subject @relation(fields: [subjectId], references: [id], onDelete: Cascade)
 
   @@index([subjectId])
+}
+
+// 16. Rôles des comptes admin
+enum AdminRole {
+  SUPER_ADMIN
+  PEDAGOGIE
+  ADMINISTRATIF
+}
+
+// 17. Comptes admin (remplace le mot de passe unique partagé)
+model AdminUser {
+  id           String    @id @default(uuid())
+  username     String    @unique
+  passwordHash String
+  role         AdminRole
+  createdAt    DateTime  @default(now())
+}
+
+// 18. Un engagement instructeur : matière + niveau enseignés dans le cadre d'un suivi
+model Contract {
+  id           String        @id @default(uuid())
+  instructorId String
+  subjectId    String
+  level        AcademicLevel
+  createdAt    DateTime      @default(now())
+
+  instructor Instructor      @relation(fields: [instructorId], references: [id], onDelete: Cascade)
+  subject    Subject         @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  entries    ContractEntry[]
+
+  @@index([instructorId])
+}
+
+// 19. Historique mensuel d'un contrat : élèves, séances, montant reçu
+model ContractEntry {
+  id             String   @id @default(uuid())
+  contractId     String
+  month          DateTime
+  studentCount   Int
+  sessionCount   Int
+  amountReceived Float
+  createdAt      DateTime @default(now())
+
+  contract Contract @relation(fields: [contractId], references: [id], onDelete: Cascade)
+
+  @@unique([contractId, month])
 }

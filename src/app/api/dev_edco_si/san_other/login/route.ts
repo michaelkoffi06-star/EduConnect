@@ -50,7 +50,9 @@ export async function POST(request: NextRequest) {
   const user = await prisma.adminUser.findUnique({ where: { username } });
 
   const isValid =
-    !!user && user.role === 'SUPER_ADMIN' && (await verifyPassword(password, user.passwordHash));
+    !!user &&
+    (user.role === 'PEDAGOGIE' || user.role === 'ADMINISTRATIF') &&
+    (await verifyPassword(password, user.passwordHash));
 
   if (!isValid) {
     await prisma.loginAttempt.create({ data: { ip } }).catch(() => {});
@@ -58,7 +60,7 @@ export async function POST(request: NextRequest) {
   }
 
   const token = await createSessionToken({ id: user!.id, username: user!.username, role: user!.role });
-  const res = NextResponse.json({ ok: true });
+  const res = NextResponse.json({ ok: true, role: user!.role });
   res.cookies.set(SESSION_COOKIE_NAME, token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',

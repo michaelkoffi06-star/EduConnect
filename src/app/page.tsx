@@ -259,7 +259,7 @@ export default async function HomePage() {
                 <a href="https://www.facebook.com/profile.php?id=100090481355986" target="_blank" rel="noopener noreferrer" className="hover:text-[#c9951a]">Facebook</a>
               </li>
               <li>
-                <a href="https://wa.me/2250778114938" target="_blank" rel="noopener noreferrer" className="hover:text-[#c9951a]">WhatsApp</a>
+                <a href="https://whatsapp.com/channel/0029Vb8wlEbLtOjF6QiMXV0x" target="_blank" rel="noopener noreferrer" className="hover:text-[#c9951a]">WhatsApp</a>
               </li>
               <li>
                 <a href="/suggestions" className="hover:text-[#c9951a]">Suggestions</a>

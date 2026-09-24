@@ -1,10 +1,13 @@
 export const dynamic = 'force-dynamic';
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { requireRole } from '@/lib/admin-permissions';
 
 // GET /api/bleSseD/instructors
 // Récupère TOUS les instructeurs (peu importe leur statut), pour la page Admin
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const denied = requireRole(request, ['SUPER_ADMIN', 'PEDAGOGIE', 'ADMINISTRATIF']);
+  if (denied) return denied;
   try {
     const instructors = await prisma.instructor.findMany({
       include: {

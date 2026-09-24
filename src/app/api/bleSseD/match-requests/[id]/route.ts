@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { requireRole } from '@/lib/admin-permissions';
 
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const denied = requireRole(request, ['SUPER_ADMIN', 'ADMINISTRATIF']);
+  if (denied) return denied;
   try {
     const { id } = await params;
     const { status } = await request.json();

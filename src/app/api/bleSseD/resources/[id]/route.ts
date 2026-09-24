@@ -1,12 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { deleteFromR2, resourceKey, BUCKET_PHOTOS } from '@/lib/r2';
+import { requireRole } from '@/lib/admin-permissions';
 
 // DELETE /api/bleSseD/resources/[id] — protégé par le middleware (voir §7bis)
 export async function DELETE(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const denied = requireRole(req, ['SUPER_ADMIN', 'PEDAGOGIE']);
+  if (denied) return denied;
   try {
     const { id } = await params;
     const resource = await prisma.resource.findUnique({ where: { id } });
