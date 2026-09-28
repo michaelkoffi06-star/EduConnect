@@ -87,6 +87,7 @@ export default function LibraryManager({
   const [resFile, setResFile] = useState<File | null>(null);
   const [resSubmitting, setResSubmitting] = useState(false);
   const [resFormError, setResFormError] = useState('');
+  const [fileInputKey, setFileInputKey] = useState(0);
 
   // Filtre de la liste
   const [filterSubjectId, setFilterSubjectId] = useState('');
@@ -232,6 +233,7 @@ export default function LibraryManager({
     setResLevel('ALL');
     setResExternalUrl('');
     setResFile(null);
+    setFileInputKey((k) => k + 1);
     setResFormError('');
   };
 
@@ -536,9 +538,10 @@ export default function LibraryManager({
                 </select>
               </div>
               {(resType === 'DOCUMENT' || resType === 'EXERCICE') ? (
-                <div>
+                <div key="file">
                   <label className={label}>Fichier (PDF, JPEG, PNG — 10 Mo max) *</label>
                   <input
+                    key={fileInputKey}
                     type="file"
                     accept="application/pdf,image/jpeg,image/png"
                     onChange={(e) => setResFile(e.target.files?.[0] || null)}
@@ -546,7 +549,7 @@ export default function LibraryManager({
                   />
                 </div>
               ) : (
-                <div>
+                <div key="url">
                   <label className={label}>{resType === 'VIDEO' ? 'Lien YouTube/Vimeo *' : 'URL *'}</label>
                   <input value={resExternalUrl} onChange={(e) => setResExternalUrl(e.target.value)} placeholder="https://..." className={input} />
                 </div>

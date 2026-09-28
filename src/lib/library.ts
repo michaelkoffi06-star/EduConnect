@@ -70,12 +70,13 @@ export type PublicResourceRow = Prisma.ResourceGetPayload<{ select: typeof publi
 
 // Ajoute les champs calculés (référence, extension du fichier) et masque refNumber.
 export function toPublicResource(r: PublicResourceRow) {
-  const { refNumber, fileUrl, ...rest } = r;
+  const { refNumber, fileUrl, externalUrl, ...rest } = r;
   const fileExt = fileUrl ? fileUrl.split('.').pop()?.toLowerCase() || null : null;
   return {
     ...rest,
     subject: { ...r.subject, color: subjectColor(r.subject) },
     fileUrl,
+    externalUrl: normalizeExternalUrl(externalUrl),
     fileExt,
     urlKey: r.slug || r.id, // identifiant utilisé dans l'URL publique
     ref: refCode({
@@ -100,3 +101,20 @@ export function subjectColor(subject: { slug: string; color: string | null }): s
 }
 
 export const HEX_COLOR = /^#[0-9a-fA-F]{6}$/;
+
+// Lien externe saisi par l'équipe : ajoute https:// s'il manque (sinon le navigateur le traite
+// comme une adresse du site, ex. /bibliotheque/anglaisefacile.com), n'accepte que http(s).
+// Renvoie null si l'adresse est inutilisable.
+export function normalizeExternalUrl(raw: string | null | undefined): string | null {
+  const value = (raw || '').trim();
+  if (!value) return null;
+  const withScheme = /^[a-z][a-z0-9+.-]*:/i.test(value) ? value : `https://${value.replace(/^\/+/, '')}`;
+  try {
+    const u = new URL(withScheme);
+    if (u.protocol !== 'http:' && u.protocol !== 'https:') return null;
+    if (!u.hostname.includes('.')) return null;
+    return u.toString();
+  } catch {
+    return null;
+  }
+}

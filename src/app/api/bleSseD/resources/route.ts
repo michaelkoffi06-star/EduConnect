@@ -4,7 +4,7 @@ import { prisma } from '@/lib/prisma';
 import { objectExists, resourceKey, extFromMime, BUCKET_PHOTOS, photoPublicUrl } from '@/lib/r2';
 import type { ResourceType, AcademicLevel } from '@prisma/client';
 import { requireRole } from '@/lib/admin-permissions';
-import { publicResourceSelect, toPublicResource, resourceSlug } from '@/lib/library';
+import { publicResourceSelect, toPublicResource, resourceSlug, normalizeExternalUrl } from '@/lib/library';
 
 // GET /api/bleSseD/resources — protégé par le middleware (voir §7bis)
 export async function GET(request: NextRequest) {
@@ -61,8 +61,12 @@ export async function POST(req: NextRequest) {
       fileUrl = photoPublicUrl(key);
     }
 
-    if (needsUrl && (!externalUrl || !externalUrl.trim())) {
-      return NextResponse.json({ error: 'URL requise pour ce type de ressource.' }, { status: 400 });
+    const cleanUrl = needsUrl ? normalizeExternalUrl(externalUrl) : null;
+    if (needsUrl && !cleanUrl) {
+      return NextResponse.json(
+        { error: 'Adresse invalide. Exemple attendu : https://www.youtube.com/watch?v=… ou https://exemple.com' },
+        { status: 400 }
+      );
     }
 
     const id = resourceId || crypto.randomUUID();
@@ -79,7 +83,7 @@ export async function POST(req: NextRequest) {
         position: Number.isFinite(Number(position)) ? Number(position) : 0,
         level: (level || chapterLevel || 'ALL') as AcademicLevel,
         fileUrl: fileUrl || null,
-        externalUrl: needsUrl ? externalUrl.trim() : null,
+        externalUrl: cleanUrl,
       },
       select: publicResourceSelect,
     });
