@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import LibraryManager from '@/components/admin/LibraryManager';
 
 interface Subject { id: string; name: string; }
 interface InstructorSubject { subject: Subject; }
@@ -17,18 +18,6 @@ interface Instructor {
   cniUrl: string | null;
   cvUrl: string | null;
   subjects: InstructorSubject[];
-}
-
-interface Resource {
-  id: string;
-  title: string;
-  description: string | null;
-  type: 'DOCUMENT' | 'VIDEO' | 'EXERCICE' | 'LIEN';
-  level: string;
-  fileUrl: string | null;
-  externalUrl: string | null;
-  createdAt: string;
-  subject: Subject;
 }
 
 interface ContractEntry {
@@ -59,13 +48,6 @@ const STATUS_LABELS: Record<string, string> = {
   APPROVED: 'Approuvé',
   SUSPENDED: 'Suspendu',
 };
-const RESOURCE_TYPE_LABELS: Record<string, string> = {
-  DOCUMENT: 'Document',
-  VIDEO: 'Vidéo',
-  EXERCICE: 'Exercice',
-  LIEN: 'Lien',
-};
-
 export default function PedagogiePage() {
   const router = useRouter();
   const [tab, setTab] = useState<Tab>('instructors');
@@ -77,20 +59,8 @@ export default function PedagogiePage() {
   const [filter, setFilter] = useState<FilterOption>('PENDING');
   const [updatingId, setUpdatingId] = useState<string | null>(null);
 
-  // Bibliothèque
-  const [resourcesList, setResourcesList] = useState<Resource[]>([]);
-  const [resourcesLoading, setResourcesLoading] = useState(true);
+  // Matières (formulaire des contrats)
   const [allSubjects, setAllSubjects] = useState<Subject[]>([]);
-  const [deletingResourceId, setDeletingResourceId] = useState<string | null>(null);
-  const [resTitle, setResTitle] = useState('');
-  const [resDescription, setResDescription] = useState('');
-  const [resType, setResType] = useState<'DOCUMENT' | 'VIDEO' | 'EXERCICE' | 'LIEN'>('DOCUMENT');
-  const [resSubjectId, setResSubjectId] = useState('');
-  const [resLevel, setResLevel] = useState('ALL');
-  const [resExternalUrl, setResExternalUrl] = useState('');
-  const [resFile, setResFile] = useState<File | null>(null);
-  const [resSubmitting, setResSubmitting] = useState(false);
-  const [resFormError, setResFormError] = useState('');
 
   // Contrats
   const [contracts, setContracts] = useState<Contract[]>([]);
@@ -127,19 +97,6 @@ export default function PedagogiePage() {
     }
   };
 
-  const fetchResources = async () => {
-    setResourcesLoading(true);
-    try {
-      const res = await fetch('/api/bleSseD/resources');
-      if (!res.ok) throw new Error();
-      setResourcesList(await res.json());
-    } catch {
-      setErrorMsg('Impossible de charger la bibliothèque.');
-    } finally {
-      setResourcesLoading(false);
-    }
-  };
-
   const fetchSubjectsList = async () => {
     try {
       const res = await fetch('/api/subjects');
@@ -163,7 +120,6 @@ export default function PedagogiePage() {
 
   useEffect(() => {
     fetchInstructors();
-    fetchResources();
     fetchSubjectsList();
     fetchContracts();
   }, []);
@@ -183,90 +139,6 @@ export default function PedagogiePage() {
       setErrorMsg("Impossible de mettre à jour cet instructeur.");
     } finally {
       setUpdatingId(null);
-    }
-  };
-
-  const resetResourceForm = () => {
-    setResTitle('');
-    setResDescription('');
-    setResType('DOCUMENT');
-    setResSubjectId('');
-    setResLevel('ALL');
-    setResExternalUrl('');
-    setResFile(null);
-    setResFormError('');
-  };
-
-  const handleResourceSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setResFormError('');
-    if (!resTitle.trim() || !resSubjectId) {
-      setResFormError('Titre et matière sont obligatoires.');
-      return;
-    }
-    const needsFile = resType === 'DOCUMENT' || resType === 'EXERCICE';
-    const needsUrl = resType === 'VIDEO' || resType === 'LIEN';
-    if (needsFile && !resFile) {
-      setResFormError('Un fichier est requis pour ce type de ressource.');
-      return;
-    }
-    if (needsUrl && !resExternalUrl.trim()) {
-      setResFormError('Une URL est requise pour ce type de ressource.');
-      return;
-    }
-    setResSubmitting(true);
-    try {
-      const resourceId = crypto.randomUUID();
-      if (needsFile && resFile) {
-        const presignRes = await fetch('/api/bleSseD/resources/presign', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ resourceId, contentType: resFile.type }),
-        });
-        const presignData = await presignRes.json();
-        if (!presignRes.ok) throw new Error(presignData.error || 'Échec de la présignature.');
-        const putRes = await fetch(presignData.uploadUrl, {
-          method: 'PUT',
-          headers: { 'Content-Type': resFile.type },
-          body: resFile,
-        });
-        if (!putRes.ok) throw new Error("Échec de l'envoi du fichier.");
-      }
-      const createRes = await fetch('/api/bleSseD/resources', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          resourceId,
-          title: resTitle.trim(),
-          description: resDescription.trim() || undefined,
-          type: resType,
-          subjectId: resSubjectId,
-          level: resLevel,
-          contentType: needsFile ? resFile?.type : undefined,
-          externalUrl: needsUrl ? resExternalUrl.trim() : undefined,
-        }),
-      });
-      const createResult = await createRes.json();
-      if (!createRes.ok) throw new Error(createResult.error || 'Erreur lors de la création.');
-      setResourcesList((prev) => [createResult, ...prev]);
-      resetResourceForm();
-    } catch (err: any) {
-      setResFormError(err.message || 'Une erreur est survenue.');
-    } finally {
-      setResSubmitting(false);
-    }
-  };
-
-  const handleDeleteResource = async (id: string) => {
-    setDeletingResourceId(id);
-    try {
-      const res = await fetch(`/api/bleSseD/resources/${id}`, { method: 'DELETE' });
-      if (!res.ok) throw new Error();
-      setResourcesList((prev) => prev.filter((r) => r.id !== id));
-    } catch {
-      setErrorMsg('Impossible de supprimer cette ressource.');
-    } finally {
-      setDeletingResourceId(null);
     }
   };
 
@@ -591,163 +463,7 @@ export default function PedagogiePage() {
           </div>
         )}
 
-        {tab === 'resources' && (
-          <div className="space-y-6">
-            <div className="bg-[#112240] rounded-2xl border border-[#2a4a6e] p-5">
-              <h3 className="text-sm font-semibold text-white mb-4">Ajouter une ressource</h3>
-              <form onSubmit={handleResourceSubmit} className="space-y-4">
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs text-gray-400 mb-1">Titre *</label>
-                    <input
-                      value={resTitle}
-                      onChange={(e) => setResTitle(e.target.value)}
-                      className="w-full px-3 py-2 bg-[#0d1f38] border border-[#2a4a6e] rounded-lg text-sm text-white focus:outline-none focus:border-[#c9951a]"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs text-gray-400 mb-1">Matière *</label>
-                    <select
-                      value={resSubjectId}
-                      onChange={(e) => setResSubjectId(e.target.value)}
-                      className="w-full px-3 py-2 bg-[#0d1f38] border border-[#2a4a6e] rounded-lg text-sm text-white focus:outline-none focus:border-[#c9951a]"
-                    >
-                      <option value="">Choisir une matière</option>
-                      {allSubjects.map((s) => (
-                        <option key={s.id} value={s.id}>{s.name}</option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs text-gray-400 mb-1">Type *</label>
-                    <select
-                      value={resType}
-                      onChange={(e) => setResType(e.target.value as typeof resType)}
-                      className="w-full px-3 py-2 bg-[#0d1f38] border border-[#2a4a6e] rounded-lg text-sm text-white focus:outline-none focus:border-[#c9951a]"
-                    >
-                      <option value="DOCUMENT">Document (PDF/image)</option>
-                      <option value="EXERCICE">Exercice (PDF/image)</option>
-                      <option value="VIDEO">Vidéo (lien YouTube/Vimeo)</option>
-                      <option value="LIEN">Lien externe</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-xs text-gray-400 mb-1">Niveau</label>
-                    <select
-                      value={resLevel}
-                      onChange={(e) => setResLevel(e.target.value)}
-                      className="w-full px-3 py-2 bg-[#0d1f38] border border-[#2a4a6e] rounded-lg text-sm text-white focus:outline-none focus:border-[#c9951a]"
-                    >
-                      <option value="ALL">Tous niveaux</option>
-                      <option value="PRIMAIRE">Primaire</option>
-                      <option value="COLLEGE">Collège</option>
-                      <option value="LYCEE">Lycée</option>
-                    </select>
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-xs text-gray-400 mb-1">Description</label>
-                  <textarea
-                    value={resDescription}
-                    onChange={(e) => setResDescription(e.target.value)}
-                    rows={2}
-                    className="w-full px-3 py-2 bg-[#0d1f38] border border-[#2a4a6e] rounded-lg text-sm text-white focus:outline-none focus:border-[#c9951a] resize-none"
-                    placeholder="Optionnel"
-                  />
-                </div>
-                {(resType === 'DOCUMENT' || resType === 'EXERCICE') ? (
-                  <div>
-                    <label className="block text-xs text-gray-400 mb-1">Fichier (PDF, JPEG, PNG — 10 Mo max) *</label>
-                    <input
-                      type="file"
-                      accept="application/pdf,image/jpeg,image/png"
-                      onChange={(e) => setResFile(e.target.files?.[0] || null)}
-                      className="w-full text-xs text-gray-300 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:bg-[#c9951a] file:text-white file:text-xs file:font-semibold"
-                    />
-                  </div>
-                ) : (
-                  <div>
-                    <label className="block text-xs text-gray-400 mb-1">
-                      {resType === 'VIDEO' ? 'Lien YouTube/Vimeo *' : 'URL *'}
-                    </label>
-                    <input
-                      value={resExternalUrl}
-                      onChange={(e) => setResExternalUrl(e.target.value)}
-                      placeholder="https://..."
-                      className="w-full px-3 py-2 bg-[#0d1f38] border border-[#2a4a6e] rounded-lg text-sm text-white focus:outline-none focus:border-[#c9951a]"
-                    />
-                  </div>
-                )}
-                {resFormError && (
-                  <div className="p-2.5 bg-red-900/30 border border-red-500/40 rounded-lg text-xs text-red-300">
-                    {resFormError}
-                  </div>
-                )}
-                <button
-                  type="submit"
-                  disabled={resSubmitting}
-                  className="px-4 py-2.5 bg-[#c9951a] hover:bg-[#d4a820] disabled:opacity-50 text-white text-sm font-semibold rounded-lg transition"
-                >
-                  {resSubmitting ? 'Ajout en cours...' : 'Ajouter la ressource'}
-                </button>
-              </form>
-            </div>
-
-            {resourcesLoading ? (
-              <div className="flex justify-center py-20">
-                <div className="animate-spin rounded-full h-8 w-8 border-4 border-[#c9951a] border-t-transparent"></div>
-              </div>
-            ) : resourcesList.length === 0 ? (
-              <div className="text-center py-16 bg-[#112240] rounded-2xl border border-[#2a4a6e]">
-                <p className="text-gray-500">Aucune ressource pour le moment.</p>
-              </div>
-            ) : (
-              <div className="bg-[#112240] rounded-2xl border border-[#2a4a6e] overflow-hidden">
-                <table className="w-full text-sm">
-                  <thead className="border-b border-[#2a4a6e]">
-                    <tr className="text-xs text-gray-400 uppercase tracking-wide">
-                      <th className="text-left px-4 py-3 font-semibold">Titre</th>
-                      <th className="text-left px-4 py-3 font-semibold">Matière</th>
-                      <th className="text-left px-4 py-3 font-semibold">Type</th>
-                      <th className="text-left px-4 py-3 font-semibold">Niveau</th>
-                      <th className="text-right px-4 py-3 font-semibold">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-[#1e3a5f]">
-                    {resourcesList.map((r) => (
-                      <tr key={r.id} className="hover:bg-[#0d1f38] transition align-top">
-                        <td className="px-4 py-3 text-gray-300 max-w-xs">
-                          <button
-                            onClick={() => window.open(r.fileUrl || r.externalUrl || '#', '_blank')}
-                            className="text-[#c9951a] hover:underline font-semibold text-left"
-                          >
-                            {r.title}
-                          </button>
-                        </td>
-                        <td className="px-4 py-3 text-gray-300">{r.subject.name}</td>
-                        <td className="px-4 py-3 text-gray-400 text-xs">{RESOURCE_TYPE_LABELS[r.type]}</td>
-                        <td className="px-4 py-3 text-gray-400 text-xs">{r.level}</td>
-                        <td className="px-4 py-3">
-                          <div className="flex justify-end">
-                            <button
-                              disabled={deletingResourceId === r.id}
-                              onClick={() => handleDeleteResource(r.id)}
-                              className="px-3 py-1.5 text-xs font-semibold bg-red-900/40 hover:bg-red-900/70 disabled:opacity-50 text-red-300 rounded-lg transition"
-                            >
-                              Supprimer
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-        )}
+        {tab === 'resources' && <LibraryManager canEdit />}
 
         {tab === 'contracts' && (
           <div className="space-y-6">

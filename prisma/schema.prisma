@@ -76,13 +76,15 @@ model Instructor {
 
 // 6. Table des Disciplines (Maths, Physique...)
 model Subject {
-  id   String @id @default(uuid())
-  name String @unique
-  slug String @unique
+  id    String  @id @default(uuid())
+  name  String  @unique
+  slug  String  @unique
+  color String? // Couleur des tranches de la matière sur l'étagère de la bibliothèque (hex, ex. #8FB3AB)
 
   instructors InstructorSubject[]
   resources   Resource[]
   contracts   Contract[]
+  chapters    Chapter[]
 }
 
 // 7. Table de liaison explicite Many-to-Many
@@ -164,18 +166,45 @@ enum ResourceType {
 
 // 15. Bibliothèque de contenus éducatifs (documents, vidéos, exercices, liens)
 model Resource {
-  id          String        @id @default(uuid())
-  title       String
-  description String?       @db.Text
-  type        ResourceType
-  subjectId   String
-  level       AcademicLevel @default(ALL)
-  fileUrl     String? // DOCUMENT / EXERCICE : fichier hébergé sur R2
-  externalUrl String? // VIDEO / LIEN : URL externe (YouTube, Vimeo, etc.)
-  createdAt   DateTime      @default(now())
+  id            String        @id @default(uuid())
+  title         String
+  slug          String?       @unique // URL publique /bibliotheque/<slug> ; null pour les ressources créées avant la v2 (on retombe alors sur l'id)
+  description   String?       @db.Text
+  type          ResourceType
+  subjectId     String
+  chapterId     String? // Classeur (chapitre) auquel appartient la ressource ; optionnel
+  position      Int           @default(0) // Ordre d'affichage des onglets dans le classeur
+  level         AcademicLevel @default(ALL)
+  fileUrl       String? // DOCUMENT / EXERCICE : fichier hébergé sur R2
+  externalUrl   String? // VIDEO / LIEN : URL externe (YouTube, Vimeo, etc.)
+  refNumber     Int           @unique @default(autoincrement()) // Sert à construire le code de référence affiché (ex. MATH-3E-07-C)
+  viewCount     Int           @default(0)
+  downloadCount Int           @default(0)
+  createdAt     DateTime      @default(now())
 
-  subject Subject @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  subject Subject  @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  chapter Chapter? @relation(fields: [chapterId], references: [id], onDelete: SetNull)
 
+  @@index([subjectId])
+  @@index([chapterId])
+}
+
+// 15bis. Chapitres de la bibliothèque : chaque chapitre est un "classeur" qui regroupe
+// les ressources d'une matière pour un niveau/une classe (cours, exercices, vidéos, liens).
+model Chapter {
+  id        String        @id @default(uuid())
+  title     String
+  slug      String
+  subjectId String
+  level     AcademicLevel
+  classe    String? // Classe précise, texte libre (ex. "3e", "Tle D", "CM2")
+  order     Int           @default(0) // Ordre d'affichage dans la matière
+  createdAt DateTime      @default(now())
+
+  subject   Subject    @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  resources Resource[]
+
+  @@unique([subjectId, slug])
   @@index([subjectId])
 }
 

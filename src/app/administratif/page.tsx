@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import LibraryManager from '@/components/admin/LibraryManager';
 
 interface MatchRequest {
   id: string;
@@ -23,16 +24,6 @@ interface Instructor {
   city: string | null;
   commune: string | null;
   subjects: InstructorSubject[];
-}
-
-interface Resource {
-  id: string;
-  title: string;
-  type: 'DOCUMENT' | 'VIDEO' | 'EXERCICE' | 'LIEN';
-  level: string;
-  fileUrl: string | null;
-  externalUrl: string | null;
-  subject: Subject;
 }
 
 type Tab = 'requests' | 'instructors' | 'resources';
@@ -57,12 +48,6 @@ const STATUS_LABELS: Record<string, string> = {
   APPROVED: 'Approuvé',
   SUSPENDED: 'Suspendu',
 };
-const RESOURCE_TYPE_LABELS: Record<string, string> = {
-  DOCUMENT: 'Document',
-  VIDEO: 'Vidéo',
-  EXERCICE: 'Exercice',
-  LIEN: 'Lien',
-};
 
 export default function AdministratifPage() {
   const router = useRouter();
@@ -76,8 +61,6 @@ export default function AdministratifPage() {
   const [instructors, setInstructors] = useState<Instructor[]>([]);
   const [instructorsLoading, setInstructorsLoading] = useState(true);
 
-  const [resourcesList, setResourcesList] = useState<Resource[]>([]);
-  const [resourcesLoading, setResourcesLoading] = useState(true);
 
   const [showAccountPanel, setShowAccountPanel] = useState(false);
   const [accCurrentPassword, setAccCurrentPassword] = useState('');
@@ -112,23 +95,9 @@ export default function AdministratifPage() {
     }
   };
 
-  const fetchResources = async () => {
-    setResourcesLoading(true);
-    try {
-      const res = await fetch('/api/bleSseD/resources');
-      if (!res.ok) throw new Error();
-      setResourcesList(await res.json());
-    } catch {
-      setErrorMsg('Impossible de charger la bibliothèque.');
-    } finally {
-      setResourcesLoading(false);
-    }
-  };
-
   useEffect(() => {
     fetchRequests();
     fetchInstructors();
-    fetchResources();
   }, []);
 
   const updateRequestStatus = async (id: string, newStatus: string) => {
@@ -413,47 +382,7 @@ export default function AdministratifPage() {
           )
         )}
 
-        {tab === 'resources' && (
-          resourcesLoading ? (
-            <div className="flex justify-center py-20">
-              <div className="animate-spin rounded-full h-8 w-8 border-4 border-[#c9951a] border-t-transparent"></div>
-            </div>
-          ) : resourcesList.length === 0 ? (
-            <div className="text-center py-16 bg-[#112240] rounded-2xl border border-[#2a4a6e]">
-              <p className="text-gray-500">Aucune ressource.</p>
-            </div>
-          ) : (
-            <div className="bg-[#112240] rounded-2xl border border-[#2a4a6e] overflow-hidden">
-              <table className="w-full text-sm">
-                <thead className="border-b border-[#2a4a6e]">
-                  <tr className="text-xs text-gray-400 uppercase tracking-wide">
-                    <th className="text-left px-4 py-3 font-semibold">Titre</th>
-                    <th className="text-left px-4 py-3 font-semibold">Matière</th>
-                    <th className="text-left px-4 py-3 font-semibold">Type</th>
-                    <th className="text-left px-4 py-3 font-semibold">Niveau</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[#1e3a5f]">
-                  {resourcesList.map((r) => (
-                    <tr key={r.id} className="hover:bg-[#0d1f38] transition">
-                      <td className="px-4 py-3">
-                        <button
-                          onClick={() => window.open(r.fileUrl || r.externalUrl || '#', '_blank')}
-                          className="text-[#c9951a] hover:underline text-left font-semibold"
-                        >
-                          {r.title}
-                        </button>
-                      </td>
-                      <td className="px-4 py-3 text-gray-300">{r.subject.name}</td>
-                      <td className="px-4 py-3 text-gray-400 text-xs">{RESOURCE_TYPE_LABELS[r.type]}</td>
-                      <td className="px-4 py-3 text-gray-400 text-xs">{r.level}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )
-        )}
+        {tab === 'resources' && <LibraryManager canEdit={false} />}
       </main>
     </div>
   );

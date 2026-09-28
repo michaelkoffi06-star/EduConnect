@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma';
 import { objectExists, resourceKey, extFromMime, BUCKET_PHOTOS, photoPublicUrl } from '@/lib/r2';
 import type { ResourceType, AcademicLevel } from '@prisma/client';
 import { requireRole } from '@/lib/admin-permissions';
+import { publicResourceSelect, toPublicResource, resourceSlug } from '@/lib/library';
 
 // GET /api/bleSseD/resources — protégé par le middleware (voir §7bis)
 export async function GET(request: NextRequest) {
@@ -11,10 +12,10 @@ export async function GET(request: NextRequest) {
   if (denied) return denied;
   try {
     const resources = await prisma.resource.findMany({
-      include: { subject: true },
+      select: publicResourceSelect,
       orderBy: { createdAt: 'desc' },
     });
-    return NextResponse.json(resources, { status: 200 });
+    return NextResponse.json(resources.map(toPublicResource), { status: 200 });
   } catch (error: any) {
     console.error('Erreur API Admin Resources (GET):', error);
     return NextResponse.json({ error: 'Erreur serveur', details: error.message }, { status: 500 });
@@ -27,10 +28,20 @@ export async function POST(req: NextRequest) {
   if (denied) return denied;
   try {
     const body = await req.json();
-    const { resourceId, title, description, type, subjectId, level, contentType, externalUrl } = body;
+    const { resourceId, title, description, type, subjectId, level, contentType, externalUrl, chapterId, position } = body;
 
     if (!title || !type || !subjectId) {
       return NextResponse.json({ error: 'Titre, type et matière sont obligatoires.' }, { status: 400 });
+    }
+
+    // Un chapitre (classeur) doit appartenir à la même matière que la ressource
+    let chapterLevel: AcademicLevel | undefined;
+    if (chapterId) {
+      const chapter = await prisma.chapter.findUnique({ where: { id: chapterId } });
+      if (!chapter || chapter.subjectId !== subjectId) {
+        return NextResponse.json({ error: "Ce chapitre n'appartient pas à la matière choisie." }, { status: 400 });
+      }
+      chapterLevel = chapter.level;
     }
 
     const needsFile = type === 'DOCUMENT' || type === 'EXERCICE';
@@ -54,21 +65,26 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'URL requise pour ce type de ressource.' }, { status: 400 });
     }
 
+    const id = resourceId || crypto.randomUUID();
+
     const resource = await prisma.resource.create({
       data: {
-        id: resourceId || undefined,
+        id,
         title,
+        slug: resourceSlug(title, id),
         description: description || null,
         type: type as ResourceType,
         subjectId,
-        level: (level || 'ALL') as AcademicLevel,
+        chapterId: chapterId || null,
+        position: Number.isFinite(Number(position)) ? Number(position) : 0,
+        level: (level || chapterLevel || 'ALL') as AcademicLevel,
         fileUrl: fileUrl || null,
         externalUrl: needsUrl ? externalUrl.trim() : null,
       },
-      include: { subject: true },
+      select: publicResourceSelect,
     });
 
-    return NextResponse.json(resource, { status: 201 });
+    return NextResponse.json(toPublicResource(resource), { status: 201 });
   } catch (error: any) {
     console.error('Erreur API Admin Resources (POST):', error);
     return NextResponse.json({ error: 'Erreur serveur', details: error.message }, { status: 500 });

@@ -85,6 +85,24 @@ export async function getPresignedUploadUrl(
   return getSignedUrl(r2Client, command, { expiresIn });
 }
 
+// URL de téléchargement temporaire qui force l'enregistrement du fichier (Content-Disposition:
+// attachment) au lieu de l'ouvrir dans le navigateur — l'attribut HTML `download` est ignoré
+// pour un fichier servi depuis un autre domaine (R2), d'où ce passage par une URL signée.
+export async function getPresignedDownloadUrl(
+  bucket: string,
+  key: string,
+  filename: string,
+  expiresIn = 300
+) {
+  const ascii = filename.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^\w.-]+/g, '_');
+  const command = new GetObjectCommand({
+    Bucket: bucket,
+    Key: key,
+    ResponseContentDisposition: `attachment; filename="${ascii}"; filename*=UTF-8''${encodeURIComponent(filename)}`,
+  });
+  return getSignedUrl(r2Client, command, { expiresIn });
+}
+
 export async function objectExists(bucket: string, key: string): Promise<boolean> {
   try {
     await r2Client.send(new HeadObjectCommand({ Bucket: bucket, Key: key }));
