@@ -57,6 +57,14 @@ const WALL_STYLE = {
 } as React.CSSProperties;
 const SPECIAL_SHELF_SIZE = 10;
 
+// Fond de l'étagère : photo (public/images/bibliotheque/fond-etagere.jpg) sous un voile clair
+// qui garde les tranches et les textes lisibles.
+const BG_IMAGE = "/images/bibliotheque/fond-etagere.jpg";
+const BG_VEIL = 0.5;
+
+// Halo clair autour des textes posés directement sur la photo
+const HALO = { textShadow: "0 1px 0 rgba(255,250,240,0.9), 0 0 14px rgba(255,250,240,0.95)" };
+
 function norm(s: string) {
   return s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 }
@@ -85,12 +93,12 @@ function Spine({ r }: { r: LibResource }) {
     >
       <span className="block w-3/5 h-px bg-current opacity-30" />
       <span
-        className="[writing-mode:vertical-rl] rotate-180 overflow-hidden whitespace-nowrap text-ellipsis font-[family-name:var(--font-biblio-serif)] text-[17px] font-semibold leading-none"
+        className="[writing-mode:vertical-rl] rotate-180 overflow-hidden whitespace-nowrap text-ellipsis font-[family-name:var(--font-biblio-serif)] text-[18px] font-bold leading-none"
         style={{ maxHeight: h - 56 }}
       >
         {r.title}
       </span>
-      <span className="font-[family-name:var(--font-biblio-mono)] text-[9px] tracking-wider">{TYPE_TAGS[r.type]}</span>
+      <span className="font-[family-name:var(--font-biblio-mono)] text-[10px] font-medium tracking-wider">{TYPE_TAGS[r.type]}</span>
     </Link>
   );
 }
@@ -98,9 +106,9 @@ function Spine({ r }: { r: LibResource }) {
 function ShelfRow({ shelf }: { shelf: Shelf }) {
   return (
     <section className={`mt-8 min-w-0 ${shelf.wide ? "lg:col-span-2" : ""}`}>
-      <div className="flex items-baseline gap-3 px-1">
-        <h2 className="text-xs font-semibold tracking-[0.16em] uppercase text-[#2E4636]">{shelf.label}</h2>
-        <span className="text-sm text-[#6B6152]">{plural(shelf.items.length, "ressource", "ressources")}</span>
+      <div className="inline-flex items-baseline gap-3 ml-1 px-3 py-1.5 rounded-md bg-[#FBF7EE]/90 shadow-sm">
+        <h2 className="text-[13px] font-bold tracking-[0.14em] uppercase text-[#1F3A2A]">{shelf.label}</h2>
+        <span className="text-sm font-medium text-[#3A3024]">{plural(shelf.items.length, "ressource", "ressources")}</span>
       </div>
       <div className="mt-3 flex items-end gap-1 overflow-x-auto px-3 pt-2 min-h-[232px] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {shelf.items.map((r) => (
@@ -121,26 +129,26 @@ function ShelfRow({ shelf }: { shelf: Shelf }) {
 function ShelfList({ shelf }: { shelf: Shelf }) {
   return (
     <section className={`mt-8 min-w-0 ${shelf.wide ? "lg:col-span-2" : ""}`}>
-      <div className="flex items-baseline gap-3 px-1 mb-2">
-        <h2 className="text-xs font-semibold tracking-[0.16em] uppercase text-[#2E4636]">{shelf.label}</h2>
-        <span className="text-sm text-[#6B6152]">{plural(shelf.items.length, "ressource", "ressources")}</span>
+      <div className="inline-flex items-baseline gap-3 ml-1 mb-2 px-3 py-1.5 rounded-md bg-[#FBF7EE]/90 shadow-sm">
+        <h2 className="text-[13px] font-bold tracking-[0.14em] uppercase text-[#1F3A2A]">{shelf.label}</h2>
+        <span className="text-sm font-medium text-[#3A3024]">{plural(shelf.items.length, "ressource", "ressources")}</span>
       </div>
-      <ul className="divide-y divide-[#E2D8C4] border-y border-[#E2D8C4]">
+      <ul className="divide-y divide-[#E2D8C4] rounded-lg bg-[#FBF7EE]/92 shadow-sm overflow-hidden">
         {shelf.items.map((r) => (
           <li key={r.id}>
             <Link
               href={`/bibliotheque/${r.urlKey}`}
-              className="flex items-center gap-3 px-1 py-3 min-h-[48px] hover:bg-[#EDE5D5] transition"
+              className="flex items-center gap-3 px-3 py-3 min-h-[48px] hover:bg-[#EDE5D5] transition"
             >
               <span className="w-2.5 h-8 rounded-sm shrink-0" style={{ background: r.subject.color }} aria-hidden="true" />
               <span className="min-w-0 flex-1">
                 <span className="block font-medium truncate">{r.title}</span>
-                <span className="block text-xs text-[#6B6152] truncate">
+                <span className="block text-xs text-[#4A4034] truncate">
                   {r.subject.name}
                   {r.chapter ? ` · ${r.chapter.title}` : ""} · {r.chapter?.classe || LEVEL_LABELS[r.level]}
                 </span>
               </span>
-              <span className="hidden sm:block font-[family-name:var(--font-biblio-mono)] text-[11px] text-[#6B6152]">{r.ref}</span>
+              <span className="hidden sm:block font-[family-name:var(--font-biblio-mono)] text-[11px] text-[#4A4034]">{r.ref}</span>
               <span className="font-[family-name:var(--font-biblio-mono)] text-[10px] tracking-wider text-[#2E4636] w-12 text-right">
                 {TYPE_TAGS[r.type]}
               </span>
@@ -185,21 +193,8 @@ export default function BibliothequeClient() {
   const [level, setLevel] = useState<Level | "">("");
   const [group, setGroup] = useState<Group>("matiere");
   const [view, setView] = useState<View>("etagere");
-  // Aperçu d'un fond photo, le temps de choisir : /bibliotheque?fond=2&voile=60
-  // (image public/images/bibliotheque/fonds/fond-2.jpg ; voile = opacité du filtre clair, en %).
-  // Sans paramètre, c'est le mur en lambris dessiné en CSS.
-  const [photoBg, setPhotoBg] = useState<{ src: string; veil: number } | null>(null);
-
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const n = Number(params.get("fond"));
-    if (!Number.isInteger(n) || n < 1 || n > 9) return;
-    const v = Number(params.get("voile"));
-    setPhotoBg({
-      src: `/images/bibliotheque/fonds/fond-${n}.jpg`,
-      veil: Number.isFinite(v) && params.has("voile") ? Math.min(95, Math.max(0, v)) / 100 : 0.55,
-    });
-  }, []);
+  // Si la photo de fond ne se charge pas, on retombe sur le mur en lambris CSS
+  const [bgFailed, setBgFailed] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -283,14 +278,23 @@ export default function BibliothequeClient() {
   return (
     <div
       className="relative isolate min-h-screen text-[#231E17] [--plank:88px] md:[--plank:132px]"
-      style={photoBg ? { background: "#E9DDC6" } : WALL_STYLE}
+      style={bgFailed ? WALL_STYLE : { background: "#E9DDC6" }}
     >
-      {photoBg && (
+      {!bgFailed && (
         // Couche fixe derrière la page : l'image ne s'étire pas sur toute la hauteur de la liste,
         // et next/image la redimensionne et la compresse selon l'écran (important sur mobile).
         <div className="fixed inset-0 -z-10" aria-hidden="true">
-          <Image src={photoBg.src} alt="" fill priority sizes="100vw" quality={70} className="object-cover" />
-          <div className="absolute inset-0" style={{ background: `rgba(244, 237, 223, ${photoBg.veil})` }} />
+          <Image
+            src={BG_IMAGE}
+            alt=""
+            fill
+            priority
+            sizes="100vw"
+            quality={70}
+            className="object-cover"
+            onError={() => setBgFailed(true)}
+          />
+          <div className="absolute inset-0" style={{ background: `rgba(244, 237, 223, ${BG_VEIL})` }} />
         </div>
       )}
       <SiteHeader />
@@ -298,13 +302,13 @@ export default function BibliothequeClient() {
       <main className="max-w-7xl mx-auto px-5 md:px-10 pt-8 md:pt-12 pb-20">
         <header className="flex flex-col md:flex-row md:items-end md:justify-between gap-5">
           <div className="flex flex-col gap-2">
-            <span className="font-[family-name:var(--font-biblio-mono)] text-[11px] tracking-[0.14em] uppercase text-[#6B6152]">
+            <span className="font-[family-name:var(--font-biblio-mono)] text-xs font-medium tracking-[0.14em] uppercase text-[#3A3024]" style={HALO}>
               EduConnect · Libre accès
             </span>
-            <h1 className="font-[family-name:var(--font-biblio-serif)] font-semibold text-5xl md:text-7xl leading-[0.95] tracking-tight">
+            <h1 className="font-[family-name:var(--font-biblio-serif)] font-bold text-5xl md:text-7xl leading-[0.95] tracking-tight text-[#1A140D]" style={HALO}>
               Bibliothèque
             </h1>
-            <p className="text-[15px] md:text-base text-[#6B6152]">{loading ? "Chargement des ressources…" : countLabel}</p>
+            <p className="text-[15px] md:text-base font-medium text-[#2E2619]" style={HALO}>{loading ? "Chargement des ressources…" : countLabel}</p>
           </div>
           <label className="flex items-center gap-2.5 h-12 w-full md:w-[400px] px-4 bg-[#FBF8F1] border border-[#D6CBB6] rounded-full text-[#6B6152] focus-within:border-[#231E17]">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
@@ -345,7 +349,7 @@ export default function BibliothequeClient() {
                 type="button"
                 aria-pressed={view === v}
                 onClick={() => setView(v)}
-                className={`h-9 px-4 rounded-full text-sm transition ${view === v ? "bg-[#FBF8F1] shadow-sm font-medium" : "text-[#6B6152]"}`}
+                className={`h-9 px-4 rounded-full text-sm transition ${view === v ? "bg-[#FBF8F1] shadow-sm font-medium" : "text-[#4A4034]"}`}
               >
                 {v === "etagere" ? "Étagère" : "Liste"}
               </button>
@@ -368,18 +372,18 @@ export default function BibliothequeClient() {
             ))}
           </div>
         ) : error ? (
-          <div className="mt-12 p-8 border border-dashed border-[#C9BCA3] rounded-2xl text-center">
+          <div className="mt-12 p-8 border border-dashed border-[#C9BCA3] rounded-2xl text-center bg-[#FBF7EE]/90">
             <p className="font-[family-name:var(--font-biblio-serif)] text-2xl font-semibold">La bibliothèque n’a pas pu se charger</p>
-            <p className="mt-2 text-[#6B6152]">Vérifie ta connexion puis recharge la page.</p>
+            <p className="mt-2 text-[#4A4034]">Vérifie ta connexion puis recharge la page.</p>
           </div>
         ) : shelves.length === 0 ? (
-          <div className="mt-12 p-8 border border-dashed border-[#C9BCA3] rounded-2xl text-center flex flex-col items-center gap-3">
+          <div className="mt-12 p-8 border border-dashed border-[#C9BCA3] rounded-2xl text-center flex flex-col items-center gap-3 bg-[#FBF7EE]/90">
             <p className="font-[family-name:var(--font-biblio-serif)] text-2xl font-semibold">
               {resources.length === 0 ? "Les premières ressources arrivent bientôt" : "Aucune ressource trouvée"}
             </p>
             {resources.length > 0 && (
               <>
-                <p className="text-[#6B6152]">Essaie un autre mot ou un autre niveau.</p>
+                <p className="text-[#4A4034]">Essaie un autre mot ou un autre niveau.</p>
                 <button
                   type="button"
                   onClick={() => {

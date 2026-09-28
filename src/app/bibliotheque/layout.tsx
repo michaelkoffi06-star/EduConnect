@@ -5,7 +5,7 @@ import { Cormorant_Garamond, IBM_Plex_Mono } from "next/font/google";
 const serif = Cormorant_Garamond({
   variable: "--font-biblio-serif",
   subsets: ["latin"],
-  weight: ["500", "600"],
+  weight: ["500", "600", "700"],
   style: ["normal", "italic"],
 });
 const mono = IBM_Plex_Mono({
