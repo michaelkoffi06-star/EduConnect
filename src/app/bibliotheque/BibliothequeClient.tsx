@@ -42,6 +42,18 @@ const LEVEL_FILTERS: { value: Level | ""; label: string }[] = [
 ];
 
 const NEW_WINDOW_DAYS = 45;
+
+// Mur de la bibliothèque : lambris de bois clair (lattes verticales, veinage discret et
+// halo de lumière en haut), dessiné en CSS pur — aucune image à charger, même sur mobile.
+const WALL_STYLE = {
+  background: [
+    "radial-gradient(ellipse 120% 70% at 50% 0%, rgba(255,251,242,0.65), rgba(255,251,242,0) 60%)",
+    "repeating-linear-gradient(90deg, rgba(96,72,40,0.13) 0 1px, rgba(255,255,255,0.22) 1px 2px, transparent 2px var(--plank))",
+    "repeating-linear-gradient(90deg, transparent 0 calc(var(--plank) * 0.37), rgba(96,72,40,0.035) calc(var(--plank) * 0.37) calc(var(--plank) * 0.62), transparent calc(var(--plank) * 0.62) var(--plank))",
+    "repeating-linear-gradient(0deg, rgba(96,72,40,0.03) 0 1px, transparent 1px 5px)",
+    "#E9DDC6",
+  ].join(", "),
+} as React.CSSProperties;
 const SPECIAL_SHELF_SIZE = 10;
 
 function norm(s: string) {
@@ -151,7 +163,7 @@ function Chip({
   tone?: "ink" | "green";
 }) {
   const on = tone === "ink" ? "bg-[#231E17] text-[#F4EFE4] border-[#231E17]" : "bg-[#2E4636] text-[#F4EFE4] border-[#2E4636]";
-  const off = tone === "ink" ? "bg-[#EAE2D2] text-[#231E17] border-[#D6CBB6]" : "bg-transparent text-[#231E17] border-[#C9BCA3]";
+  const off = tone === "ink" ? "bg-[#F4EDDF] text-[#231E17] border-[#CDBFA5]" : "bg-[#F4EDDF]/60 text-[#231E17] border-[#C2B292]";
   return (
     <button
       type="button"
@@ -253,7 +265,7 @@ export default function BibliothequeClient() {
     : `${plural(resources.length, "ressource", "ressources")} en libre accès — cours, exercices, vidéos et liens`;
 
   return (
-    <div className="min-h-screen bg-[#F4EFE4] text-[#231E17]">
+    <div className="min-h-screen text-[#231E17] [--plank:88px] md:[--plank:132px]" style={WALL_STYLE}>
       <SiteHeader />
 
       <main className="max-w-7xl mx-auto px-5 md:px-10 pt-8 md:pt-12 pb-20">
@@ -299,7 +311,7 @@ export default function BibliothequeClient() {
               </Chip>
             ))}
           </div>
-          <div className="lg:ml-auto flex gap-1 p-1 rounded-full bg-[#EAE2D2] border border-[#D6CBB6] self-start">
+          <div className="lg:ml-auto flex gap-1 p-1 rounded-full bg-[#F4EDDF] border border-[#CDBFA5] self-start">
             {(["etagere", "liste"] as View[]).map((v) => (
               <button
                 key={v}
