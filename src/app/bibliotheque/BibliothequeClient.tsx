@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import SiteHeader from "@/components/SiteHeader";
 import {
   LEVEL_LABELS,
@@ -184,6 +185,21 @@ export default function BibliothequeClient() {
   const [level, setLevel] = useState<Level | "">("");
   const [group, setGroup] = useState<Group>("matiere");
   const [view, setView] = useState<View>("etagere");
+  // Aperçu d'un fond photo, le temps de choisir : /bibliotheque?fond=2&voile=60
+  // (image public/images/bibliotheque/fonds/fond-2.jpg ; voile = opacité du filtre clair, en %).
+  // Sans paramètre, c'est le mur en lambris dessiné en CSS.
+  const [photoBg, setPhotoBg] = useState<{ src: string; veil: number } | null>(null);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const n = Number(params.get("fond"));
+    if (!Number.isInteger(n) || n < 1 || n > 9) return;
+    const v = Number(params.get("voile"));
+    setPhotoBg({
+      src: `/images/bibliotheque/fonds/fond-${n}.jpg`,
+      veil: Number.isFinite(v) && params.has("voile") ? Math.min(95, Math.max(0, v)) / 100 : 0.55,
+    });
+  }, []);
 
   useEffect(() => {
     (async () => {
@@ -265,7 +281,18 @@ export default function BibliothequeClient() {
     : `${plural(resources.length, "ressource", "ressources")} en libre accès — cours, exercices, vidéos et liens`;
 
   return (
-    <div className="min-h-screen text-[#231E17] [--plank:88px] md:[--plank:132px]" style={WALL_STYLE}>
+    <div
+      className="relative isolate min-h-screen text-[#231E17] [--plank:88px] md:[--plank:132px]"
+      style={photoBg ? { background: "#E9DDC6" } : WALL_STYLE}
+    >
+      {photoBg && (
+        // Couche fixe derrière la page : l'image ne s'étire pas sur toute la hauteur de la liste,
+        // et next/image la redimensionne et la compresse selon l'écran (important sur mobile).
+        <div className="fixed inset-0 -z-10" aria-hidden="true">
+          <Image src={photoBg.src} alt="" fill priority sizes="100vw" quality={70} className="object-cover" />
+          <div className="absolute inset-0" style={{ background: `rgba(244, 237, 223, ${photoBg.veil})` }} />
+        </div>
+      )}
       <SiteHeader />
 
       <main className="max-w-7xl mx-auto px-5 md:px-10 pt-8 md:pt-12 pb-20">
