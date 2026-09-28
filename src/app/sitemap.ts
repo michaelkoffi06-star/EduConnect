@@ -1,8 +1,13 @@
 import type { MetadataRoute } from "next";
+import { prisma } from "@/lib/prisma";
 
 const SITE_URL = "https://educonnect-ci.org";
 
-export default function sitemap(): MetadataRoute.Sitemap {
+// Régénéré au plus une fois par heure : les nouvelles ressources de la bibliothèque
+// y apparaissent sans redéploiement.
+export const revalidate = 3600;
+
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const routes = [
     { path: "", priority: 1, changeFrequency: "daily" as const },
     { path: "/trouver-un-tuteur", priority: 0.9, changeFrequency: "daily" as const },
@@ -13,10 +18,31 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { path: "/confidentialite", priority: 0.3, changeFrequency: "yearly" as const },
   ];
 
-  return routes.map((route) => ({
+  const staticEntries: MetadataRoute.Sitemap = routes.map((route) => ({
     url: `${SITE_URL}${route.path}`,
     lastModified: new Date(),
     changeFrequency: route.changeFrequency,
     priority: route.priority,
   }));
+
+  // Une entrée par ressource de la bibliothèque (page /bibliotheque/<slug>).
+  // Si la base est injoignable (build sans accès réseau, par ex.), on garde les pages fixes.
+  try {
+    const resources = await prisma.resource.findMany({
+      select: { id: true, slug: true, createdAt: true },
+      orderBy: { createdAt: "desc" },
+    });
+    return [
+      ...staticEntries,
+      ...resources.map((r) => ({
+        url: `${SITE_URL}/bibliotheque/${r.slug || r.id}`,
+        lastModified: r.createdAt,
+        changeFrequency: "monthly" as const,
+        priority: 0.6,
+      })),
+    ];
+  } catch (error) {
+    console.error("Sitemap : ressources de la bibliothèque indisponibles", error);
+    return staticEntries;
+  }
 }

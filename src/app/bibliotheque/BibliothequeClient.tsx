@@ -1,223 +1,368 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import SiteHeader from "@/components/SiteHeader";
-import ScrollReveal from "@/components/ScrollReveal";
+import {
+  LEVEL_LABELS,
+  TYPE_LABELS,
+  TYPE_TAGS,
+  hashString,
+  readableInk,
+  type LibResource,
+  type Level,
+  type ResType,
+} from "@/components/bibliotheque/shared";
 
-interface Subject {
-  id: string;
-  name: string;
-  slug: string;
+// Accueil de la bibliothèque : une étagère par matière (ou par type / niveau), où chaque
+// ressource est une tranche de livre. Un clic ouvre la ressource dans son classeur
+// (/bibliotheque/[key]). Voir §7quaterdecies de la doc.
+
+type Group = "matiere" | "type" | "niveau";
+type View = "etagere" | "liste";
+
+interface Shelf {
+  key: string;
+  label: string;
+  items: LibResource[];
+  wide?: boolean;
 }
 
-interface Resource {
-  id: string;
-  title: string;
-  description: string | null;
-  type: "DOCUMENT" | "VIDEO" | "EXERCICE" | "LIEN";
-  level: string;
-  fileUrl: string | null;
-  externalUrl: string | null;
-  createdAt: string;
-  subject: Subject;
+const GROUPS: { value: Group; label: string }[] = [
+  { value: "matiere", label: "Par matière" },
+  { value: "type", label: "Par type" },
+  { value: "niveau", label: "Par niveau" },
+];
+
+const LEVEL_FILTERS: { value: Level | ""; label: string }[] = [
+  { value: "", label: "Tous" },
+  { value: "PRIMAIRE", label: "Primaire" },
+  { value: "COLLEGE", label: "Collège" },
+  { value: "LYCEE", label: "Lycée" },
+];
+
+const NEW_WINDOW_DAYS = 45;
+const SPECIAL_SHELF_SIZE = 10;
+
+function norm(s: string) {
+  return s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 }
 
-const TYPE_LABELS: Record<string, string> = {
-  DOCUMENT: "Document",
-  VIDEO: "Vidéo",
-  EXERCICE: "Exercice",
-  LIEN: "Lien",
-};
+function plural(n: number, one: string, many: string) {
+  return `${n} ${n > 1 ? many : one}`;
+}
 
-const TYPE_ICONS: Record<string, string> = {
-  DOCUMENT: "📄",
-  VIDEO: "🎬",
-  EXERCICE: "📝",
-  LIEN: "🔗",
-};
+function Spine({ r }: { r: LibResource }) {
+  const h = 172 + (hashString(r.id) % 6) * 9;
+  const w = 44 + (r.title.length > 30 ? 8 : r.title.length > 16 ? 4 : 0);
+  const ink = readableInk(r.subject.color);
+  return (
+    <Link
+      href={`/bibliotheque/${r.urlKey}`}
+      title={r.title}
+      aria-label={`${r.title} — ${TYPE_LABELS[r.type]}, ${r.subject.name}`}
+      className="shrink-0 flex flex-col items-center justify-between rounded-t-[3px] rounded-b-[1px] pt-3 pb-2 transition-transform duration-200 hover:-translate-y-1.5 focus-visible:-translate-y-1.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2F55D2]"
+      style={{
+        width: w,
+        height: h,
+        background: r.subject.color,
+        color: ink,
+        boxShadow: "inset -3px 0 0 rgba(0,0,0,0.08), inset 2px 0 0 rgba(255,255,255,0.28)",
+      }}
+    >
+      <span className="block w-3/5 h-px bg-current opacity-30" />
+      <span
+        className="[writing-mode:vertical-rl] rotate-180 overflow-hidden whitespace-nowrap text-ellipsis font-[family-name:var(--font-biblio-serif)] text-[17px] font-semibold leading-none"
+        style={{ maxHeight: h - 56 }}
+      >
+        {r.title}
+      </span>
+      <span className="font-[family-name:var(--font-biblio-mono)] text-[9px] tracking-wider">{TYPE_TAGS[r.type]}</span>
+    </Link>
+  );
+}
 
-const LEVEL_LABELS: Record<string, string> = {
-  PRIMAIRE: "Primaire",
-  COLLEGE: "Collège",
-  LYCEE: "Lycée",
-  ALL: "Tous niveaux",
-};
+function ShelfRow({ shelf }: { shelf: Shelf }) {
+  return (
+    <section className={`mt-8 min-w-0 ${shelf.wide ? "lg:col-span-2" : ""}`}>
+      <div className="flex items-baseline gap-3 px-1">
+        <h2 className="text-xs font-semibold tracking-[0.16em] uppercase text-[#2E4636]">{shelf.label}</h2>
+        <span className="text-sm text-[#6B6152]">{plural(shelf.items.length, "ressource", "ressources")}</span>
+      </div>
+      <div className="mt-3 flex items-end gap-1 overflow-x-auto px-3 pt-2 min-h-[232px] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        {shelf.items.map((r) => (
+          <Spine key={r.id} r={r} />
+        ))}
+      </div>
+      <div
+        className="h-3 rounded-[3px]"
+        style={{
+          background: "linear-gradient(#BFA87D, #8C744C)",
+          boxShadow: "0 9px 14px -7px rgba(60,40,15,0.5)",
+        }}
+      />
+    </section>
+  );
+}
 
-export default function Bibliotheque() {
-  const [resources, setResources] = useState<Resource[]>([]);
-  const [selectedSubject, setSelectedSubject] = useState<string>("");
-  const [selectedLevel, setSelectedLevel] = useState<string>("");
-  const [loading, setLoading] = useState<boolean>(true);
+function ShelfList({ shelf }: { shelf: Shelf }) {
+  return (
+    <section className={`mt-8 min-w-0 ${shelf.wide ? "lg:col-span-2" : ""}`}>
+      <div className="flex items-baseline gap-3 px-1 mb-2">
+        <h2 className="text-xs font-semibold tracking-[0.16em] uppercase text-[#2E4636]">{shelf.label}</h2>
+        <span className="text-sm text-[#6B6152]">{plural(shelf.items.length, "ressource", "ressources")}</span>
+      </div>
+      <ul className="divide-y divide-[#E2D8C4] border-y border-[#E2D8C4]">
+        {shelf.items.map((r) => (
+          <li key={r.id}>
+            <Link
+              href={`/bibliotheque/${r.urlKey}`}
+              className="flex items-center gap-3 px-1 py-3 min-h-[48px] hover:bg-[#EDE5D5] transition"
+            >
+              <span className="w-2.5 h-8 rounded-sm shrink-0" style={{ background: r.subject.color }} aria-hidden="true" />
+              <span className="min-w-0 flex-1">
+                <span className="block font-medium truncate">{r.title}</span>
+                <span className="block text-xs text-[#6B6152] truncate">
+                  {r.subject.name}
+                  {r.chapter ? ` · ${r.chapter.title}` : ""} · {r.chapter?.classe || LEVEL_LABELS[r.level]}
+                </span>
+              </span>
+              <span className="hidden sm:block font-[family-name:var(--font-biblio-mono)] text-[11px] text-[#6B6152]">{r.ref}</span>
+              <span className="font-[family-name:var(--font-biblio-mono)] text-[10px] tracking-wider text-[#2E4636] w-12 text-right">
+                {TYPE_TAGS[r.type]}
+              </span>
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
 
-  const levelOptions = [
-    { name: "Tous niveaux", value: "" },
-    { name: "Primaire", value: "PRIMAIRE" },
-    { name: "Collège", value: "COLLEGE" },
-    { name: "Lycée", value: "LYCEE" },
-  ];
+function Chip({
+  pressed,
+  onClick,
+  children,
+  tone = "ink",
+}: {
+  pressed: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+  tone?: "ink" | "green";
+}) {
+  const on = tone === "ink" ? "bg-[#231E17] text-[#F4EFE4] border-[#231E17]" : "bg-[#2E4636] text-[#F4EFE4] border-[#2E4636]";
+  const off = tone === "ink" ? "bg-[#EAE2D2] text-[#231E17] border-[#D6CBB6]" : "bg-transparent text-[#231E17] border-[#C9BCA3]";
+  return (
+    <button
+      type="button"
+      aria-pressed={pressed}
+      onClick={onClick}
+      className={`shrink-0 h-11 px-4 rounded-full border text-[15px] transition ${pressed ? on : off}`}
+    >
+      {children}
+    </button>
+  );
+}
 
-  const disciplines = [
-    { name: "Tous les contenus", slug: "" },
-    { name: "Mathematiques", slug: "maths" },
-    { name: "Physique-Chimie", slug: "physique-chimie" },
-    { name: "SVT", slug: "svt" },
-    { name: "Anglais", slug: "anglais" },
-    { name: "Francais", slug: "francais" },
-    { name: "Histoire-Geographie", slug: "histoire-geo" },
-    { name: "Philosophie", slug: "philosophie" },
-    { name: "Economie", slug: "economie" },
-    { name: "Allemand", slug: "allemand" },
-    { name: "Espagnol", slug: "espagnol" },
-    { name: "Portugais", slug: "portugais" },
-    { name: "Informatique", slug: "informatique" },
-  ];
+export default function BibliothequeClient() {
+  const [resources, setResources] = useState<LibResource[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+  const [q, setQ] = useState("");
+  const [level, setLevel] = useState<Level | "">("");
+  const [group, setGroup] = useState<Group>("matiere");
+  const [view, setView] = useState<View>("etagere");
 
   useEffect(() => {
-    async function fetchResources() {
-      setLoading(true);
+    (async () => {
       try {
-        const params = new URLSearchParams();
-        if (selectedSubject) params.set("subject", selectedSubject);
-        if (selectedLevel) params.set("level", selectedLevel);
-        const url = params.toString() ? `/api/resources?${params.toString()}` : "/api/resources";
-        const res = await fetch(url);
-        if (res.ok) setResources(await res.json());
-      } catch (error) {
-        console.error("Erreur:", error);
+        const res = await fetch("/api/resources");
+        if (!res.ok) throw new Error();
+        setResources(await res.json());
+      } catch {
+        setError(true);
       } finally {
         setLoading(false);
       }
-    }
-    fetchResources();
-  }, [selectedSubject, selectedLevel]);
+    })();
+  }, []);
 
-  const openResource = (r: Resource) => {
-    const url = r.fileUrl || r.externalUrl;
-    if (url) window.open(url, "_blank", "noopener,noreferrer");
-  };
+  const filtered = useMemo(() => {
+    const qn = norm(q.trim());
+    return resources.filter((r) => {
+      if (level && r.level !== level && r.level !== "ALL") return false;
+      if (!qn) return true;
+      const hay = norm([r.title, r.description || "", r.subject.name, r.chapter?.title || "", r.chapter?.classe || ""].join(" "));
+      return hay.includes(qn);
+    });
+  }, [resources, q, level]);
+
+  const shelves = useMemo<Shelf[]>(() => {
+    const out: Shelf[] = [];
+    const searching = q.trim().length > 0;
+
+    if (group === "matiere") {
+      if (!searching) {
+        const cutoff = Date.now() - NEW_WINDOW_DAYS * 24 * 3600 * 1000;
+        const fresh = filtered
+          .filter((r) => new Date(r.createdAt).getTime() >= cutoff)
+          .slice(0, SPECIAL_SHELF_SIZE);
+        if (fresh.length) out.push({ key: "new", label: "Nouveautés", items: fresh, wide: true });
+
+        const popular = [...filtered]
+          .filter((r) => r.viewCount > 0)
+          .sort((a, b) => b.viewCount - a.viewCount)
+          .slice(0, SPECIAL_SHELF_SIZE);
+        if (popular.length >= 3) out.push({ key: "popular", label: "Les plus consultées", items: popular, wide: true });
+      }
+      const bySubject = new Map<string, LibResource[]>();
+      for (const r of filtered) {
+        const list = bySubject.get(r.subject.id) || [];
+        list.push(r);
+        bySubject.set(r.subject.id, list);
+      }
+      [...bySubject.values()]
+        .sort((a, b) => a[0].subject.name.localeCompare(b[0].subject.name, "fr"))
+        .forEach((items) => {
+          // Dans une matière : par chapitre (ordre défini par la pédagogie), puis position dans le classeur
+          items.sort(
+            (a, b) =>
+              (a.chapter?.order ?? 9999) - (b.chapter?.order ?? 9999) ||
+              (a.chapter?.title || "").localeCompare(b.chapter?.title || "", "fr") ||
+              a.position - b.position
+          );
+          out.push({ key: items[0].subject.id, label: items[0].subject.name, items });
+        });
+    } else if (group === "type") {
+      (["DOCUMENT", "EXERCICE", "VIDEO", "LIEN"] as ResType[]).forEach((t) => {
+        const items = filtered.filter((r) => r.type === t);
+        if (items.length) out.push({ key: t, label: t === "VIDEO" ? "Vidéos" : t === "LIEN" ? "Liens" : TYPE_LABELS[t], items });
+      });
+    } else {
+      (["PRIMAIRE", "COLLEGE", "LYCEE", "ALL"] as Level[]).forEach((lv) => {
+        const items = filtered.filter((r) => r.level === lv);
+        if (items.length) out.push({ key: lv, label: LEVEL_LABELS[lv], items });
+      });
+    }
+    return out;
+  }, [filtered, group, q]);
+
+  const isFiltered = q.trim().length > 0 || level !== "";
+  const countLabel = isFiltered
+    ? `${plural(filtered.length, "ressource correspond", "ressources correspondent")}`
+    : `${plural(resources.length, "ressource", "ressources")} en libre accès — cours, exercices, vidéos et liens`;
 
   return (
-    <div className="min-h-screen bg-white text-[#0d1b3e] font-sans">
-
+    <div className="min-h-screen bg-[#F4EFE4] text-[#231E17]">
       <SiteHeader />
 
-      <section className="relative border-b border-[#eee6d3] py-16 px-4 overflow-hidden">
-        <div
-          className="absolute inset-0 bg-cover bg-center"
-          style={{ backgroundImage: "url('/images/bibliotheque/hero.jpeg')" }}
-        />
-        <div className="absolute inset-0 bg-[#faf8f2]/45" />
-        <ScrollReveal className="relative z-10 max-w-4xl mx-auto text-center">
-          <div className="flex items-center justify-center gap-2 mb-5">
-            <span className="w-8 h-px bg-[#c9951a]" />
-            <span className="text-xs font-medium text-[#8a6510] tracking-wide">
-              Ressources pédagogiques
+      <main className="max-w-7xl mx-auto px-5 md:px-10 pt-8 md:pt-12 pb-20">
+        <header className="flex flex-col md:flex-row md:items-end md:justify-between gap-5">
+          <div className="flex flex-col gap-2">
+            <span className="font-[family-name:var(--font-biblio-mono)] text-[11px] tracking-[0.14em] uppercase text-[#6B6152]">
+              EduConnect · Libre accès
             </span>
-            <span className="w-8 h-px bg-[#c9951a]" />
+            <h1 className="font-[family-name:var(--font-biblio-serif)] font-semibold text-5xl md:text-7xl leading-[0.95] tracking-tight">
+              Bibliothèque
+            </h1>
+            <p className="text-[15px] md:text-base text-[#6B6152]">{loading ? "Chargement des ressources…" : countLabel}</p>
           </div>
-          <h1 className="font-[family-name:var(--font-cinzel)] text-3xl md:text-5xl tracking-tight mb-4">
-            Bibliothèque EduConnect
-          </h1>
-          <p className="text-gray-600 max-w-2xl mx-auto leading-relaxed">
-            Documents, vidéos, exercices et liens utiles, classés par matière et par niveau.
-          </p>
-        </ScrollReveal>
-      </section>
+          <label className="flex items-center gap-2.5 h-12 w-full md:w-[400px] px-4 bg-[#FBF8F1] border border-[#D6CBB6] rounded-full text-[#6B6152] focus-within:border-[#231E17]">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+              <circle cx="11" cy="11" r="7" />
+              <path d="M20 20l-3.5-3.5" />
+            </svg>
+            <span className="sr-only">Rechercher une ressource</span>
+            <input
+              type="search"
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder="Pythagore, dissertation, cellule…"
+              className="flex-1 min-w-0 bg-transparent outline-none text-[15px] text-[#231E17] placeholder:text-[#7A705F]"
+            />
+          </label>
+        </header>
 
-      <div className="sticky top-[57px] z-40 bg-white/90 backdrop-blur-sm border-b border-[#eee6d3]">
-        <div className="max-w-7xl mx-auto px-4 py-4 space-y-3">
-          <div className="flex gap-2 overflow-x-auto">
-            {disciplines.map((dis) => (
-              <button
-                key={dis.slug === "" ? "all" : dis.slug}
-                onClick={() => setSelectedSubject(dis.slug)}
-                className={
-                  selectedSubject === dis.slug
-                    ? "px-4 py-2 rounded-full text-xs font-semibold whitespace-nowrap bg-[#0d1b3e] text-white transition"
-                    : "px-4 py-2 rounded-full text-xs font-semibold whitespace-nowrap bg-[#faf8f2] text-gray-600 border border-[#eee6d3] hover:border-[#c9951a]/60 hover:text-[#0d1b3e] transition"
-                }
-              >
-                {dis.name}
-              </button>
+        <div className="mt-6 flex flex-col lg:flex-row lg:items-center gap-2.5 lg:gap-3">
+          <div className="flex gap-2 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            {GROUPS.map((g) => (
+              <Chip key={g.value} pressed={group === g.value} onClick={() => setGroup(g.value)}>
+                {g.label}
+              </Chip>
             ))}
           </div>
-          <div className="flex gap-2 overflow-x-auto">
-            {levelOptions.map((lvl) => (
+          <span className="hidden lg:block w-px h-7 bg-[#D6CBB6]" />
+          <div className="flex gap-2 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            {LEVEL_FILTERS.map((l) => (
+              <Chip key={l.value || "all"} tone="green" pressed={level === l.value} onClick={() => setLevel(l.value)}>
+                {l.label}
+              </Chip>
+            ))}
+          </div>
+          <div className="lg:ml-auto flex gap-1 p-1 rounded-full bg-[#EAE2D2] border border-[#D6CBB6] self-start">
+            {(["etagere", "liste"] as View[]).map((v) => (
               <button
-                key={lvl.value === "" ? "all-levels" : lvl.value}
-                onClick={() => setSelectedLevel(lvl.value)}
-                className={
-                  selectedLevel === lvl.value
-                    ? "px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap border border-[#c9951a] bg-[#c9951a]/10 text-[#8a6510] transition"
-                    : "px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap border border-[#eee6d3] bg-white text-gray-500 hover:border-[#c9951a]/60 hover:text-[#0d1b3e] transition"
-                }
+                key={v}
+                type="button"
+                aria-pressed={view === v}
+                onClick={() => setView(v)}
+                className={`h-9 px-4 rounded-full text-sm transition ${view === v ? "bg-[#FBF8F1] shadow-sm font-medium" : "text-[#6B6152]"}`}
               >
-                {lvl.name}
+                {v === "etagere" ? "Étagère" : "Liste"}
               </button>
             ))}
           </div>
         </div>
-      </div>
 
-      <section
-        className="bg-repeat"
-        style={{ backgroundImage: "url('/images/bibliotheque/pattern.jpeg')" }}
-      >
-        <div className="max-w-7xl mx-auto px-4 py-10">
         {loading ? (
-          <div className="flex justify-center items-center py-20">
-            <div className="animate-spin rounded-full h-10 w-10 border-4 border-[#c9951a] border-t-transparent"></div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-16 animate-pulse" aria-hidden="true">
+            {[0, 1, 2, 3].map((i) => (
+              <div key={i} className="mt-10">
+                <div className="h-3 w-32 bg-[#E2D8C4] rounded mb-4" />
+                <div className="flex items-end gap-1 px-3 min-h-[200px]">
+                  {Array.from({ length: 7 }).map((_, j) => (
+                    <div key={j} className="w-11 bg-[#E2D8C4] rounded-t" style={{ height: 150 + ((i * 7 + j) % 5) * 10 }} />
+                  ))}
+                </div>
+                <div className="h-3 rounded bg-[#D6CBB6]" />
+              </div>
+            ))}
           </div>
-        ) : resources.length === 0 ? (
-          <div className="text-center py-16 bg-[#faf8f2] rounded-3xl border border-[#eee6d3]">
-            <p className="text-gray-500 text-lg">Aucune ressource dans cette catégorie pour le moment.</p>
+        ) : error ? (
+          <div className="mt-12 p-8 border border-dashed border-[#C9BCA3] rounded-2xl text-center">
+            <p className="font-[family-name:var(--font-biblio-serif)] text-2xl font-semibold">La bibliothèque n’a pas pu se charger</p>
+            <p className="mt-2 text-[#6B6152]">Vérifie ta connexion puis recharge la page.</p>
+          </div>
+        ) : shelves.length === 0 ? (
+          <div className="mt-12 p-8 border border-dashed border-[#C9BCA3] rounded-2xl text-center flex flex-col items-center gap-3">
+            <p className="font-[family-name:var(--font-biblio-serif)] text-2xl font-semibold">
+              {resources.length === 0 ? "Les premières ressources arrivent bientôt" : "Aucune ressource trouvée"}
+            </p>
+            {resources.length > 0 && (
+              <>
+                <p className="text-[#6B6152]">Essaie un autre mot ou un autre niveau.</p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setQ("");
+                    setLevel("");
+                    setGroup("matiere");
+                  }}
+                  className="h-11 px-5 rounded-full border border-[#231E17] text-[15px]"
+                >
+                  Tout afficher
+                </button>
+              </>
+            )}
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-start">
-            {resources.map((r, index) => (
-              <ScrollReveal key={r.id} delay={Math.min(index * 80, 400)}>
-                <div className="flex flex-col bg-white rounded-3xl border border-[#eee6d3] shadow-sm overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:border-[#c9951a]/50 p-5">
-                  <div className="flex items-center gap-2 mb-3">
-                    <span className="text-2xl">{TYPE_ICONS[r.type]}</span>
-                    <div>
-                      <span className="block text-xs font-semibold text-[#8a6510] uppercase tracking-wide">
-                        {TYPE_LABELS[r.type]}
-                      </span>
-                    </div>
-                  </div>
-
-                  <h3 className="font-[family-name:var(--font-cinzel)] text-base text-[#0d1b3e] mb-2">
-                    {r.title}
-                  </h3>
-
-                  {r.description && (
-                    <p className="text-gray-600 text-sm leading-relaxed mb-3 line-clamp-3">
-                      {r.description}
-                    </p>
-                  )}
-
-                  <div className="flex flex-wrap gap-1.5 mb-4">
-                    <span className="bg-[#c9951a]/12 text-[#8a6510] text-xs px-2.5 py-1 rounded-md font-semibold border border-[#c9951a]/30">
-                      {r.subject.name}
-                    </span>
-                    <span className="text-xs text-gray-500 bg-[#faf8f2] px-2 py-0.5 rounded-md border border-[#eee6d3]">
-                      {LEVEL_LABELS[r.level] || r.level}
-                    </span>
-                  </div>
-
-                  <button
-                    onClick={() => openResource(r)}
-                    className="mt-auto w-full bg-gradient-to-r from-[#c9951a] to-[#d4a820] hover:brightness-105 text-white font-bold py-2.5 rounded-lg text-sm transition"
-                  >
-                    {r.type === "DOCUMENT" || r.type === "EXERCICE" ? "Télécharger" : "Ouvrir"}
-                  </button>
-                </div>
-              </ScrollReveal>
-            ))}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-16">
+            {shelves.map((s) =>
+              view === "etagere" ? <ShelfRow key={s.key} shelf={s} /> : <ShelfList key={s.key} shelf={s} />
+            )}
           </div>
         )}
-        </div>
-      </section>
+      </main>
     </div>
   );
 }
