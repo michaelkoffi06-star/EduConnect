@@ -50,7 +50,7 @@ export default function CorrigesClient() {
     <div className="relative min-h-screen bg-[#E9DDC6] text-[#231E17]">
       {/* Même fond que l'étagère (photo Unsplash sous un voile clair), fixé pendant le défilement */}
       <div className="fixed inset-0 -z-0 pointer-events-none" aria-hidden="true">
-        <Image src="/images/bibliotheque/fond-etagere.jpg" alt="" fill priority sizes="100vw" quality={70} className="object-cover animate-ken-burns" />
+        <Image src="/images/bibliotheque/fond-etagere.jpg" alt="" fill priority sizes="100vw" quality={70} className="object-cover" />
         <div className="absolute inset-0 bg-gradient-to-b from-[#F4EDDF]/60 via-[#F4EDDF]/75 to-[#F4EDDF]/90" />
       </div>
       <div className="relative">

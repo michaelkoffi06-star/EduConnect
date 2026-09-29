@@ -47,7 +47,7 @@ export const SuccessBox = ({ children }: { children: React.ReactNode }) => <Box 
 
 // --- Décor ---
 
-// Photo plein cadre qui avance lentement, sous un voile (clair par défaut, bleu nuit si dark)
+// Photo plein cadre, immobile, sous un voile (clair par défaut, bleu nuit si dark)
 export function Backdrop({
   src,
   position = "center",
@@ -61,7 +61,7 @@ export function Backdrop({
 }) {
   return (
     <div className="absolute inset-0 overflow-hidden" aria-hidden="true">
-      <Image src={src} alt="" fill priority={priority} sizes="100vw" quality={70} className="object-cover animate-ken-burns" style={{ objectPosition: position }} />
+      <Image src={src} alt="" fill priority={priority} sizes="100vw" quality={70} className="object-cover" style={{ objectPosition: position }} />
       {dark ? (
         <div className="absolute inset-0 bg-gradient-to-br from-[#0d1b3e]/90 via-[#0d1b3e]/70 to-[#0d1b3e]/40" />
       ) : (
