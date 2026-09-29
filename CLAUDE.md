@@ -51,3 +51,7 @@ npx prisma db push               # applique le schéma sur la base locale
   celui du dernier commit (un ancien déploiement est déjà resté en production).
 - Bibliothèque v2 (étagère + classeur, lecture PDF via PDF.js depuis un CDN) : voir §7quaterdecies
   de la documentation.
+- Comptes du site (élèves, parents, instructeurs) : session **séparée** de l'admin (cookie `user_session`,
+  `src/lib/user-auth.ts`) ; toute route réservée commence par `getCurrentUser(request)`
+  (`src/lib/user-session.ts`), et `isApprovedInstructor()` pour le marché et la salle des profs.
+  Corrigés dans le bucket R2 **privé**. Voir §7quindecies.

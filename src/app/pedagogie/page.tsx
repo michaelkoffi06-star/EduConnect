@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import LibraryManager from '@/components/admin/LibraryManager';
+import ForumModeration from '@/components/admin/ForumModeration';
 
 interface Subject { id: string; name: string; }
 interface InstructorSubject { subject: Subject; }
@@ -35,7 +36,7 @@ interface Contract {
   entries: ContractEntry[];
 }
 
-type Tab = 'instructors' | 'resources' | 'contracts';
+type Tab = 'instructors' | 'resources' | 'contracts' | 'forum';
 type FilterOption = 'ALL' | 'PENDING' | 'APPROVED' | 'SUSPENDED';
 
 const STATUS_STYLES: Record<string, string> = {
@@ -346,6 +347,14 @@ export default function PedagogiePage() {
           >
             Contrats
           </button>
+          <button
+            onClick={() => setTab('forum')}
+            className={`px-4 py-2.5 text-sm font-semibold border-b-2 -mb-px transition ${
+              tab === 'forum' ? 'border-[#c9951a] text-[#c9951a]' : 'border-transparent text-gray-400 hover:text-white'
+            }`}
+          >
+            Forum
+          </button>
         </div>
 
         {errorMsg && (
@@ -464,6 +473,7 @@ export default function PedagogiePage() {
         )}
 
         {tab === 'resources' && <LibraryManager canEdit />}
+        {tab === 'forum' && <ForumModeration />}
 
         {tab === 'contracts' && (
           <div className="space-y-6">

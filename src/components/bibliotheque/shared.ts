@@ -23,6 +23,7 @@ export interface LibResource {
   createdAt: string;
   subject: { id: string; name: string; slug: string; color: string };
   chapter: { id: string; title: string; slug: string; level: Level; classe: string | null; order: number } | null;
+  correction: { id: string; fileExt: string } | null; // Corrigé réservé aux comptes connectés
 }
 
 export const TYPE_LABELS: Record<ResType, string> = {

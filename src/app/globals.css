@@ -42,6 +42,102 @@ body {
   animation: float 4s ease-in-out infinite;
 }
 
+/* --- Pages de comptes, forum, espace instructeur (voir §7quindecies) --- */
+
+/* Apparition « fondante » : flou → net + léger glissement, même esprit que PageTransition */
+@keyframes fadeBlurIn {
+  from { opacity: 0; filter: blur(10px); transform: translateY(14px); }
+  /* none (et non blur(0)) : ne laisse pas de filtre actif, qui bloquerait le backdrop-blur des cartes */
+  to { opacity: 1; filter: none; transform: none; }
+}
+.animate-fade-blur {
+  animation: fadeBlurIn 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Cascade : chaque enfant apparaît un peu après le précédent (style="--i: n" sur l'enfant) */
+.stagger > * {
+  animation: fadeBlurIn 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: calc(var(--i, 0) * 70ms);
+}
+
+/* Photo de fond qui avance très lentement (effet « Ken Burns ») */
+@keyframes kenBurns {
+  from { transform: scale(1.12) translate3d(0, 0, 0); }
+  to { transform: scale(1) translate3d(0, -1.5%, 0); }
+}
+.animate-ken-burns {
+  animation: kenBurns 22s ease-out both;
+}
+
+/* Halos de couleur qui dérivent doucement derrière les contenus */
+@keyframes drift {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  50% { transform: translate3d(4%, -6%, 0) scale(1.08); }
+}
+.animate-drift {
+  animation: drift 16s ease-in-out infinite;
+}
+
+/* Flottement vertical, sans rotation (cartes flottantes des pages de comptes et du forum).
+   L'animation « float » de l'accueil garde sa légère inclinaison. */
+@keyframes floatY {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+.animate-float-y {
+  animation: floatY 4.5s ease-in-out infinite;
+}
+
+/* Squelette de chargement */
+@keyframes shimmer {
+  from { background-position: -400px 0; }
+  to { background-position: 400px 0; }
+}
+.skeleton {
+  background: linear-gradient(90deg, #f3eee2 0px, #fbf8f1 160px, #f3eee2 320px);
+  background-size: 800px 100%;
+  animation: shimmer 1.4s linear infinite;
+}
+
+/* Fondu entre les pages lors des navigations internes (src/components/PageTransition.tsx) */
+/* Flou volontairement léger : animer un fort flou sur toute la page coûte cher (téléphones
+   d'entrée de gamme) et fige l'animation pendant que la nouvelle page se construit. */
+@keyframes pageLeave {
+  from { opacity: 1; filter: none; transform: none; }
+  to { opacity: 0; filter: blur(4px); transform: translateY(-4px); }
+}
+@keyframes pageEnter {
+  from { opacity: 0; filter: blur(4px); transform: translateY(8px); }
+  to { opacity: 1; filter: none; transform: none; }
+}
+
+/* Fondu entre les pages lors des navigations complètes (rechargement, redirection après
+   connexion…) : géré par le navigateur (Chrome/Edge/Android, Safari récent). Les navigations
+   internes sont gérées par src/components/PageTransition.tsx. */
+@view-transition {
+  navigation: auto;
+}
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 0.4s;
+  animation-timing-function: ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  @view-transition {
+    navigation: none;
+  }
+  .animate-fade-blur,
+  .stagger > *,
+  .animate-ken-burns,
+  .animate-drift,
+  .animate-float,
+  .animate-float-y,
+  .skeleton {
+    animation: none !important;
+  }
+}
+
 /* Systeme de theme clair/sombre pour les pages publiques */
 :root {
   --ec-bg: #ffffff;

@@ -61,6 +61,12 @@ export function resourceKey(resourceId: string, ext: string) {
   return `resources/${resourceId}.${ext}`;
 }
 
+// Clé du corrigé d'une ressource, dans le bucket PRIVÉ : "corrections/<correctionId>.<ext>"
+// (servi uniquement aux comptes connectés via une URL signée, voir §7quindecies)
+export function correctionKey(correctionId: string, ext: string) {
+  return `corrections/${correctionId}.${ext}`;
+}
+
 // --- Upload direct depuis le navigateur (URLs présignées) ---
 // Contourne la limite de 4,5 Mo des fonctions serverless Vercel : le fichier
 // est envoyé directement du navigateur vers R2, sans passer par notre API.
@@ -101,6 +107,12 @@ export async function getPresignedDownloadUrl(
     ResponseContentDisposition: `attachment; filename="${ascii}"; filename*=UTF-8''${encodeURIComponent(filename)}`,
   });
   return getSignedUrl(r2Client, command, { expiresIn });
+}
+
+// URL de lecture temporaire (affichage dans la page, sans forcer le téléchargement),
+// pour les fichiers du bucket privé.
+export async function getPresignedReadUrl(bucket: string, key: string, expiresIn = 300) {
+  return getSignedUrl(r2Client, new GetObjectCommand({ Bucket: bucket, Key: key }), { expiresIn });
 }
 
 export async function objectExists(bucket: string, key: string): Promise<boolean> {

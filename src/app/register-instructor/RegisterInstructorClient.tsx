@@ -144,6 +144,7 @@ export default function RegisterInstructor() {
           photoType: photoFile.type,
           cniType: cniFile.type,
           cvType: cvFile.type,
+          password: formValues.get('password'),
         }),
       });
       const result = await res.json();
@@ -187,6 +188,9 @@ export default function RegisterInstructor() {
             <h1 className="text-2xl font-bold text-[#0d1b3e] mb-3">Candidature envoyée !</h1>
             <p className="text-gray-600 text-sm leading-relaxed">
               Votre profil est <span className="font-semibold text-[#c9951a]">en attente de validation</span> par notre équipe. Vous serez contacté par WhatsApp sous 48h.
+            </p>
+            <p className="text-gray-600 text-sm leading-relaxed mt-3">
+              Un email vous a été envoyé pour <span className="font-semibold">confirmer votre adresse</span> et activer votre compte (pensez à regarder dans les spams).
             </p>
             {editLink && (
               <div className="mt-6 bg-[#faf8f2] border border-[#eee6d3] rounded-2xl p-4 text-left">
@@ -310,6 +314,17 @@ export default function RegisterInstructor() {
                   className={inputClass}
                 />
               </div>
+            </div>
+
+            <div>
+              <label className={labelClass}>
+                Mot de passe * <span className="text-gray-500 font-normal normal-case">(8 caractères min.)</span>
+              </label>
+              <input name="password" type="password" required minLength={8} autoComplete="new-password" className={inputClass} />
+              <p className="text-xs text-gray-500 mt-1">
+                Il crée votre compte EduConnect : bibliothèque des corrigés et forum dès la confirmation de votre email,
+                puis marché des annonces et salle des profs une fois votre profil approuvé.
+              </p>
             </div>
           </div>
 

@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getResendClient } from '@/lib/resend';
+import { hashPassword } from '@/lib/password';
+import { createEmailToken, normalizeEmail, passwordError } from '@/lib/user-session';
 import type { InstructorType, AcademicLevel, TeachingMode } from '@prisma/client';
 import {
   BUCKET_PHOTOS,
@@ -39,6 +41,7 @@ export async function POST(req: NextRequest) {
       photoType,
       cniType,
       cvType,
+      password,
     } = body;
 
     if (!UUID_RE.test(instructorId || '')) {
@@ -51,6 +54,20 @@ export async function POST(req: NextRequest) {
 
     if (!ALLOWED_PHOTO_TYPES.includes(photoType) || !ALLOWED_DOC_TYPES.includes(cniType) || !ALLOWED_DOC_TYPES.includes(cvType)) {
       return NextResponse.json({ error: 'Type de fichier invalide.' }, { status: 400 });
+    }
+
+    // Compte de connexion à l'espace instructeur (voir §7quindecies), créé avec la fiche
+    const pwdError = passwordError(password);
+    if (pwdError) {
+      return NextResponse.json({ error: pwdError }, { status: 400 });
+    }
+    const accountEmail = normalizeEmail(email);
+    const existingAccount = await prisma.user.findUnique({ where: { email: accountEmail }, select: { id: true } });
+    if (existingAccount) {
+      return NextResponse.json(
+        { error: 'Un compte EduConnect utilise déjà cet email. Utilisez une autre adresse.' },
+        { status: 409 }
+      );
     }
 
     const photoExt = extFromMime(photoType);
@@ -94,10 +111,22 @@ export async function POST(req: NextRequest) {
         subjects: {
           create: subjects.map((subjectId: string) => ({ subjectId })),
         },
+        user: {
+          create: {
+            email: accountEmail,
+            passwordHash: await hashPassword(password),
+            role: 'INSTRUCTEUR',
+            firstName,
+            lastName,
+          },
+        },
       },
+      include: { user: { select: { id: true } } },
     });
 
     const editLink = `${req.nextUrl.origin}/modifier-profil/${newInstructor.editToken}`;
+    const verifyToken = newInstructor.user ? await createEmailToken(newInstructor.user.id, 'VERIFY_EMAIL') : null;
+    const verifyLink = verifyToken ? `${req.nextUrl.origin}/api/compte/confirmer?jeton=${verifyToken}` : null;
 
     try {
       if (!process.env.ADMIN_NOTIFICATION_EMAIL) {
@@ -139,6 +168,12 @@ export async function POST(req: NextRequest) {
             <p>Vous pouvez modifier votre profil à tout moment via ce lien personnel :</p>
             <p><a href="${editLink}">${editLink}</a></p>
             <p style="font-size: 12px; color: #888;">Conservez ce lien, il n'est envoyé qu'une seule fois.</p>
+            ${verifyLink ? `
+            <p style="margin-top: 20px;">Confirmez aussi votre adresse email pour activer votre compte EduConnect
+            (espace instructeur, bibliothèque des corrigés, forum) :</p>
+            <p><a href="${verifyLink}">Confirmer mon email</a></p>
+            <p style="font-size: 12px; color: #888;">Le marché des annonces et la salle des profs s'ouvriront dès que votre profil sera approuvé.</p>
+            ` : ''}
           </div>
         `,
       });
@@ -146,7 +181,7 @@ export async function POST(req: NextRequest) {
       console.error("Info : email de confirmation instructeur non envoyé :", emailError);
     }
 
-    return NextResponse.json({ ...newInstructor, editLink }, { status: 201 });
+    return NextResponse.json({ ...newInstructor, user: undefined, editLink }, { status: 201 });
 
   } catch (error: any) {
     console.error('Erreur inscription instructeur :', error);

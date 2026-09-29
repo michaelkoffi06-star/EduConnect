@@ -64,6 +64,8 @@ export const publicResourceSelect = {
   createdAt: true,
   subject: { select: { id: true, name: true, slug: true, color: true } },
   chapter: { select: { id: true, title: true, slug: true, level: true, classe: true, order: true } },
+  // Présence d'un corrigé (le fichier lui-même n'est servi qu'aux comptes connectés)
+  correction: { select: { id: true, fileExt: true } },
 } satisfies Prisma.ResourceSelect;
 
 export type PublicResourceRow = Prisma.ResourceGetPayload<{ select: typeof publicResourceSelect }>;

@@ -1,5 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifySessionToken, SESSION_COOKIE_NAME, type AdminRole } from '@/lib/bleSseD-auth';
+import { verifyUserSessionToken, USER_SESSION_COOKIE } from '@/lib/user-auth';
+
+// Pages réservées aux comptes utilisateurs (élèves, parents, instructeurs — voir §7quindecies).
+// Le middleware vérifie seulement la signature du cookie ; les droits fins (email confirmé,
+// instructeur approuvé) sont vérifiés par les routes API et les pages elles-mêmes.
+const USER_PAGES = ['/mon-compte', '/espace-instructeur'];
 
 // S'applique à toutes les routes sauf les fichiers statiques Next.js et le dossier marketing
 // (logo, assets de l'ancienne vitrine), pour que la page de maintenance puisse afficher le logo.
@@ -86,6 +92,16 @@ export async function middleware(request: NextRequest) {
       return NextResponse.json({ error: 'Site en maintenance.' }, { status: 503 });
     }
     return NextResponse.rewrite(new URL('/maintenance', request.url));
+  }
+
+  // --- Comptes utilisateurs : sans session valide, renvoi vers la connexion puis retour à la page
+  if (USER_PAGES.some((p) => pathname === p || pathname.startsWith(`${p}/`))) {
+    const session = await verifyUserSessionToken(request.cookies.get(USER_SESSION_COOKIE)?.value);
+    if (!session) {
+      const login = new URL('/connexion', request.url);
+      login.searchParams.set('suite', pathname);
+      return NextResponse.redirect(login);
+    }
   }
 
   return NextResponse.next();

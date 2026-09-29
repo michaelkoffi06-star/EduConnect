@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import PdfReader, { DownloadIcon } from "@/components/bibliotheque/PdfReader";
+import PdfReader, { DownloadIcon, LockIcon } from "@/components/bibliotheque/PdfReader";
 import {
   LEVEL_LABELS,
   TYPE_LABELS,
@@ -113,15 +113,126 @@ function Reader({ r, fill, ink }: { r: LibResource; fill: string; ink: string })
   );
 }
 
+// Lecture d'un corrigé (réservé aux comptes connectés) : l'URL signée du fichier, valable
+// quelques minutes, est demandée à l'API au moment de l'ouverture.
+function CorrectionReader({ r, ink }: { r: LibResource; ink: string }) {
+  const correction = r.correction!;
+  const [state, setState] = useState<{ url: string } | "loading" | "error">("loading");
+  const downloadHref = `/api/corrections/${correction.id}`;
+
+  useEffect(() => {
+    let cancelled = false;
+    setState("loading");
+    fetch(`/api/corrections/${correction.id}?mode=lecture`)
+      .then((res) => (res.ok ? res.json() : Promise.reject()))
+      .then((d) => !cancelled && setState({ url: d.url }))
+      .catch(() => !cancelled && setState("error"));
+    return () => {
+      cancelled = true;
+    };
+  }, [correction.id]);
+
+  if (state === "loading") return <p className="text-sm opacity-85 py-10 text-center">Ouverture du corrigé…</p>;
+  if (state === "error") {
+    return (
+      <p className="text-sm py-10 text-center">
+        Le corrigé n’a pas pu s’ouvrir.{" "}
+        <a href={downloadHref} className="underline font-semibold">Le télécharger</a>
+      </p>
+    );
+  }
+  if (correction.fileExt === "pdf") {
+    return <PdfReader key={correction.id} url={state.url} title={`Corrigé — ${r.title}`} reference={`${r.ref} · CORRIGÉ`} downloadHref={downloadHref} ink={ink} />;
+  }
+  // eslint-disable-next-line @next/next/no-img-element
+  return <img src={state.url} alt={`Corrigé — ${r.title}`} className="w-full h-auto bg-white rounded-[4px] shadow-[0_14px_30px_-14px_rgba(0,0,0,0.6)]" />;
+}
+
+// Encadré « Corrigé » de la fiche : boutons pour les comptes connectés, invitation à se
+// connecter sinon (le reste de la bibliothèque reste en libre accès).
+function CorrectionBox({
+  r,
+  account,
+  showing,
+  onToggle,
+  fill,
+  ink,
+}: {
+  r: LibResource;
+  account: "loading" | "in" | "out";
+  showing: boolean;
+  onToggle: () => void;
+  fill: string;
+  ink: string;
+}) {
+  if (!r.correction) return null;
+  const next = encodeURIComponent(`/bibliotheque/${r.urlKey}?corrige=1`);
+  return (
+    <div className="rounded-lg border-[1.5px] border-current p-4 flex flex-col gap-3">
+      <span className="font-[family-name:var(--font-biblio-mono)] text-[11px] tracking-[0.12em] inline-flex items-center gap-2">
+        <LockIcon /> CORRIGÉ DISPONIBLE
+      </span>
+      {account === "in" ? (
+        <>
+          <button
+            type="button"
+            onClick={onToggle}
+            className="h-11 rounded-full inline-flex items-center justify-center gap-2 font-semibold"
+            style={{ background: ink, color: fill }}
+          >
+            {showing ? "Revenir à l’énoncé" : "Lire le corrigé"}
+          </button>
+          <a href={`/api/corrections/${r.correction.id}`} className="h-11 rounded-full inline-flex items-center justify-center gap-2 font-semibold border-[1.5px] border-current">
+            <DownloadIcon /> Télécharger le corrigé
+          </a>
+        </>
+      ) : account === "out" ? (
+        <>
+          <p className="text-sm leading-snug">Réservé aux membres : élèves, parents et instructeurs inscrits. L’inscription est gratuite.</p>
+          <Link
+            href={`/connexion?suite=${next}`}
+            className="h-11 rounded-full inline-flex items-center justify-center font-semibold"
+            style={{ background: ink, color: fill }}
+          >
+            Se connecter
+          </Link>
+          <Link href="/inscription" className="text-sm text-center underline underline-offset-4">
+            Créer un compte
+          </Link>
+        </>
+      ) : null}
+    </div>
+  );
+}
+
 export default function ClasseurClient({ initialId, siblings }: { initialId: string; siblings: LibResource[] }) {
   const [activeId, setActiveId] = useState(initialId);
   const active = siblings.find((s) => s.id === activeId) || siblings[0];
   const activeIndex = siblings.indexOf(active);
   const chapter = active.chapter;
+  const [account, setAccount] = useState<"loading" | "in" | "out">("loading");
+  const [showCorrectionFor, setShowCorrectionFor] = useState<string | null>(null);
+  const hasCorrections = siblings.some((s) => s.correction);
+
+  // Session lue seulement si le classeur contient au moins un corrigé
+  useEffect(() => {
+    if (!hasCorrections) return;
+    fetch("/api/compte/moi")
+      .then((r) => r.json())
+      .then((d) => {
+        setAccount(d.user ? "in" : "out");
+        // Lien direct vers le corrigé (?corrige=1, depuis l'étagère des corrigés ou après connexion)
+        if (d.user && new URLSearchParams(window.location.search).get("corrige") === "1") {
+          setShowCorrectionFor(initialId);
+        }
+      })
+      .catch(() => setAccount("out"));
+  }, [hasCorrections, initialId]);
 
   // L'URL suit l'onglet ouvert (lien partageable vers le bon document)
   const selectDoc = (r: LibResource) => {
     setActiveId(r.id);
+    setShowCorrectionFor(null);
     window.history.replaceState(null, "", `/bibliotheque/${r.urlKey}`);
     document.title = `${r.title} | EduConnect CI`;
   };
@@ -237,6 +348,15 @@ export default function ClasseurClient({ initialId, siblings }: { initialId: str
                         </a>
                       )}
 
+                      <CorrectionBox
+                        r={f.r}
+                        account={account}
+                        showing={showCorrectionFor === f.r.id}
+                        onToggle={() => setShowCorrectionFor(showCorrectionFor === f.r.id ? null : f.r.id)}
+                        fill={f.fill}
+                        ink={f.ink}
+                      />
+
                       {siblings.length > 1 && (
                         <div className="hidden lg:flex flex-col gap-1 pt-4 border-t" style={{ borderTopColor: "currentColor" }}>
                           <span className="font-[family-name:var(--font-biblio-mono)] text-[11px] tracking-[0.12em] opacity-80 mb-1.5">DANS CE CLASSEUR</span>
@@ -258,7 +378,11 @@ export default function ClasseurClient({ initialId, siblings }: { initialId: str
                     </aside>
 
                     <div className="min-w-0 lg:order-1">
-                      <Reader r={f.r} fill={f.fill} ink={f.ink} />
+                      {showCorrectionFor === f.r.id && f.r.correction ? (
+                        <CorrectionReader r={f.r} ink={f.ink} />
+                      ) : (
+                        <Reader r={f.r} fill={f.fill} ink={f.ink} />
+                      )}
                     </div>
                   </div>
                 )}

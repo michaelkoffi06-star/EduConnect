@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import SiteHeader from "@/components/SiteHeader";
+import { LockIcon } from "@/components/bibliotheque/PdfReader";
 import {
   LEVEL_LABELS,
   TYPE_LABELS,
@@ -309,6 +310,12 @@ export default function BibliothequeClient() {
               Bibliothèque
             </h1>
             <p className="text-[15px] md:text-base font-medium text-[#2E2619]" style={HALO}>{loading ? "Chargement des ressources…" : countLabel}</p>
+            <Link
+              href="/bibliotheque/corriges"
+              className="self-start mt-1 h-10 px-4 rounded-full inline-flex items-center gap-2 bg-[#231E17] text-[#F4EFE4] text-sm font-medium hover:bg-[#3A3024] transition"
+            >
+              <LockIcon /> Étagère des corrigés — réservée aux membres
+            </Link>
           </div>
           <label className="flex items-center gap-2.5 h-12 w-full md:w-[400px] px-4 bg-[#FBF8F1] border border-[#D6CBB6] rounded-full text-[#6B6152] focus-within:border-[#231E17]">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">

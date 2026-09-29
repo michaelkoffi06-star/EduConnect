@@ -35,6 +35,7 @@ interface Resource {
   urlKey: string;
   subject: { id: string; name: string; slug: string; color: string };
   chapter: { id: string; title: string; classe: string | null } | null;
+  correction: { id: string; fileExt: string } | null;
 }
 
 const TYPE_LABELS: Record<ResType, string> = { DOCUMENT: 'Document', VIDEO: 'Vidéo', EXERCICE: 'Exercice', LIEN: 'Lien' };
@@ -323,6 +324,55 @@ export default function LibraryManager({
     }
   };
 
+  // --- Corrigés (bucket R2 privé, réservés aux comptes connectés — voir §7quindecies) ---
+  const uploadCorrection = async (r: Resource, file: File) => {
+    if (!['application/pdf', 'image/jpeg', 'image/png'].includes(file.type)) {
+      setError('Corrigé : fichier PDF, JPEG ou PNG uniquement.');
+      return;
+    }
+    setBusyId(r.id);
+    setError('');
+    try {
+      const correctionId = crypto.randomUUID();
+      const presignRes = await fetch('/api/bleSseD/corrections/presign', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ correctionId, contentType: file.type }),
+      });
+      const presignData = await presignRes.json();
+      if (!presignRes.ok) throw new Error(presignData.error || 'Échec de la présignature.');
+      const putRes = await fetch(presignData.uploadUrl, { method: 'PUT', headers: { 'Content-Type': file.type }, body: file });
+      if (!putRes.ok) throw new Error("Échec de l'envoi du corrigé.");
+      const res = await fetch('/api/bleSseD/corrections', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ correctionId, resourceId: r.id, contentType: file.type }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      setResources((prev) => prev.map((x) => (x.id === r.id ? { ...x, correction: data } : x)));
+    } catch (err: any) {
+      setError(err.message || "Impossible d'ajouter le corrigé.");
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const removeCorrection = async (r: Resource) => {
+    if (!r.correction || !window.confirm(`Retirer le corrigé de « ${r.title} » ?`)) return;
+    setBusyId(r.id);
+    setError('');
+    try {
+      const res = await fetch(`/api/bleSseD/corrections/${r.correction.id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error((await res.json()).error);
+      setResources((prev) => prev.map((x) => (x.id === r.id ? { ...x, correction: null } : x)));
+    } catch (err: any) {
+      setError(err.message || 'Impossible de retirer le corrigé.');
+    } finally {
+      setBusyId(null);
+    }
+  };
+
   const handleDeleteResource = async (r: Resource) => {
     if (!window.confirm(`Supprimer « ${r.title} » ? Le fichier sera aussi effacé.`)) return;
     setBusyId(r.id);
@@ -599,6 +649,7 @@ export default function LibraryManager({
                 <th className="text-left px-4 py-3 font-semibold">Type</th>
                 <th className="text-left px-4 py-3 font-semibold">Niveau</th>
                 <th className="text-left px-4 py-3 font-semibold" title="Consultations / téléchargements">Vues / Téléch.</th>
+                <th className="text-left px-4 py-3 font-semibold" title="Réservé aux comptes connectés">Corrigé</th>
                 {canEdit && <th className="text-right px-4 py-3 font-semibold">Actions</th>}
               </tr>
             </thead>
@@ -649,6 +700,36 @@ export default function LibraryManager({
                   <td className="px-4 py-3 text-gray-400 text-xs">{TYPE_LABELS[r.type]}</td>
                   <td className="px-4 py-3 text-gray-400 text-xs">{LEVEL_LABELS[r.level]}</td>
                   <td className="px-4 py-3 text-gray-400 text-xs">{r.viewCount} / {r.downloadCount}</td>
+                  <td className="px-4 py-3 text-xs whitespace-nowrap">
+                    {r.type !== 'DOCUMENT' && r.type !== 'EXERCICE' ? (
+                      <span className="text-gray-600">—</span>
+                    ) : r.correction ? (
+                      <div className="flex items-center gap-2">
+                        <a href={`/api/bleSseD/corrections/${r.correction.id}`} target="_blank" rel="noopener noreferrer" className="text-emerald-300 hover:underline">
+                          ✓ Voir
+                        </a>
+                        {canEdit && (
+                          <button disabled={busyId === r.id} onClick={() => removeCorrection(r)} className={dangerBtn}>Retirer</button>
+                        )}
+                      </div>
+                    ) : canEdit ? (
+                      <label className={`${ghostBtn} cursor-pointer inline-block ${busyId === r.id ? 'opacity-50 pointer-events-none' : ''}`}>
+                        {busyId === r.id ? 'Envoi…' : '+ Ajouter'}
+                        <input
+                          type="file"
+                          accept="application/pdf,image/jpeg,image/png"
+                          className="sr-only"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            e.target.value = '';
+                            if (file) uploadCorrection(r, file);
+                          }}
+                        />
+                      </label>
+                    ) : (
+                      <span className="text-gray-600">Aucun</span>
+                    )}
+                  </td>
                   {canEdit && (
                     <td className="px-4 py-3">
                       <div className="flex justify-end">

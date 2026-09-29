@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import type { AcademicLevel, Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
-import { deleteFromR2, resourceKey, BUCKET_PHOTOS } from '@/lib/r2';
+import { deleteFromR2, resourceKey, correctionKey, BUCKET_PHOTOS, BUCKET_PRIVATE } from '@/lib/r2';
 import { requireRole } from '@/lib/admin-permissions';
 import { publicResourceSelect, toPublicResource, resourceSlug } from '@/lib/library';
 
@@ -80,7 +80,7 @@ export async function DELETE(
   if (denied) return denied;
   try {
     const { id } = await params;
-    const resource = await prisma.resource.findUnique({ where: { id } });
+    const resource = await prisma.resource.findUnique({ where: { id }, include: { correction: true } });
     if (!resource) {
       return NextResponse.json({ error: 'Ressource introuvable.' }, { status: 404 });
     }
@@ -88,6 +88,10 @@ export async function DELETE(
     if (resource.fileUrl) {
       const ext = resource.fileUrl.split('.').pop();
       if (ext) await deleteFromR2(BUCKET_PHOTOS, resourceKey(id, ext));
+    }
+    // Le corrigé est supprimé en base par cascade ; son fichier (bucket privé) est effacé ici
+    if (resource.correction) {
+      await deleteFromR2(BUCKET_PRIVATE, correctionKey(resource.correction.id, resource.correction.fileExt));
     }
 
     await prisma.resource.delete({ where: { id } });

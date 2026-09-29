@@ -31,7 +31,7 @@ Le projet est un **monolithe Next.js unique** : le site vitrine (marketing) et l
 
 ```
 src/
-├── middleware.ts                       # Protège /bleSseD, /pedagogie, /administratif et leurs API (voir §7bis/§7decies)
+├── middleware.ts                       # Protège /bleSseD, /pedagogie, /administratif et leurs API (voir §7bis/§7decies) ; /mon-compte et /espace-instructeur (comptes utilisateurs, §7quindecies)
 ├── lib/
 │   ├── prisma.ts                       # Client Prisma (singleton, adaptateur pg)
 │   ├── bleSseD-auth.ts                 # Création/vérification du token de session (payload {sub, username, role, exp}, voir §7bis)
@@ -39,8 +39,17 @@ src/
 │   ├── password.ts                     # hashPassword/verifyPassword (scrypt, format salt:hash) — partagé par tous les comptes admin
 │   ├── library.ts                      # Bibliothèque : slugs, code de référence, forme publique d'une ressource, normalisation des liens
 │   ├── library-server.ts               # Bibliothèque : recherche d'une ressource par slug ou id (serveur uniquement)
-│   └── r2.ts                           # Client S3/R2 + helpers upload/delete/get (voir §7ter)
+│   ├── r2.ts                           # Client S3/R2 + helpers upload/delete/get (voir §7ter), clés des corrigés (bucket privé)
+│   ├── user-auth.ts / user-session.ts  # Comptes utilisateurs : cookie de session, compte connecté, jetons d'email (voir §7quindecies)
+│   ├── user-emails.ts                  # Emails aux comptes (confirmation, mot de passe oublié, instructeur retenu)
+│   └── market.ts / forum.ts            # Marché des instructeurs et forum : validation, règles d'accès
 ├── app/
+│   ├── inscription/ , connexion/       # Création de compte (élève/parent/instructeur) et connexion — page.tsx + <Nom>Client.tsx
+│   ├── reinitialiser-mot-de-passe/     # Nouveau mot de passe (lien reçu par email)
+│   ├── mon-compte/                     # Tableau de bord du compte (raccourcis, profil, mot de passe) — privé
+│   ├── espace-instructeur/             # Marché des annonces, instructeurs approuvés — privé
+│   ├── forum/ , forum/[id]/            # Forum (Questions, Salle des profs) et page d'un sujet
+│   ├── bibliotheque/corriges/          # Étagère des corrigés, réservée aux comptes
 │   ├── layout.tsx                      # Layout racine : métadonnées globales (Open Graph, Twitter Card, favicon, vérification Bing/Google — voir §7novies)
 │   ├── page.tsx                        # Vitrine (accueil), données structurées JSON-LD (EducationalOrganization), lien WhatsApp du footer (voir §8)
 │   ├── sitemap.ts                      # Génère /sitemap.xml (routes publiques, voir §7novies)
@@ -101,13 +110,24 @@ src/
 │           ├── subjects/[id]/route.ts             # PATCH — couleur d'une matière sur l'étagère
 │           ├── resources/presign/route.ts         # Présignature upload document/exercice → R2
 │           ├── feedback/route.ts + [id]/          # Suggestions (SUPER_ADMIN uniquement)
-│           └── contracts/route.ts + [id]/ + [id]/entries/ # CRUD contrats instructeur/matière/niveau + saisie mensuelle (voir §7undecies)
+│           ├── contracts/route.ts + [id]/ + [id]/entries/ # CRUD contrats instructeur/matière/niveau + saisie mensuelle (voir §7undecies)
+│           ├── corrections/ + presign/ + [id]/    # Corrigés : upload vers R2 privé, aperçu, retrait (voir §7quindecies)
+│           ├── market-offers/ + [id]/ , market-interests/[id]/ # Marché : annonces et décisions sur les candidatures
+│           └── forum/route.ts                     # Modération : signalements, masquer/rétablir
+│       ├── compte/**                         # Comptes utilisateurs : inscription, connexion, confirmation, mot de passe (voir §7quindecies)
+│       ├── corrections/ + [id]/              # Corrigés pour les comptes connectés (liste, URL signée)
+│       ├── espace-instructeur/annonces/**    # Marché côté instructeur (annonces, candidature)
+│       └── forum/**                          # Sujets, réponses, suppressions, signalements
 ├── components/
 │   ├── SiteHeader.tsx      # Header partagé, thème clair/sombre selon la page
 │   ├── ScrollReveal.tsx    # Fondu + glissement au chargement/scroll (IntersectionObserver)
 │   ├── MarketingStyles.tsx # Ancien système CSS custom (conservé, plus utilisé activement)
 │   ├── FileDropzone.tsx   # Zone de glisser-déposer réutilisable (register-instructor, modifier-profil)
-│   ├── admin/LibraryManager.tsx     # Onglet Bibliothèque commun aux 3 panneaux admin (canEdit)
+│   ├── admin/LibraryManager.tsx     # Onglet Bibliothèque commun aux 3 panneaux admin (canEdit), colonne Corrigé
+│   ├── admin/MarketManager.tsx      # Onglet Marché (/bleSseD, /administratif)
+│   ├── admin/ForumModeration.tsx    # Onglet Forum (/bleSseD, /pedagogie)
+│   ├── compte/ui.tsx                # Styles et composants des pages de comptes, hook useAccount()
+│   ├── forum/shared.tsx             # Auteur + badge, dates relatives du forum
 │   └── bibliotheque/
 │       ├── shared.ts               # Types et utilitaires de l'étagère et du classeur (couleurs lisibles, vidéos intégrées…)
 │       └── PdfReader.tsx           # Lecteur PDF page par page (PDF.js chargé depuis un CDN), plein écran
@@ -121,6 +141,7 @@ scripts/backfill-resource-slugs.mjs  # Donne un slug aux ressources créées ava
 public/
 ├── uploads/photos/          # Vide, plus utilisé (photos servies depuis R2 désormais, voir §7ter)
 ├── images/hero/             # Fonds d'écran des sections héro (accueil, trouver-un-tuteur, register-instructor)
+├── images/comptes/          # Fonds photo (Unsplash) des pages de comptes, espace instructeur et forum (voir §7quindecies)
 ├── images/bibliotheque/     # fond-etagere.jpg (fond de l'étagère, photo Unsplash) ; hero.jpeg / pattern.jpeg (ancienne bibliothèque, inutilisés)
 └── marketing/               # Assets de l'ancienne vitrine HTML/CSS (dont le logo, réutilisé comme favicon et image Open Graph)
 
@@ -137,13 +158,19 @@ private-uploads/
 - **`ContactMessage`** — messages du formulaire de contact général du site.
 - **`MatchRequest`** — une demande "je veux cet instructeur", avec un `status` (`NEW` / `CONTACTED` / `DONE`) que l'admin fait avancer manuellement.
 - **`WaitlistEntry`** — inscription d'un parent à la liste d'attente quand aucun instructeur n'est disponible pour une matière donnée (`email` + `subjectId`).
-- **`Resource`** — un contenu de la bibliothèque pédagogique : `type` (`DOCUMENT`/`VIDEO`/`EXERCICE`/`LIEN`), `subjectId`, `level` (`AcademicLevel`, défaut `ALL`), et soit `fileUrl` (DOCUMENT/EXERCICE, fichier hébergé sur R2 — bucket photos, préfixe `resources/`), soit `externalUrl` (VIDEO/LIEN, URL externe type YouTube/Vimeo — pas d'upload vidéo). Depuis la v2 (§7quaterdecies) : `slug` (URL publique `/bibliotheque/<slug>`, unique), `chapterId` (classeur, optionnel), `position` (ordre des onglets dans le classeur), `refNumber` (auto-incrémenté, sert au code de référence affiché, ex. `MATH-3E-07-C`), `viewCount` et `downloadCount`. Accessible à tous sans authentification ni restriction par compte (aucun système de compte parent/élève n'existe encore, voir §9.1).
+- **`Resource`** — un contenu de la bibliothèque pédagogique : `type` (`DOCUMENT`/`VIDEO`/`EXERCICE`/`LIEN`), `subjectId`, `level` (`AcademicLevel`, défaut `ALL`), et soit `fileUrl` (DOCUMENT/EXERCICE, fichier hébergé sur R2 — bucket photos, préfixe `resources/`), soit `externalUrl` (VIDEO/LIEN, URL externe type YouTube/Vimeo — pas d'upload vidéo). Depuis la v2 (§7quaterdecies) : `slug` (URL publique `/bibliotheque/<slug>`, unique), `chapterId` (classeur, optionnel), `position` (ordre des onglets dans le classeur), `refNumber` (auto-incrémenté, sert au code de référence affiché, ex. `MATH-3E-07-C`), `viewCount` et `downloadCount`. Accessible à tous sans authentification ; seul son éventuel corrigé (`Correction`, §7quindecies) est réservé aux comptes connectés.
 - **`Chapter`** — un chapitre de la bibliothèque, affiché comme un classeur : `subjectId`, `title`, `slug` (unique par matière), `level`, `classe` (texte libre, ex. « 3e », « Tle D »), `order`. Sa suppression détache ses ressources sans les supprimer.
 - **`Subject.color`** — couleur (hex) des tranches de la matière sur l'étagère ; sans couleur choisie, une couleur est attribuée automatiquement.
 - **`AdminUser`** — un compte du back-office (`username` unique, `passwordHash` scrypt, `role` : `AdminRole`). Remplace l'ancien mot de passe admin unique partagé (voir §7decies).
 - **`AdminRole`** *(enum)* — `SUPER_ADMIN` / `PEDAGOGIE` / `ADMINISTRATIF`.
 - **`Contract`** — un engagement instructeur/matière/niveau (`instructorId`, `subjectId`, `level`), créé et suivi depuis le panneau Pédagogie. Porte plusieurs `ContractEntry` (un par mois suivi).
 - **`ContractEntry`** — une entrée mensuelle d'un contrat : `month` (date, premier du mois), `studentCount`, `sessionCount`, `amountReceived`. Unique par `(contractId, month)` — une seule entrée par mois et par contrat, modifiable (upsert) plutôt que dupliquée.
+- **`User`** + **`UserRole`** *(enum `ELEVE`/`PARENT`/`INSTRUCTEUR`)* — compte du site (distinct d'`AdminUser`) : email unique en minuscules, `passwordHash`, prénom/nom, `classe` (élève), `emailVerifiedAt` (connexion impossible avant confirmation), `instructorId` (unique : compte instructeur ↔ fiche `Instructor`, supprimé avec la fiche). Voir §7quindecies.
+- **`UserToken`** + **`UserTokenType`** *(`VERIFY_EMAIL`/`RESET_PASSWORD`)* — jeton à usage unique envoyé par email ; seule l'empreinte SHA-256 (`tokenHash`) est stockée, avec `expiresAt`/`usedAt`.
+- **`Correction`** — corrigé d'une `Resource` (un seul par ressource, `resourceId` unique) : `fileExt`, compteurs vues/téléchargements. Fichier dans le bucket R2 privé, `corrections/<id>.<ext>`.
+- **`MarketOffer`** + **`MarketOfferStatus`** *(`OPEN`/`FILLED`/`CLOSED`)* — annonce du marché des instructeurs, publiée par l'équipe (matière, niveau, classe, mode, lieu, rythme, rémunération, description — jamais les coordonnées de la famille).
+- **`MarketInterest`** + **`MarketInterestStatus`** *(`PENDING`/`SELECTED`/`DECLINED`)* — un instructeur positionné sur une annonce (unique par annonce et instructeur), avec un message optionnel.
+- **`ForumThread`** + **`ForumSpace`** *(`QUESTIONS`/`SALLE_DES_PROFS`)*, **`ForumPost`**, **`ForumReport`** — sujets, réponses et signalements du forum ; `hidden` pour la modération, `replyCount` et `lastActivityAt` tenus à jour pour la liste.
 
 Voir `prisma/schema.prisma` pour le détail exact des champs et enums.
 
@@ -186,6 +213,7 @@ DATABASE_URL=
 RESEND_API_KEY=
 ADMIN_NOTIFICATION_EMAIL=
 ADMIN_SESSION_SECRET=       # voir §7bis
+USER_SESSION_SECRET=        # optionnel, voir §7quindecies (à défaut, ADMIN_SESSION_SECRET est utilisé)
 ADMIN_RECOVERY_KEY=         # voir §7terdecies — jamais partagé en clair, y compris ici
 R2_ACCOUNT_ID=              # voir §7ter
 R2_ACCESS_KEY_ID=           # voir §7ter
@@ -481,7 +509,7 @@ Cette route est rate-limitée comme les routes de connexion (voir §7bis), et re
 - une étagère par matière (ou par type / par niveau, au choix), chaque ressource étant une tranche de livre à la couleur de sa matière ; titre vertical, étiquette de type (COURS, EXOS, VIDÉO, LIEN) ;
 - étagères spéciales « Nouveautés » (ajouts des 45 derniers jours) et « Les plus consultées » (à partir de 3 ressources vues) ;
 - recherche plein texte, filtre de niveau, bascule « Étagère / Liste » (la liste reste lisible pour qui a du mal avec les titres verticaux) ;
-- fond : photo `public/images/bibliotheque/fond-etagere.jpg` (Unsplash, licence libre) sous un voile clair à 50 %, affichée via `next/image` (redimensionnée et compressée selon l'écran) ; si l'image manque, un mur en lambris dessiné en CSS prend le relais. Textes posés sur la photo renforcés (halo clair, plaques derrière les noms d'étagère).
+- fond : photo `public/images/bibliotheque/fond-etagere.jpg` (Unsplash, licence libre) sous un voile clair à 50 %, affichée via `next/image` (redimensionnée et compressée selon l'écran) ; si l'image manque, un mur en lambris dessiné en CSS prend le relais. ⚠️ La qualité demandée (70) doit figurer dans `images.qualities` de `next.config.ts` (voir §7quindecies), sinon Next.js 16 refuse l'image et c'est le lambris qui s'affiche. Textes posés sur la photo renforcés (halo clair, plaques derrière les noms d'étagère).
 
 **Ouverture — le classeur** (`/bibliotheque/[key]`, page serveur + `ClasseurClient.tsx`) :
 - le chapitre s'affiche comme un classeur sombre, un onglet coloré par document (ordre = `position`) ; changer d'onglet met à jour l'adresse (lien partageable vers le bon document) ;
@@ -501,6 +529,103 @@ Cette route est rate-limitée comme les routes de connexion (voir §7bis), et re
 - Après un changement de branche, `next dev` peut répondre 404 sur toutes les routes API (cache de développement corrompu) : `rm -rf .next` puis relancer.
 - Tester sur téléphone en local exige que l'adresse du PC soit autorisée dans `allowedDevOrigins` (`next.config.ts`) ; sinon la page arrive sans JavaScript (menu inactif, contenus absents). Des jokers sur les plages privées (`10.*.*.*`, `192.168.*.*`, `172.*.*.*`) évitent de retoucher la config quand l'IP change. Sans effet en production.
 - La lecture PDF lit le fichier directement sur R2 : la règle CORS du bucket photos doit autoriser `GET` depuis `educonnect-ci.org` (voir §7septies). En cas d'échec, le lecteur propose « Ouvrir le PDF » et « Télécharger ».
+
+---
+
+## 7quindecies. Comptes utilisateurs, corrigés, marché des instructeurs et forum
+
+**Objectif** : donner un compte aux élèves, aux parents et aux instructeurs. Avec un compte :
+- tous (élèves, parents, instructeurs) lisent et téléchargent les **corrigés** de la bibliothèque — le reste de la bibliothèque reste en libre accès ;
+- tous participent au **forum** (questions des élèves, réponses de tous) ;
+- les **instructeurs approuvés** accèdent en plus au **marché des annonces** (besoins des familles publiés par l'équipe) et à la **salle des profs** (forum entre instructeurs).
+
+Décisions prises avec Michaël (29/09/2026) : annonces publiées **par l'équipe** (la règle « jamais de contact direct famille ↔ instructeur » est conservée) ; compte instructeur **lié à la fiche existante** et marché/salle des profs ouverts **seulement une fois la fiche approuvée** ; corrigés **rattachés aux documents/exercices** existants ; forum à **publication directe + signalement**.
+
+### Comptes et session
+
+- Modèle `User` (§4) : email unique (enregistré en minuscules), mot de passe scrypt (`lib/password.ts`, même format que les comptes admin), `role` (`ELEVE` / `PARENT` / `INSTRUCTEUR`), `emailVerifiedAt`, `instructorId` (compte instructeur ↔ fiche `Instructor`).
+- **Session distincte de la session admin** : cookie httpOnly `user_session` (30 jours), signé en HMAC-SHA256 comme la session admin mais avec un préfixe propre (`lib/user-auth.ts`, compatible Edge) — un jeton utilisateur ne peut jamais passer pour un jeton admin, et inversement. Secret : `USER_SESSION_SECRET`, ou à défaut `ADMIN_SESSION_SECRET` (aucune nouvelle variable obligatoire).
+- `lib/user-session.ts` (serveur) : `getCurrentUser(request)` relit le compte en base à chaque appel (un compte supprimé, non confirmé ou un instructeur suspendu perd l'accès immédiatement), `isApprovedInstructor()`, jetons d'email, limitation des tentatives.
+- **Confirmation d'email obligatoire** avant la première connexion : lien `GET /api/compte/confirmer?jeton=…` (48 h), qui confirme, connecte et redirige vers `/mon-compte`. Certaines messageries ouvrent les liens avant l'utilisateur : si le jeton a déjà servi et que l'email est confirmé, on renvoie simplement vers la connexion.
+- **Jetons d'email** (`UserToken`) : seule l'empreinte SHA-256 est stockée, usage unique, un seul jeton actif par type ; mot de passe oublié valable 1 h.
+- **Anti-bruteforce** : même table `LoginAttempt` que l'admin, avec un préfixe par usage (`compte:<ip>`, `oubli:<ip>`, `renvoi:<ip>`) — 5 essais / 15 min. Les routes « mot de passe oublié » et « renvoyer la confirmation » répondent pareil que l'email existe ou non.
+- **Instructeurs** : le formulaire `/register-instructor` demande désormais un mot de passe et crée le compte avec la fiche (l'email de confirmation de candidature contient aussi le lien de confirmation du compte). Les instructeurs inscrits avant cette version créent leur accès depuis `/inscription` (profil « Instructeur ») avec **l'email de leur fiche** — la confirmation d'email prouve qu'ils en sont propriétaires. Depuis `/mon-compte`, un instructeur retrouve le lien de modification de sa fiche (`/modifier-profil/[token]`).
+- **Middleware** : `/mon-compte` et `/espace-instructeur` redirigent vers `/connexion?suite=…` sans cookie valide (vérification de signature seulement ; les droits fins sont vérifiés par les API).
+- Sur le forum, seuls le prénom et l'initiale du nom sont affichés (« Awa K. »), avec un badge Élève / Parent / Instructeur (badge Instructeur seulement si la fiche est approuvée).
+
+### Corrigés
+
+- Modèle `Correction` (un corrigé par document/exercice, `resourceId` unique). Fichier dans le **bucket R2 privé** `educonnect-private`, clé `corrections/<id>.<ext>` — jamais accessible par lien direct.
+- `GET /api/corrections/[id]?mode=lecture` renvoie une URL signée (5 min) pour la lecture dans la page ; sans `mode`, redirige vers une URL signée de téléchargement. Compte connecté obligatoire.
+- **Classeur** : un encadré « 🔒 Corrigé disponible » s'affiche sous le bouton Télécharger — « Lire le corrigé » / « Télécharger le corrigé » pour un compte connecté, « Se connecter / Créer un compte » sinon. `?corrige=1` dans l'URL ouvre directement le corrigé.
+- **Étagère des corrigés** : `/bibliotheque/corriges` (lien depuis l'accueil de la bibliothèque), liste par matière, réservée aux comptes.
+- **Admin** : colonne « Corrigé » dans l'onglet Bibliothèque (ajout par upload direct navigateur → R2 privé, aperçu, retrait). Supprimer une ressource efface aussi son corrigé.
+- **Prérequis Cloudflare** : la règle CORS du bucket **privé** doit autoriser `PUT` (upload admin) et `GET` (lecteur PDF) depuis `educonnect-ci.org` — c'est déjà le cas d'après §7septies, à vérifier si l'ajout ou la lecture d'un corrigé échoue.
+
+### Marché des instructeurs
+
+- Modèles `MarketOffer` (titre, matière, niveau, classe, mode, ville/commune, rythme, rémunération indicative, description, statut `OPEN`/`FILLED`/`CLOSED`) et `MarketInterest` (instructeur positionné, message, statut `PENDING`/`SELECTED`/`DECLINED`, unique par annonce et instructeur).
+- **Équipe** (onglet « Marché » de `/bleSseD` et `/administratif`, rôles `SUPER_ADMIN` + `ADMINISTRATIF`) : publie les annonces **sans coordonnées de la famille**, voit les instructeurs positionnés (WhatsApp, email, message), les retient ou les écarte. Retenir un instructeur lui envoie un email.
+- **Instructeur approuvé** (`/espace-instructeur`) : annonces ouvertes (filtre « Mes matières »), bouton « Je suis intéressé(e) » avec message optionnel, onglet « Mes candidatures » avec leur état, retrait possible tant que la candidature est en attente.
+
+### Forum
+
+- Modèles `ForumThread` (espace `QUESTIONS` ou `SALLE_DES_PROFS`, matière et niveau optionnels, `replyCount`, `lastActivityAt`, `hidden`), `ForumPost`, `ForumReport`.
+- `QUESTIONS` : **lecture publique** (indexable, titre de la question en métadonnées), écriture pour tout compte connecté. `SALLE_DES_PROFS` : lecture et écriture réservées aux instructeurs approuvés (non indexée).
+- Publication immédiate ; anti-spam : 8 messages max par compte sur 10 minutes. L'auteur peut supprimer son sujet ou sa réponse ; tout compte peut signaler un message (une fois).
+- **Modération** (onglet « Forum » de `/bleSseD` et `/pedagogie`) : signalements à traiter (masquer / classer sans suite) et derniers sujets (masquer / rétablir). Un message masqué disparaît du site mais reste en base.
+
+### Fichiers
+
+```
+src/lib/user-auth.ts            # Cookie de session utilisateur (Edge + Node)
+src/lib/user-session.ts         # getCurrentUser, droits, jetons d'email, anti-bruteforce
+src/lib/user-emails.ts          # Emails : confirmation, mot de passe oublié, instructeur retenu
+src/lib/market.ts, forum.ts     # Validation des annonces, règles d'accès du forum
+src/components/compte/ui.tsx    # Styles et petits composants des pages de comptes, useAccount()
+src/components/forum/shared.tsx # Auteur + badge, dates relatives
+src/components/admin/MarketManager.tsx, ForumModeration.tsx
+src/app/inscription, connexion, reinitialiser-mot-de-passe, mon-compte, espace-instructeur, forum, forum/[id], bibliotheque/corriges
+src/app/api/compte/**                 # inscription, connexion, deconnexion, moi, confirmer, renvoyer-confirmation, mot-de-passe-oublie, reinitialiser, PATCH profil/mot de passe
+src/app/api/corrections/**            # liste + fichier d'un corrigé (comptes connectés)
+src/app/api/espace-instructeur/**     # annonces + candidature
+src/app/api/forum/**                  # sujets, réponses, suppression, signalements
+src/app/api/bleSseD/corrections/**, market-offers/**, market-interests/[id], forum
+```
+
+### Design des pages (fonds photo et transitions)
+
+Les pages de cette section partagent un système visuel dans la continuité de l'accueil (or `#c9951a`, bleu nuit `#0d1b3e`, titres Cinzel), défini dans `src/components/compte/ui.tsx` :
+- **`AuthShell`** (inscription, connexion, nouveau mot de passe) : écran partagé, photo sous un voile bleu nuit avec une phrase d'accroche et les avantages à gauche, formulaire à droite ; sur téléphone, la photo devient un bandeau que la carte du formulaire vient chevaucher.
+- **`PageHero`** (mon compte, espace instructeur, forum) : grand bandeau photo sous un voile clair, carte flottante à droite (profil, chiffres clés), contenu qui chevauche le bas du bandeau. La page d'un sujet du forum utilise un bandeau sombre avec la question en titre.
+- Cartes en verre dépoli, halos dorés qui dérivent lentement (`Glow`), avatars à initiales colorés selon le profil, icônes SVG en ligne (aucune dépendance), squelettes de chargement.
+- **Transitions « fondantes »** (`globals.css`) : `animate-fade-blur` (flou → net + léger glissement, même esprit que `PageTransition`), `stagger` (apparition en cascade des cartes, délai via la variable CSS `--i`), `animate-ken-burns` (la photo de fond avance très lentement), `animate-drift`, `skeleton`. Toutes désactivées si l'appareil demande de réduire les animations (`prefers-reduced-motion`).
+- L'étagère des corrigés reprend le fond photo de la bibliothèque (`fond-etagere.jpg`).
+- Les cartes flottantes de ces pages utilisent `animate-float-y` (flottement vertical, **sans rotation**) ; l'animation `animate-float` de l'accueil garde sa légère inclinaison volontaire.
+
+**Fondu entre les pages** (`src/components/PageTransition.tsx`, monté dans `layout.tsx`, s'applique à tout le site) :
+- **Navigations internes** : au clic sur un lien interne, la page actuelle s'efface (animation CSS `pageLeave`, 220 ms), puis la navigation est lancée ; la nouvelle page apparaît avec `pageEnter` (450 ms). Ne sont pas interceptés : liens externes, nouvel onglet, `download`, routes `/api/**`, fichiers, et liens vers la page actuelle (changement de filtre ou d'ancre). Filet de sécurité : si la navigation n'aboutit pas, la page réapparaît au bout de 5 s.
+- **Navigations complètes** (rechargement, `window.location` après connexion) : fondu natif du navigateur via `@view-transition { navigation: auto; }` (`globals.css`).
+- Désactivé si l'appareil demande de réduire les animations.
+- **Pièges rencontrés** : (1) une première version basculait des transitions CSS via `requestAnimationFrame` — quand le navigateur ne produit pas d'image (onglet en arrière-plan, appareil occupé), la nouvelle page pouvait rester invisible : d'où les `@keyframes`, qui démarrent sans dépendre des images affichées ; (2) animer un fort flou sur toute la page figeait l'animation pendant la construction de la nouvelle page (mesuré) : le flou est limité à 4 px ; (3) au repos, le conteneur ne porte **aucun** filtre ni transformation — l'ancienne version laissait `filter: blur(0px)`, ce qui dérègle les éléments `position: fixed` et `backdrop-blur` des pages.
+
+**Photos** (`public/images/comptes/`, ~1,8 Mo au total, redimensionnées par `next/image`) — toutes gratuites sous [licence Unsplash](https://unsplash.com/license) (usage commercial libre, sans attribution obligatoire) :
+
+| Fichier | Page | Photo Unsplash |
+|---|---|---|
+| `inscription.jpg` | Inscription | Classe, mains levées — Emmanuel Ikwuegbu (`M-4lFg1Xfag`) |
+| `connexion.jpg` | Connexion, nouveau mot de passe | Élève qui écrit — Santi Vedrí (`O5EMzfdxedg`) |
+| `mon-compte.jpg` | Mon compte | Jeunes diplômés — Nqobile Vundla (`zOt6a59k2BE`) |
+| `espace-instructeur.jpg` | Espace instructeur, salle des profs | Enseignante devant sa classe — Emmanuel Ikwuegbu (`VC6MGt9ZoBA`) |
+| `forum.jpg` | Forum | Étudiants avec ordinateurs, au Plateau à Abidjan — Iwaria Inc. (`vWqBjWbc_H4`) |
+
+**Piège corrigé au passage (`next.config.ts`)** : depuis Next.js 16, `next/image` n'accepte par défaut que la qualité 75. Les fonds demandaient 70 et recevaient une erreur 400 — y compris le fond de l'étagère de la bibliothèque, qui affichait donc toujours le décor de secours en lambris au lieu de la photo. `images.qualities: [70, 75]` règle les deux.
+
+### Mise en production
+
+1. Pousser le schéma sur Neon **avant** de fusionner (nouvelles tables uniquement, aucune donnée existante touchée) : `DATABASE_URL="<url directe Neon>" npx prisma db push`.
+2. Optionnel : ajouter `USER_SESSION_SECRET` sur Vercel (sinon `ADMIN_SESSION_SECRET` est utilisé).
+3. Prévenir les instructeurs déjà inscrits (WhatsApp) qu'ils peuvent créer leur accès sur `/inscription` avec l'email de leur fiche.
 
 ---
 
@@ -546,17 +671,20 @@ Le lien WhatsApp du footer de la vitrine a ensuite été mis à jour : il pointa
 
 La bibliothèque a ensuite été entièrement repensée (v2, voir §7quaterdecies) : accueil en étagère de livres colorés par matière, ouverture des ressources dans un classeur à onglets par chapitre, lecture en ligne compatible mobile (PDF page par page, vidéos intégrées) et téléchargement direct, avec de nouvelles données (chapitres, couleurs des matières, slugs, compteurs de vues et de téléchargements) et un onglet d'administration commun aux trois panneaux. Le travail a été mené sur une branche séparée (`bibliotheque-v2`), testé en local sur ordinateur et téléphone, puis fusionné dans `main` après la mise à jour du schéma Neon.
 
+Des comptes utilisateurs ont ensuite été ouverts aux élèves, aux parents et aux instructeurs (voir §7quindecies), avec trois nouveautés : des corrigés rattachés aux documents de la bibliothèque et réservés aux membres (le reste restant en libre accès), un marché d'annonces où l'équipe publie anonymement les besoins des familles et où les instructeurs approuvés se positionnent, et un forum d'entraide (questions des élèves, salle des profs entre instructeurs) modéré par signalement. Le travail a été mené sur la branche `espaces-comptes`. Ces nouvelles pages ont ensuite reçu un habillage plus moderne (photos libres de droits en fond, cartes en verre dépoli, apparitions en fondu et en cascade), vérifié par captures d'écran sur ordinateur et téléphone ; à cette occasion, la photo de fond de l'étagère, jusque-là jamais affichée à cause d'un réglage de qualité d'image refusé par Next.js 16, a été rétablie.
+
 Reste à traiter : l'analytics, le système de notation, et le pipeline de vérification automatique.
 
 ---
 
 ## 9. Fonctionnalités à développer
 
-Fonctionnalités identifiées comme nécessaires au bon fonctionnement et à la croissance de l'application. La liste d'attente par matière, les filtres mode/ville/commune, la bibliothèque de contenus pédagogiques, la refonte visuelle, le référencement (SEO), le système admin multi-rôles (comptes, contrats, export CSV, récupération de mot de passe) et la bibliothèque v2 ont depuis été développés et déployés (voir §8, §7decies à §7quaterdecies) ; ce qui suit reste à faire.
+Fonctionnalités identifiées comme nécessaires au bon fonctionnement et à la croissance de l'application. La liste d'attente par matière, les filtres mode/ville/commune, la bibliothèque de contenus pédagogiques, la refonte visuelle, le référencement (SEO), le système admin multi-rôles (comptes, contrats, export CSV, récupération de mot de passe), la bibliothèque v2 et les comptes utilisateurs (corrigés, marché, forum) ont depuis été développés (voir §8, §7decies à §7quindecies) ; ce qui suit reste à faire.
 
 ### 9.1 Croissance (augmenter les inscriptions)
 
-- **Comptes parents/élèves.** Actuellement, chaque demande de mise en relation est anonyme (email ressaisi à chaque fois), sans historique ni suivi. Un compte simple permettrait à un parent de suivre l'état de ses demandes passées sans tout ressaisir. Prérequis identifié pour restreindre un jour la bibliothèque de contenus (§8) aux matières réellement suivies par l'élève.
+- **Relier les demandes aux comptes parents.** Les comptes existent désormais (§7quindecies), mais une demande de mise en relation reste anonyme (email ressaisi à chaque fois). Étape suivante : pré-remplir la demande quand le parent est connecté et lui montrer le suivi de ses demandes dans `/mon-compte`, puis permettre à l'équipe de créer une annonce du marché directement depuis une demande.
+- **Lien parent ↔ enfant** entre comptes (un parent suit l'activité de son enfant), et notifications (email/WhatsApp) quand quelqu'un répond à une question du forum.
 - **Système de parrainage.** Un code de parrainage pour les parents ou instructeurs satisfaits — solution peu coûteuse, adaptée à un contexte où le bouche-à-oreille est probablement déjà le principal canal d'acquisition.
 
 ### 9.2 Expérience utilisateur

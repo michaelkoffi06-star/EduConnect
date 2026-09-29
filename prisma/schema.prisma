@@ -69,9 +69,11 @@ model Instructor {
   createdAt   DateTime       @default(now())
   updatedAt   DateTime       @updatedAt
 
-  subjects      InstructorSubject[]
-  matchRequests MatchRequest[]
-  contracts     Contract[]
+  subjects        InstructorSubject[]
+  matchRequests   MatchRequest[]
+  contracts       Contract[]
+  user            User? // Compte de connexion de l'instructeur (espace instructeur, voir §7quindecies)
+  marketInterests MarketInterest[]
 }
 
 // 6. Table des Disciplines (Maths, Physique...)
@@ -81,10 +83,12 @@ model Subject {
   slug  String  @unique
   color String? // Couleur des tranches de la matière sur l'étagère de la bibliothèque (hex, ex. #8FB3AB)
 
-  instructors InstructorSubject[]
-  resources   Resource[]
-  contracts   Contract[]
-  chapters    Chapter[]
+  instructors  InstructorSubject[]
+  resources    Resource[]
+  contracts    Contract[]
+  chapters     Chapter[]
+  marketOffers MarketOffer[]
+  forumThreads ForumThread[]
 }
 
 // 7. Table de liaison explicite Many-to-Many
@@ -182,8 +186,9 @@ model Resource {
   downloadCount Int           @default(0)
   createdAt     DateTime      @default(now())
 
-  subject Subject  @relation(fields: [subjectId], references: [id], onDelete: Cascade)
-  chapter Chapter? @relation(fields: [chapterId], references: [id], onDelete: SetNull)
+  subject    Subject     @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  chapter    Chapter?    @relation(fields: [chapterId], references: [id], onDelete: SetNull)
+  correction Correction? // Corrigé réservé aux comptes connectés (voir §7quindecies)
 
   @@index([subjectId])
   @@index([chapterId])
@@ -252,4 +257,184 @@ model ContractEntry {
   contract Contract @relation(fields: [contractId], references: [id], onDelete: Cascade)
 
   @@unique([contractId, month])
+}
+
+// ---------------------------------------------------------------------------
+// Comptes utilisateurs, corrigés, marché des instructeurs et forum (voir §7quindecies)
+// ---------------------------------------------------------------------------
+
+// 20. Profil d'un compte utilisateur du site (distinct des comptes admin)
+enum UserRole {
+  ELEVE
+  PARENT
+  INSTRUCTEUR
+}
+
+// 21. Compte utilisateur : élève, parent ou instructeur (email + mot de passe)
+model User {
+  id              String    @id @default(uuid())
+  email           String    @unique // Toujours enregistré en minuscules
+  passwordHash    String
+  role            UserRole
+  firstName       String
+  lastName        String
+  classe          String? // Élève : classe suivie, texte libre (ex. "3e", "Tle D")
+  emailVerifiedAt DateTime? // Connexion impossible tant que l'email n'est pas confirmé
+  instructorId    String?   @unique // Compte INSTRUCTEUR : fiche instructeur liée (même email)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  instructor   Instructor?   @relation(fields: [instructorId], references: [id], onDelete: Cascade)
+  tokens       UserToken[]
+  forumThreads ForumThread[]
+  forumPosts   ForumPost[]
+  forumReports ForumReport[]
+}
+
+// 22. Jetons à usage unique envoyés par email (confirmation d'adresse, mot de passe oublié)
+enum UserTokenType {
+  VERIFY_EMAIL
+  RESET_PASSWORD
+}
+
+model UserToken {
+  id        String        @id @default(uuid())
+  tokenHash String        @unique // SHA-256 du jeton : le jeton en clair n'existe que dans l'email
+  type      UserTokenType
+  userId    String
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime      @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+// 23. Corrigé d'un document/exercice de la bibliothèque. Fichier stocké dans le bucket R2
+// PRIVÉ (clé "corrections/<id>.<ext>"), servi uniquement aux comptes connectés via une URL signée.
+model Correction {
+  id            String   @id @default(uuid())
+  resourceId    String   @unique // Un corrigé par document
+  fileExt       String // pdf / jpg / png
+  viewCount     Int      @default(0)
+  downloadCount Int      @default(0)
+  createdAt     DateTime @default(now())
+
+  resource Resource @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+}
+
+// 24. Statut d'une annonce du marché des instructeurs
+enum MarketOfferStatus {
+  OPEN // Visible par les instructeurs, qui peuvent se positionner
+  FILLED // Pourvue (un instructeur a été retenu)
+  CLOSED // Retirée sans suite
+}
+
+// 25. Annonce du marché : besoin d'une famille, publié anonymement par l'équipe
+model MarketOffer {
+  id          String            @id @default(uuid())
+  title       String
+  subjectId   String
+  level       AcademicLevel
+  classe      String?
+  mode        TeachingMode      @default(DOMICILE)
+  city        String?
+  commune     String?
+  schedule    String? // Rythme / créneaux, texte libre (ex. "2 séances par semaine, le soir")
+  budget      String? // Rémunération indicative, texte libre
+  description String?           @db.Text
+  status      MarketOfferStatus @default(OPEN)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  subject   Subject          @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  interests MarketInterest[]
+
+  @@index([status, createdAt])
+}
+
+// 26. Statut d'une candidature d'instructeur sur une annonce
+enum MarketInterestStatus {
+  PENDING
+  SELECTED
+  DECLINED
+}
+
+// 27. Un instructeur se déclare intéressé par une annonce
+model MarketInterest {
+  id           String               @id @default(uuid())
+  offerId      String
+  instructorId String
+  message      String?              @db.Text
+  status       MarketInterestStatus @default(PENDING)
+  createdAt    DateTime             @default(now())
+
+  offer      MarketOffer @relation(fields: [offerId], references: [id], onDelete: Cascade)
+  instructor Instructor  @relation(fields: [instructorId], references: [id], onDelete: Cascade)
+
+  @@unique([offerId, instructorId])
+  @@index([instructorId])
+}
+
+// 28. Espaces du forum
+enum ForumSpace {
+  QUESTIONS // Questions des élèves et parents, réponses de tous (lecture publique)
+  SALLE_DES_PROFS // Entre instructeurs approuvés uniquement
+}
+
+// 29. Sujet du forum (question + fil de réponses)
+model ForumThread {
+  id             String         @id @default(uuid())
+  space          ForumSpace     @default(QUESTIONS)
+  title          String
+  body           String         @db.Text
+  subjectId      String?
+  level          AcademicLevel?
+  authorId       String
+  hidden         Boolean        @default(false) // Masqué par la modération
+  replyCount     Int            @default(0) // Réponses visibles
+  lastActivityAt DateTime       @default(now())
+  createdAt      DateTime       @default(now())
+
+  author  User          @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  subject Subject?      @relation(fields: [subjectId], references: [id], onDelete: SetNull)
+  posts   ForumPost[]
+  reports ForumReport[]
+
+  @@index([space, lastActivityAt])
+}
+
+// 30. Réponse dans un sujet du forum
+model ForumPost {
+  id        String   @id @default(uuid())
+  threadId  String
+  authorId  String
+  body      String   @db.Text
+  hidden    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  thread  ForumThread   @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  author  User          @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  reports ForumReport[]
+
+  @@index([threadId, createdAt])
+  @@index([authorId, createdAt])
+}
+
+// 31. Signalement d'un sujet ou d'une réponse, traité par l'équipe
+model ForumReport {
+  id         String   @id @default(uuid())
+  threadId   String
+  postId     String? // null : c'est le sujet lui-même qui est signalé
+  reporterId String
+  reason     String?
+  resolved   Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  thread   ForumThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  post     ForumPost?  @relation(fields: [postId], references: [id], onDelete: Cascade)
+  reporter User        @relation(fields: [reporterId], references: [id], onDelete: Cascade)
+
+  @@index([resolved, createdAt])
 }
