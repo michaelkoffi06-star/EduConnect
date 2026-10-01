@@ -37,7 +37,7 @@ async function uploadDirect(token: string, kind: 'photo' | 'cni' | 'cv', file: F
   const presignRes = await fetch(`/api/instructors/edit/${token}/files/presign`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ kind, contentType: file.type }),
+    body: JSON.stringify({ kind, contentType: file.type, size: file.size }),
   });
   const presignData = await presignRes.json();
   if (!presignRes.ok) throw new Error(presignData.error || `Échec de la présignature (${kind}).`);

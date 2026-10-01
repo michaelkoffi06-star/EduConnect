@@ -25,8 +25,10 @@ export async function POST(req: NextRequest) {
       data: {
         passwordHash: await hashPassword(body.password),
         emailVerifiedAt: current?.emailVerifiedAt ?? new Date(),
+        // Déconnecte toutes les sessions ouvertes avec l'ancien mot de passe (§7sedecies)
+        sessionVersion: { increment: 1 },
       },
-      select: { id: true, role: true },
+      select: { id: true, role: true, sessionVersion: true },
     });
 
     const res = NextResponse.json({ ok: true });

@@ -64,7 +64,7 @@ export async function GET(request: NextRequest) {
   } catch (error: any) {
     console.error("Erreur API Instructors (DB Mode):", error);
     return NextResponse.json(
-      { error: "Erreur serveur", details: error.message },
+      { error: "Erreur serveur" },
       { status: 500 }
     );
   }

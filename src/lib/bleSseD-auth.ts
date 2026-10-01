@@ -50,13 +50,20 @@ export interface SessionPayload {
   username: string;
   role: AdminRole;
   exp: number;
+  v?: number; // version de session (AdminUser.sessionVersion) ; absente des anciens jetons = 0
 }
 
-export async function createSessionToken(user: { id: string; username: string; role: AdminRole }): Promise<string> {
+export async function createSessionToken(user: {
+  id: string;
+  username: string;
+  role: AdminRole;
+  sessionVersion?: number;
+}): Promise<string> {
   const payload = JSON.stringify({
     sub: user.id,
     username: user.username,
     role: user.role,
+    v: user.sessionVersion ?? 0,
     exp: Date.now() + SESSION_DURATION_MS,
   });
   const payloadB64 = bytesToBase64Url(new TextEncoder().encode(payload));

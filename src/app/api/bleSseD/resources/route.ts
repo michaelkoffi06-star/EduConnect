@@ -8,7 +8,7 @@ import { publicResourceSelect, toPublicResource, resourceSlug, normalizeExternal
 
 // GET /api/bleSseD/resources — protégé par le middleware (voir §7bis)
 export async function GET(request: NextRequest) {
-  const denied = requireRole(request, ['SUPER_ADMIN', 'PEDAGOGIE', 'ADMINISTRATIF']);
+  const denied = await requireRole(request, ['SUPER_ADMIN', 'PEDAGOGIE', 'ADMINISTRATIF']);
   if (denied) return denied;
   try {
     const resources = await prisma.resource.findMany({
@@ -18,13 +18,13 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(resources.map(toPublicResource), { status: 200 });
   } catch (error: any) {
     console.error('Erreur API Admin Resources (GET):', error);
-    return NextResponse.json({ error: 'Erreur serveur', details: error.message }, { status: 500 });
+    return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
   }
 }
 
 // POST /api/bleSseD/resources — création après upload (si fichier) ou directe (si lien)
 export async function POST(req: NextRequest) {
-  const denied = requireRole(req, ['SUPER_ADMIN', 'PEDAGOGIE']);
+  const denied = await requireRole(req, ['SUPER_ADMIN', 'PEDAGOGIE']);
   if (denied) return denied;
   try {
     const body = await req.json();
@@ -91,6 +91,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(toPublicResource(resource), { status: 201 });
   } catch (error: any) {
     console.error('Erreur API Admin Resources (POST):', error);
-    return NextResponse.json({ error: 'Erreur serveur', details: error.message }, { status: 500 });
+    return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
   }
 }

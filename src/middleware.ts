@@ -75,6 +75,11 @@ export async function middleware(request: NextRequest) {
 
     const requestHeaders = new Headers(request.headers);
     requestHeaders.set('x-admin-role', role);
+    // Id du compte et version de session : requireRole() relit le compte en base avec,
+    // pour qu'un compte supprimé, rétrogradé ou dont le mot de passe a changé perde l'accès
+    // immédiatement (voir §7sedecies). Toujours réécrits ici : impossibles à falsifier.
+    requestHeaders.set('x-admin-id', session.sub);
+    requestHeaders.set('x-admin-sv', String(session.v ?? 0));
     return NextResponse.next({ request: { headers: requestHeaders } });
   }
 

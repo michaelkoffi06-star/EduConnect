@@ -64,6 +64,17 @@ bloquant (`next build` ne lance pas le lint), ne pas chercher à tout corriger a
   plus `isApprovedInstructor()` pour le marché et la salle des profs. `USER_SESSION_SECRET` est
   optionnel (repli sur `ADMIN_SESSION_SECRET`) mais à définir à part en production.
 - Corrigés : bucket R2 **privé**, servis uniquement par URL signée aux comptes connectés (§7quindecies).
+- `requireRole` est **asynchrone** (relit le compte et sa `sessionVersion` en base) : toujours
+  `const denied = await requireRole(request, [...])`. Changement de mot de passe ou de rôle ⇒
+  incrémenter `sessionVersion` (admin et comptes) pour déconnecter les sessions ouvertes.
+- Route **publique** qui écrit en base, envoie un email ou délivre une URL d'envoi de fichier :
+  `rateLimit()` (`src/lib/rate-limit.ts`) et longueurs maximales sur les champs.
+- Tout texte saisi par un utilisateur inséré dans un email passe par `escapeHtml()`
+  (`src/lib/user-emails.ts`) ; les liens d'email utilisent `siteOrigin()` (`src/lib/site.ts`).
+- URL d'envoi de fichier publique : vérifier que la cible n'appartient pas à un objet existant,
+  signer la taille (`ContentLength`) et la revérifier à la finalisation (`objectSize()`).
+- Réponses d'erreur : jamais de `error.message` renvoyé au navigateur (seulement `console.error`).
+- Audit de sécurité et corrections : §7sedecies.
 
 ## Architecture et conventions
 

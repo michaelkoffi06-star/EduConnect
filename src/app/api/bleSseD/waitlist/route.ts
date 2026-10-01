@@ -5,7 +5,7 @@ import { requireRole } from '@/lib/admin-permissions';
 
 // GET /api/bleSseD/waitlist — protégé par le middleware (voir §7bis)
 export async function GET(request: NextRequest) {
-  const denied = requireRole(request, ['SUPER_ADMIN']);
+  const denied = await requireRole(request, ['SUPER_ADMIN']);
   if (denied) return denied;
   try {
     const entries = await prisma.waitlistEntry.findMany({
@@ -26,6 +26,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(result, { status: 200 });
   } catch (error: any) {
     console.error('Erreur API Admin Waitlist (GET):', error);
-    return NextResponse.json({ error: 'Erreur serveur', details: error.message }, { status: 500 });
+    return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
   }
 }

@@ -16,7 +16,7 @@ export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const denied = requireRole(req, ['SUPER_ADMIN', 'PEDAGOGIE']);
+  const denied = await requireRole(req, ['SUPER_ADMIN', 'PEDAGOGIE']);
   if (denied) return denied;
   try {
     const { id } = await params;
@@ -86,6 +86,6 @@ export async function PATCH(
 
   } catch (error: any) {
     console.error('Erreur mise a jour fichiers instructeur (admin) :', error);
-    return NextResponse.json({ error: 'Erreur serveur.', details: error.message }, { status: 500 });
+    return NextResponse.json({ error: 'Erreur serveur.' }, { status: 500 });
   }
 }

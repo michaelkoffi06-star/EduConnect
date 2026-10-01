@@ -64,6 +64,6 @@ export async function PATCH(
     return NextResponse.json(updated, { status: 200 });
   } catch (error: any) {
     console.error('Erreur modification profil instructeur :', error);
-    return NextResponse.json({ error: 'Erreur serveur.', details: error.message }, { status: 500 });
+    return NextResponse.json({ error: 'Erreur serveur.' }, { status: 500 });
   }
 }

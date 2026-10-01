@@ -9,7 +9,7 @@ const LEVELS: AcademicLevel[] = ['PRIMAIRE', 'COLLEGE', 'LYCEE', 'ALL'];
 
 // GET /api/bleSseD/chapters — liste des chapitres (classeurs) de la bibliothèque
 export async function GET(request: NextRequest) {
-  const denied = requireRole(request, ['SUPER_ADMIN', 'PEDAGOGIE', 'ADMINISTRATIF']);
+  const denied = await requireRole(request, ['SUPER_ADMIN', 'PEDAGOGIE', 'ADMINISTRATIF']);
   if (denied) return denied;
   try {
     const chapters = await prisma.chapter.findMany({
@@ -22,13 +22,13 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(chapters, { status: 200 });
   } catch (error: any) {
     console.error('Erreur API Admin Chapters (GET):', error);
-    return NextResponse.json({ error: 'Erreur serveur', details: error.message }, { status: 500 });
+    return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
   }
 }
 
 // POST /api/bleSseD/chapters — création d'un chapitre
 export async function POST(request: NextRequest) {
-  const denied = requireRole(request, ['SUPER_ADMIN', 'PEDAGOGIE']);
+  const denied = await requireRole(request, ['SUPER_ADMIN', 'PEDAGOGIE']);
   if (denied) return denied;
   try {
     const { title, subjectId, level, classe, order } = await request.json();
@@ -62,6 +62,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(chapter, { status: 201 });
   } catch (error: any) {
     console.error('Erreur API Admin Chapters (POST):', error);
-    return NextResponse.json({ error: 'Erreur serveur', details: error.message }, { status: 500 });
+    return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
   }
 }

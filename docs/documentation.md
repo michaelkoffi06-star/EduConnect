@@ -37,6 +37,8 @@ src/
 │   ├── bleSseD-auth.ts                 # Création/vérification du token de session (payload {sub, username, role, exp}, voir §7bis)
 │   ├── admin-permissions.ts            # getRoleFromHeaders() / requireRole() — contrôle d'accès par rôle (voir §7decies)
 │   ├── password.ts                     # hashPassword/verifyPassword (scrypt, format salt:hash) — partagé par tous les comptes admin
+│   ├── rate-limit.ts                   # rateLimit() : limite par IP des routes publiques (formulaires, inscriptions, envois de fichiers) — §7sedecies
+│   ├── site.ts                         # siteOrigin() : adresse officielle du site pour les liens envoyés par email — §7sedecies
 │   ├── library.ts                      # Bibliothèque : slugs, code de référence, forme publique d'une ressource, normalisation des liens
 │   ├── library-server.ts               # Bibliothèque : recherche d'une ressource par slug ou id (serveur uniquement)
 │   ├── r2.ts                           # Client S3/R2 + helpers upload/delete/get (voir §7ter), clés des corrigés (bucket privé)
@@ -161,11 +163,11 @@ private-uploads/
 - **`Resource`** — un contenu de la bibliothèque pédagogique : `type` (`DOCUMENT`/`VIDEO`/`EXERCICE`/`LIEN`), `subjectId`, `level` (`AcademicLevel`, défaut `ALL`), et soit `fileUrl` (DOCUMENT/EXERCICE, fichier hébergé sur R2 — bucket photos, préfixe `resources/`), soit `externalUrl` (VIDEO/LIEN, URL externe type YouTube/Vimeo — pas d'upload vidéo). Depuis la v2 (§7quaterdecies) : `slug` (URL publique `/bibliotheque/<slug>`, unique), `chapterId` (classeur, optionnel), `position` (ordre des onglets dans le classeur), `refNumber` (auto-incrémenté, sert au code de référence affiché, ex. `MATH-3E-07-C`), `viewCount` et `downloadCount`. Accessible à tous sans authentification ; seul son éventuel corrigé (`Correction`, §7quindecies) est réservé aux comptes connectés.
 - **`Chapter`** — un chapitre de la bibliothèque, affiché comme un classeur : `subjectId`, `title`, `slug` (unique par matière), `level`, `classe` (texte libre, ex. « 3e », « Tle D »), `order`. Sa suppression détache ses ressources sans les supprimer.
 - **`Subject.color`** — couleur (hex) des tranches de la matière sur l'étagère ; sans couleur choisie, une couleur est attribuée automatiquement.
-- **`AdminUser`** — un compte du back-office (`username` unique, `passwordHash` scrypt, `role` : `AdminRole`). Remplace l'ancien mot de passe admin unique partagé (voir §7decies).
+- **`AdminUser`** — un compte du back-office (`username` unique, `passwordHash` scrypt, `role` : `AdminRole`, `sessionVersion`). Remplace l'ancien mot de passe admin unique partagé (voir §7decies). `sessionVersion` est incrémenté à chaque changement de mot de passe ou de rôle pour invalider les sessions ouvertes (§7sedecies).
 - **`AdminRole`** *(enum)* — `SUPER_ADMIN` / `PEDAGOGIE` / `ADMINISTRATIF`.
 - **`Contract`** — un engagement instructeur/matière/niveau (`instructorId`, `subjectId`, `level`), créé et suivi depuis le panneau Pédagogie. Porte plusieurs `ContractEntry` (un par mois suivi).
 - **`ContractEntry`** — une entrée mensuelle d'un contrat : `month` (date, premier du mois), `studentCount`, `sessionCount`, `amountReceived`. Unique par `(contractId, month)` — une seule entrée par mois et par contrat, modifiable (upsert) plutôt que dupliquée.
-- **`User`** + **`UserRole`** *(enum `ELEVE`/`PARENT`/`INSTRUCTEUR`)* — compte du site (distinct d'`AdminUser`) : email unique en minuscules, `passwordHash`, prénom/nom, `classe` (élève), `emailVerifiedAt` (connexion impossible avant confirmation), `instructorId` (unique : compte instructeur ↔ fiche `Instructor`, supprimé avec la fiche). Voir §7quindecies.
+- **`User`** + **`UserRole`** *(enum `ELEVE`/`PARENT`/`INSTRUCTEUR`)* — compte du site (distinct d'`AdminUser`) : email unique en minuscules, `passwordHash`, prénom/nom, `classe` (élève), `emailVerifiedAt` (connexion impossible avant confirmation), `instructorId` (unique : compte instructeur ↔ fiche `Instructor`, supprimé avec la fiche), `sessionVersion` (incrémenté au changement de mot de passe, §7sedecies). Voir §7quindecies.
 - **`UserToken`** + **`UserTokenType`** *(`VERIFY_EMAIL`/`RESET_PASSWORD`)* — jeton à usage unique envoyé par email ; seule l'empreinte SHA-256 (`tokenHash`) est stockée, avec `expiresAt`/`usedAt`.
 - **`Correction`** — corrigé d'une `Resource` (un seul par ressource, `resourceId` unique) : `fileExt`, compteurs vues/téléchargements. Fichier dans le bucket R2 privé, `corrections/<id>.<ext>`.
 - **`MarketOffer`** + **`MarketOfferStatus`** *(`OPEN`/`FILLED`/`CLOSED`)* — annonce du marché des instructeurs, publiée par l'équipe (matière, niveau, classe, mode, lieu, rythme, rémunération, description — jamais les coordonnées de la famille).
@@ -546,7 +548,7 @@ Décisions prises avec Michaël (29/09/2026) : annonces publiées **par l'équip
 - Modèle `User` (§4) : email unique (enregistré en minuscules), mot de passe scrypt (`lib/password.ts`, même format que les comptes admin), `role` (`ELEVE` / `PARENT` / `INSTRUCTEUR`), `emailVerifiedAt`, `instructorId` (compte instructeur ↔ fiche `Instructor`).
 - **Session distincte de la session admin** : cookie httpOnly `user_session` (30 jours), signé en HMAC-SHA256 comme la session admin mais avec un préfixe propre (`lib/user-auth.ts`, compatible Edge) — un jeton utilisateur ne peut jamais passer pour un jeton admin, et inversement. Secret : `USER_SESSION_SECRET`, ou à défaut `ADMIN_SESSION_SECRET` (aucune nouvelle variable obligatoire).
 - `lib/user-session.ts` (serveur) : `getCurrentUser(request)` relit le compte en base à chaque appel (un compte supprimé, non confirmé ou un instructeur suspendu perd l'accès immédiatement), `isApprovedInstructor()`, jetons d'email, limitation des tentatives.
-- **Confirmation d'email obligatoire** avant la première connexion : lien `GET /api/compte/confirmer?jeton=…` (48 h), qui confirme, connecte et redirige vers `/mon-compte`. Certaines messageries ouvrent les liens avant l'utilisateur : si le jeton a déjà servi et que l'email est confirmé, on renvoie simplement vers la connexion.
+- **Confirmation d'email obligatoire** avant la première connexion (lien valable 48 h). Depuis la correction du §7sedecies, le lien ouvre `/connexion?jeton=…` et l'adresse n'est confirmée **qu'avec le bon mot de passe** (`POST /api/compte/connexion` avec `confirmationToken`). L'ancien format `GET /api/compte/confirmer?jeton=…` redirige simplement vers cette page.
 - **Jetons d'email** (`UserToken`) : seule l'empreinte SHA-256 est stockée, usage unique, un seul jeton actif par type ; mot de passe oublié valable 1 h.
 - **Anti-bruteforce** : même table `LoginAttempt` que l'admin, avec un préfixe par usage (`compte:<ip>`, `oubli:<ip>`, `renvoi:<ip>`) — 5 essais / 15 min. Les routes « mot de passe oublié » et « renvoyer la confirmation » répondent pareil que l'email existe ou non.
 - **Instructeurs** : le formulaire `/register-instructor` demande désormais un mot de passe et crée le compte avec la fiche (l'email de confirmation de candidature contient aussi le lien de confirmation du compte). Les instructeurs inscrits avant cette version créent leur accès depuis `/inscription` (profil « Instructeur ») avec **l'email de leur fiche** — la confirmation d'email prouve qu'ils en sont propriétaires. Depuis `/mon-compte`, un instructeur retrouve le lien de modification de sa fiche (`/modifier-profil/[token]`).
@@ -629,6 +631,45 @@ Les pages de cette section partagent un système visuel dans la continuité de l
 
 ---
 
+## 7sedecies. Sécurité : audit d'octobre 2026 et corrections
+
+Revue de toutes les routes API (66) et du middleware, faite le 01/10/2026 ; corrections livrées sur la branche `securite`. Ce qui était déjà solide : `requireRole` sur toutes les routes admin, en-tête de rôle non falsifiable, sessions admin/comptes séparées, scrypt, jetons d'email hachés à usage unique, forum sans email exposé ni HTML interprété.
+
+**1. Grave — remplacement des fichiers d'un instructeur.** `POST /api/register-instructor/presign` (public) délivrait une URL d'envoi pour n'importe quel identifiant, y compris celui d'un instructeur existant ; ces identifiants étant publics (`/api/instructors`), n'importe qui pouvait remplacer la photo affichée, la CNI ou le CV d'un instructeur, et déposer des fichiers de taille illimitée sur R2. Corrections :
+- refus (409) si l'identifiant appartient déjà à un instructeur ;
+- taille obligatoire dans la demande (`size`), bornée (photo 5 Mo, CNI/CV 10 Mo, constantes `MAX_PHOTO_BYTES` / `MAX_DOC_BYTES` de `lib/r2.ts`) et **signée dans l'URL** (`ContentLength`) : R2 refuse un fichier d'une autre taille ;
+- revérification côté serveur à la finalisation (`objectSize()`), fichier supprimé s'il dépasse ; même chose pour le re-upload via `/modifier-profil/[token]` ;
+- 30 demandes d'URL par heure et par IP.
+
+**2. Emails.** Les textes saisis (prénom, message, nom…) étaient insérés tels quels dans le HTML des emails — dont celui envoyé **à l'adresse saisie** lors d'une candidature instructeur, ce qui permettait d'envoyer des emails piégés depuis `notifications@educonnect-ci.org`. Tout passe désormais par `escapeHtml()` (`lib/user-emails.ts`). La demande de mise en relation relit le nom de l'instructeur en base (instructeur approuvé) au lieu de croire le navigateur. Les liens envoyés par email utilisent l'adresse officielle (`siteOrigin()` de `lib/site.ts` : `https://educonnect-ci.org` en production, variable `SITE_URL` possible) et plus l'adresse déduite de la requête. Les notifications partent toutes de `notifications@educonnect-ci.org`.
+
+**3. Limitation par IP** (`rateLimit()` de `lib/rate-limit.ts`, table `LoginAttempt`, clés `rl:<usage>:<ip>`, nettoyage automatique des traces de plus de 2 jours) :
+
+| Route | Limite |
+|---|---|
+| `/api/contact`, `/api/contact-message`, `/api/feedback` | 5 / heure |
+| `/api/waitlist` | 10 / heure |
+| `/api/compte/inscription` | 5 / heure |
+| `/api/register-instructor` | 10 / heure |
+| `/api/register-instructor/presign`, `/api/instructors/edit/[token]/files/presign` | 30 / heure |
+
+Longueurs maximales ajoutées sur ces formulaires. Une panne du compteur laisse passer la requête (le site ne doit pas tomber pour ça).
+
+**4. Pré-détournement de compte.** Quelqu'un pouvait créer un compte avec l'email d'une autre personne (ou d'un instructeur sans compte) ; si la vraie personne cliquait sur le lien de confirmation reçu, le compte s'activait **avec le mot de passe de l'intrus** et la connectait directement — pour un instructeur, l'intrus obtenait ensuite le lien de modification de la fiche. Désormais le lien de confirmation ouvre `/connexion?jeton=…` et l'adresse n'est confirmée qu'en se connectant avec le bon mot de passe (`consumeEmailTokenFor()` vérifie que le jeton appartient bien au compte). La vraie personne qui ne connaît pas ce mot de passe passe par « Mot de passe oublié », qui confirme aussi l'adresse.
+
+**5. Révocation immédiate des sessions.** Les sessions (7 jours admin, 30 jours comptes) restaient valables après suppression d'un compte, changement de rôle ou de mot de passe. Nouveau champ `sessionVersion` (AdminUser et User), inscrit dans le jeton (`v`) :
+- admin : le middleware transmet `x-admin-id` et `x-admin-sv` ; `requireRole()` est devenu **asynchrone** (`await requireRole(...)`) et relit le compte en base — c'est le rôle en base qui fait foi ; version incrémentée au changement de mot de passe (`/api/account`, mot de passe oublié) et au changement de mot de passe ou de rôle par le super-admin ;
+- comptes : `getUserFromToken()` compare la version ; incrémentée au changement de mot de passe (`/api/compte`, réinitialisation). La session en cours reçoit un nouveau cookie, les autres appareils sont déconnectés.
+Les jetons émis avant la correction (sans `v`) valent version 0 : personne n'est déconnecté par la mise à jour.
+
+**6. Messages d'erreur.** Les réponses 500 ne renvoient plus le message technique interne (`details: error.message`), seulement journalisé côté serveur.
+
+**Non corrigé (faible)** : les compteurs de vues/téléchargements de la bibliothèque peuvent être gonflés artificiellement ; pas d'en-têtes de sécurité dédiés (CSP, X-Frame-Options) — le risque de « clickjacking » est limité par les cookies `SameSite=Lax`.
+
+**Mise en production** : schéma modifié (`sessionVersion`) ⇒ `prisma db push` sur Neon avant la fusion dans `main`.
+
+---
+
 ## 8. Historique de conception (pour contexte)
 
 Le projet a démarré comme deux choses séparées : une vitrine statique HTML/CSS/JS, et une app Next.js indépendante pour la gestion des instructeurs. Elles ont été fusionnées dans un seul projet Next.js pour simplifier le déploiement et la maintenance. Le design a ensuite évolué d'un thème sombre "glassmorphism" chargé vers un style plus sobre (fond blanc, moins de sections), avec un header unique simplifié (logo + menu hamburger) partagé entre toutes les pages sauf l'admin, resté en thème sombre.
@@ -672,6 +713,8 @@ Le lien WhatsApp du footer de la vitrine a ensuite été mis à jour : il pointa
 La bibliothèque a ensuite été entièrement repensée (v2, voir §7quaterdecies) : accueil en étagère de livres colorés par matière, ouverture des ressources dans un classeur à onglets par chapitre, lecture en ligne compatible mobile (PDF page par page, vidéos intégrées) et téléchargement direct, avec de nouvelles données (chapitres, couleurs des matières, slugs, compteurs de vues et de téléchargements) et un onglet d'administration commun aux trois panneaux. Le travail a été mené sur une branche séparée (`bibliotheque-v2`), testé en local sur ordinateur et téléphone, puis fusionné dans `main` après la mise à jour du schéma Neon.
 
 Des comptes utilisateurs ont ensuite été ouverts aux élèves, aux parents et aux instructeurs (voir §7quindecies), avec trois nouveautés : des corrigés rattachés aux documents de la bibliothèque et réservés aux membres (le reste restant en libre accès), un marché d'annonces où l'équipe publie anonymement les besoins des familles et où les instructeurs approuvés se positionnent, et un forum d'entraide (questions des élèves, salle des profs entre instructeurs) modéré par signalement. Le travail a été mené sur la branche `espaces-comptes`. Ces nouvelles pages ont ensuite reçu un habillage plus moderne (photos libres de droits en fond, cartes en verre dépoli, apparitions en fondu et en cascade), vérifié par captures d'écran sur ordinateur et téléphone ; à cette occasion, la photo de fond de l'étagère, jusque-là jamais affichée à cause d'un réglage de qualité d'image refusé par Next.js 16, a été rétablie.
+
+Un audit de sécurité complet a ensuite été mené (voir §7sedecies) : il a révélé une faille grave (remplacement possible des fichiers d'un instructeur via la route publique d'envoi de fichiers) et plusieurs faiblesses (emails non échappés, absence de limite sur les formulaires publics, pré-détournement de compte, sessions non révoquées), toutes corrigées sur la branche `securite`.
 
 Reste à traiter : l'analytics, le système de notation, et le pipeline de vérification automatique.
 

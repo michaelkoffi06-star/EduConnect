@@ -71,7 +71,11 @@ export async function POST(request: NextRequest) {
   }
 
   const passwordHash = await hashPassword(newPassword);
-  await prisma.adminUser.update({ where: { id: user!.id }, data: { passwordHash } });
+  // Nouvelle version de session : toute session ouverte avec l'ancien mot de passe est refusée (§7sedecies)
+  await prisma.adminUser.update({
+    where: { id: user!.id },
+    data: { passwordHash, sessionVersion: { increment: 1 } },
+  });
 
   return NextResponse.json({ ok: true });
 }

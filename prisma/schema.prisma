@@ -226,6 +226,9 @@ model AdminUser {
   username     String    @unique
   passwordHash String
   role         AdminRole
+  // Incrémenté à chaque changement de mot de passe ou de rôle : les sessions déjà ouvertes
+  // (qui portent l'ancienne valeur) sont refusées immédiatement (voir §7sedecies)
+  sessionVersion Int      @default(0)
   createdAt    DateTime  @default(now())
 }
 
@@ -281,6 +284,7 @@ model User {
   classe          String? // Élève : classe suivie, texte libre (ex. "3e", "Tle D")
   emailVerifiedAt DateTime? // Connexion impossible tant que l'email n'est pas confirmé
   instructorId    String?   @unique // Compte INSTRUCTEUR : fiche instructeur liée (même email)
+  sessionVersion  Int       @default(0) // Incrémenté au changement de mot de passe : déconnecte les autres sessions (§7sedecies)
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 

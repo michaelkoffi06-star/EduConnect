@@ -11,7 +11,7 @@ const ALLOWED_TYPES = ['application/pdf', 'image/jpeg', 'image/png'];
 
 // POST /api/bleSseD/resources/presign — protégé par le middleware (voir §7bis)
 export async function POST(req: NextRequest) {
-  const denied = requireRole(req, ['SUPER_ADMIN', 'PEDAGOGIE']);
+  const denied = await requireRole(req, ['SUPER_ADMIN', 'PEDAGOGIE']);
   if (denied) return denied;
   try {
     const { resourceId, contentType } = await req.json();
@@ -26,6 +26,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ uploadUrl, key }, { status: 200 });
   } catch (error: any) {
     console.error('Erreur présignature ressource :', error);
-    return NextResponse.json({ error: 'Erreur serveur.', details: error.message }, { status: 500 });
+    return NextResponse.json({ error: 'Erreur serveur.' }, { status: 500 });
   }
 }

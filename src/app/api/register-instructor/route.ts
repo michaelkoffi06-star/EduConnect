@@ -11,8 +11,14 @@ import {
   privateKey,
   photoPublicUrl,
   extFromMime,
-  objectExists,
+  objectSize,
+  deleteFromR2,
+  MAX_PHOTO_BYTES,
+  MAX_DOC_BYTES,
 } from '@/lib/r2';
+import { escapeHtml } from '@/lib/user-emails';
+import { rateLimit, HOUR } from '@/lib/rate-limit';
+import { siteOrigin } from '@/lib/site';
 
 
 const ALLOWED_PHOTO_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
@@ -23,6 +29,9 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 // (voir /api/register-instructor/presign), AVANT cet appel. Cette route se contente
 // de vérifier que les fichiers existent bien sur R2, puis crée la fiche instructeur.
 export async function POST(req: NextRequest) {
+  const limited = await rateLimit(req, 'inscription-instructeur', 10, HOUR);
+  if (limited) return limited;
+
   try {
     const body = await req.json();
     const {
@@ -51,6 +60,13 @@ export async function POST(req: NextRequest) {
     if (!firstName || !lastName || !email || !whatsapp || !bio || !bio.trim() || !city || !city.trim() || !commune || !commune.trim() || !Array.isArray(subjects) || subjects.length === 0) {
       return NextResponse.json({ error: 'Champs obligatoires manquants (dont la bio, la ville et la commune).' }, { status: 400 });
     }
+    const textFields = { firstName, lastName, email, whatsapp, bio, city, commune };
+    if (Object.values(textFields).some((v) => typeof v !== 'string') || subjects.some((id: unknown) => typeof id !== 'string')) {
+      return NextResponse.json({ error: 'Champs invalides.' }, { status: 400 });
+    }
+    if (firstName.length > 60 || lastName.length > 60 || email.length > 200 || whatsapp.length > 30 || bio.length > 3000 || city.length > 80 || commune.length > 80 || subjects.length > 20) {
+      return NextResponse.json({ error: 'Un des champs est trop long.' }, { status: 400 });
+    }
 
     if (!ALLOWED_PHOTO_TYPES.includes(photoType) || !ALLOWED_DOC_TYPES.includes(cniType) || !ALLOWED_DOC_TYPES.includes(cvType)) {
       return NextResponse.json({ error: 'Type de fichier invalide.' }, { status: 400 });
@@ -78,17 +94,26 @@ export async function POST(req: NextRequest) {
     const cniKey = privateKey(instructorId, 'cni', cniExt);
     const cvKey = privateKey(instructorId, 'cv', cvExt);
 
-    const [photoOk, cniOk, cvOk] = await Promise.all([
-      objectExists(BUCKET_PHOTOS, pKey),
-      objectExists(BUCKET_PRIVATE, cniKey),
-      objectExists(BUCKET_PRIVATE, cvKey),
+    const [photoSize, cniSize, cvSize] = await Promise.all([
+      objectSize(BUCKET_PHOTOS, pKey),
+      objectSize(BUCKET_PRIVATE, cniKey),
+      objectSize(BUCKET_PRIVATE, cvKey),
     ]);
 
-    if (!photoOk || !cniOk || !cvOk) {
+    if (photoSize === null || cniSize === null || cvSize === null) {
       return NextResponse.json(
         { error: "Un ou plusieurs fichiers n'ont pas fini d'être envoyés. Réessaie." },
         { status: 400 }
       );
+    }
+    // Revérification serveur de la taille (en plus de la taille signée dans l'URL d'envoi)
+    if (photoSize > MAX_PHOTO_BYTES || cniSize > MAX_DOC_BYTES || cvSize > MAX_DOC_BYTES) {
+      await Promise.all([
+        deleteFromR2(BUCKET_PHOTOS, pKey),
+        deleteFromR2(BUCKET_PRIVATE, cniKey),
+        deleteFromR2(BUCKET_PRIVATE, cvKey),
+      ]);
+      return NextResponse.json({ error: 'Un des fichiers est trop volumineux.' }, { status: 400 });
     }
 
     const newInstructor = await prisma.instructor.create({
@@ -124,9 +149,10 @@ export async function POST(req: NextRequest) {
       include: { user: { select: { id: true } } },
     });
 
-    const editLink = `${req.nextUrl.origin}/modifier-profil/${newInstructor.editToken}`;
+    const origin = siteOrigin(req);
+    const editLink = `${origin}/modifier-profil/${newInstructor.editToken}`;
     const verifyToken = newInstructor.user ? await createEmailToken(newInstructor.user.id, 'VERIFY_EMAIL') : null;
-    const verifyLink = verifyToken ? `${req.nextUrl.origin}/api/compte/confirmer?jeton=${verifyToken}` : null;
+    const verifyLink = verifyToken ? `${origin}/connexion?jeton=${verifyToken}` : null;
 
     try {
       if (!process.env.ADMIN_NOTIFICATION_EMAIL) {
@@ -139,7 +165,7 @@ export async function POST(req: NextRequest) {
             from: 'EduConnect <notifications@educonnect-ci.org>',
             to: [process.env.ADMIN_NOTIFICATION_EMAIL],
             subject: '🎓 Nouvelle candidature instructeur reçue !',
-            html: `<p>Candidature de <strong>${newInstructor.firstName} ${newInstructor.lastName}</strong> reçue et en attente de validation dans l'espace admin.</p>`,
+            html: `<p>Candidature de <strong>${escapeHtml(newInstructor.firstName)} ${escapeHtml(newInstructor.lastName)}</strong> reçue et en attente de validation dans l'espace admin.</p>`,
           });
           if (!error) {
             console.log("✅ Email admin envoyé, id:", data?.id, `(tentative ${attempt})`);
@@ -163,7 +189,7 @@ export async function POST(req: NextRequest) {
         subject: '✅ Votre candidature EduConnect a bien été reçue',
         html: `
           <div style="font-family: sans-serif; padding: 20px; color: #333;">
-            <h2 style="color: #c9951a;">Bonjour ${firstName},</h2>
+            <h2 style="color: #c9951a;">Bonjour ${escapeHtml(firstName)},</h2>
             <p>Votre candidature a bien été enregistrée et est en attente de validation.</p>
             <p>Vous pouvez modifier votre profil à tout moment via ce lien personnel :</p>
             <p><a href="${editLink}">${editLink}</a></p>
@@ -190,6 +216,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Un compte avec cet email existe déjà.' }, { status: 409 });
     }
 
-    return NextResponse.json({ error: 'Erreur serveur.', details: error.message }, { status: 500 });
+    return NextResponse.json({ error: 'Erreur serveur.' }, { status: 500 });
   }
 }

@@ -7,7 +7,7 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const denied = requireRole(request, ['SUPER_ADMIN', 'PEDAGOGIE']);
+  const denied = await requireRole(request, ['SUPER_ADMIN', 'PEDAGOGIE']);
   if (denied) return denied;
   try {
     const { id } = await params;
@@ -32,6 +32,6 @@ export async function POST(
     return NextResponse.json(entry, { status: 201 });
   } catch (error: any) {
     console.error('Erreur API Admin Contract Entries (POST):', error);
-    return NextResponse.json({ error: 'Erreur serveur', details: error.message }, { status: 500 });
+    return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
   }
 }

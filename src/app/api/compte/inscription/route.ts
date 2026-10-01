@@ -3,6 +3,8 @@ import { prisma } from '@/lib/prisma';
 import { hashPassword } from '@/lib/password';
 import { EMAIL_RE, createEmailToken, normalizeEmail, passwordError } from '@/lib/user-session';
 import { sendVerificationEmail } from '@/lib/user-emails';
+import { rateLimit, HOUR } from '@/lib/rate-limit';
+import { siteOrigin } from '@/lib/site';
 
 // POST /api/compte/inscription — création d'un compte élève, parent ou instructeur.
 // - ELEVE / PARENT : prénom, nom, email, mot de passe (+ classe pour l'élève).
@@ -11,6 +13,10 @@ import { sendVerificationEmail } from '@/lib/user-emails';
 //   créent leur compte directement depuis /register-instructor.
 // Le compte est inutilisable tant que l'email n'est pas confirmé (lien envoyé par email).
 export async function POST(req: NextRequest) {
+  // Chaque inscription envoie un email : nombre limité par IP (voir §7sedecies)
+  const limited = await rateLimit(req, 'inscription-compte', 5, HOUR);
+  if (limited) return limited;
+
   try {
     const body = await req.json().catch(() => ({}));
     const role = body?.role;
@@ -84,7 +90,7 @@ export async function POST(req: NextRequest) {
     });
 
     const token = await createEmailToken(user.id, 'VERIFY_EMAIL');
-    await sendVerificationEmail(email, user.firstName, `${req.nextUrl.origin}/api/compte/confirmer?jeton=${token}`);
+    await sendVerificationEmail(email, user.firstName, `${siteOrigin(req)}/connexion?jeton=${token}`);
 
     return NextResponse.json({ ok: true }, { status: 201 });
   } catch (error: any) {

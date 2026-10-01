@@ -8,7 +8,7 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 // POST /api/bleSseD/corrections — rattache un corrigé à un document/exercice, après l'upload
 // direct du fichier sur R2. Remplace le corrigé existant s'il y en a déjà un.
 export async function POST(req: NextRequest) {
-  const denied = requireRole(req, ['SUPER_ADMIN', 'PEDAGOGIE']);
+  const denied = await requireRole(req, ['SUPER_ADMIN', 'PEDAGOGIE']);
   if (denied) return denied;
   try {
     const { correctionId, resourceId, contentType } = await req.json();
@@ -44,6 +44,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(correction, { status: 201 });
   } catch (error: any) {
     console.error('Erreur API Admin Corrigés (POST):', error);
-    return NextResponse.json({ error: 'Erreur serveur', details: error.message }, { status: 500 });
+    return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
   }
 }

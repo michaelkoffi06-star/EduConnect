@@ -8,7 +8,7 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const denied = requireRole(request, ['SUPER_ADMIN']);
+  const denied = await requireRole(request, ['SUPER_ADMIN']);
   if (denied) return denied;
   try {
     const { id } = await params;
@@ -30,6 +30,6 @@ export async function PATCH(
       return NextResponse.json({ error: 'Suggestion introuvable' }, { status: 404 });
     }
 
-    return NextResponse.json({ error: 'Erreur serveur', details: error.message }, { status: 500 });
+    return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
   }
 }

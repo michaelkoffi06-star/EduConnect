@@ -81,13 +81,21 @@ export function extFromMime(mime: string) {
   return 'jpg';
 }
 
+// contentLength (optionnel) : taille exacte annoncée par le navigateur. Elle est signée avec l'URL,
+// donc R2 refuse un fichier d'une autre taille ; les routes publiques l'exigent (voir §7sedecies).
 export async function getPresignedUploadUrl(
   bucket: string,
   key: string,
   contentType: string,
-  expiresIn = 300
+  expiresIn = 300,
+  contentLength?: number
 ) {
-  const command = new PutObjectCommand({ Bucket: bucket, Key: key, ContentType: contentType });
+  const command = new PutObjectCommand({
+    Bucket: bucket,
+    Key: key,
+    ContentType: contentType,
+    ...(contentLength !== undefined && { ContentLength: contentLength }),
+  });
   return getSignedUrl(r2Client, command, { expiresIn });
 }
 
@@ -114,6 +122,21 @@ export async function getPresignedDownloadUrl(
 export async function getPresignedReadUrl(bucket: string, key: string, expiresIn = 300) {
   return getSignedUrl(r2Client, new GetObjectCommand({ Bucket: bucket, Key: key }), { expiresIn });
 }
+
+// Taille (octets) d'un objet R2, ou null s'il n'existe pas. Sert à revérifier côté serveur
+// qu'un fichier envoyé par le navigateur respecte la taille maximale.
+export async function objectSize(bucket: string, key: string): Promise<number | null> {
+  try {
+    const res = await r2Client.send(new HeadObjectCommand({ Bucket: bucket, Key: key }));
+    return res.ContentLength ?? 0;
+  } catch {
+    return null;
+  }
+}
+
+// Tailles maximales des fichiers envoyés par les instructeurs (mêmes valeurs que les formulaires)
+export const MAX_PHOTO_BYTES = 5 * 1024 * 1024;
+export const MAX_DOC_BYTES = 10 * 1024 * 1024;
 
 export async function objectExists(bucket: string, key: string): Promise<boolean> {
   try {

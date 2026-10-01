@@ -6,7 +6,7 @@ import { hashPassword } from '@/lib/password';
 
 // GET /api/bleSseD/admin-users — liste des comptes (SUPER_ADMIN uniquement)
 export async function GET(request: NextRequest) {
-  const denied = requireRole(request, ['SUPER_ADMIN']);
+  const denied = await requireRole(request, ['SUPER_ADMIN']);
   if (denied) return denied;
   try {
     const users = await prisma.adminUser.findMany({
@@ -16,13 +16,13 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(users, { status: 200 });
   } catch (error: any) {
     console.error('Erreur API Admin Users (GET):', error);
-    return NextResponse.json({ error: 'Erreur serveur', details: error.message }, { status: 500 });
+    return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
   }
 }
 
 // POST /api/bleSseD/admin-users — créer un nouveau compte (SUPER_ADMIN uniquement)
 export async function POST(request: NextRequest) {
-  const denied = requireRole(request, ['SUPER_ADMIN']);
+  const denied = await requireRole(request, ['SUPER_ADMIN']);
   if (denied) return denied;
   try {
     const { username, password, role } = await request.json();
@@ -49,6 +49,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Cet identifiant est déjà pris.' }, { status: 409 });
     }
     console.error('Erreur API Admin Users (POST):', error);
-    return NextResponse.json({ error: 'Erreur serveur', details: error.message }, { status: 500 });
+    return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
   }
 }

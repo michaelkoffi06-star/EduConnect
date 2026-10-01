@@ -5,7 +5,7 @@ import { requireRole } from '@/lib/admin-permissions';
 
 // GET /api/bleSseD/corrections/[id] — aperçu du corrigé par l'équipe (redirige vers une URL signée)
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const denied = requireRole(req, ['SUPER_ADMIN', 'PEDAGOGIE', 'ADMINISTRATIF']);
+  const denied = await requireRole(req, ['SUPER_ADMIN', 'PEDAGOGIE', 'ADMINISTRATIF']);
   if (denied) return denied;
   const { id } = await params;
   const correction = await prisma.correction.findUnique({ where: { id }, select: { id: true, fileExt: true } });
@@ -18,7 +18,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 
 // DELETE /api/bleSseD/corrections/[id] — retire le corrigé (fichier R2 compris)
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const denied = requireRole(req, ['SUPER_ADMIN', 'PEDAGOGIE']);
+  const denied = await requireRole(req, ['SUPER_ADMIN', 'PEDAGOGIE']);
   if (denied) return denied;
   try {
     const { id } = await params;
@@ -31,6 +31,6 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
     return NextResponse.json({ success: true });
   } catch (error: any) {
     console.error('Erreur API Admin Corrigés (DELETE):', error);
-    return NextResponse.json({ error: 'Erreur serveur', details: error.message }, { status: 500 });
+    return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
   }
 }

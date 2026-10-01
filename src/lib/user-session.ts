@@ -21,6 +21,7 @@ const currentUserSelect = {
   lastName: true,
   classe: true,
   emailVerifiedAt: true,
+  sessionVersion: true,
   createdAt: true,
   instructor: {
     select: {
@@ -45,6 +46,8 @@ export async function getUserFromToken(token: string | undefined | null): Promis
   if (!session) return null;
   const user = await loadUser(session.sub);
   if (!user || !user.emailVerifiedAt) return null;
+  // Session ouverte avant un changement de mot de passe : refusée (voir §7sedecies)
+  if ((session.v ?? 0) !== user.sessionVersion) return null;
   return user;
 }
 
@@ -93,7 +96,10 @@ export function displayName(user: { firstName: string; lastName: string }): stri
   return initial ? `${user.firstName.trim()} ${initial}.` : user.firstName.trim();
 }
 
-export async function setUserSessionCookie(res: NextResponse, user: { id: string; role: UserRole }) {
+export async function setUserSessionCookie(
+  res: NextResponse,
+  user: { id: string; role: UserRole; sessionVersion?: number }
+) {
   const token = await createUserSessionToken(user);
   res.cookies.set(USER_SESSION_COOKIE, token, {
     httpOnly: true,
@@ -158,6 +164,21 @@ export async function consumeEmailToken(token: unknown, type: UserTokenType): Pr
     data: { usedAt: new Date() },
   });
   return count === 1 ? record.userId : null;
+}
+
+// Variante qui ne consomme le jeton que s'il appartient bien au compte indiqué
+// (confirmation d'email à la connexion : voir /api/compte/connexion et §7sedecies).
+export async function consumeEmailTokenFor(token: unknown, type: UserTokenType, userId: string): Promise<boolean> {
+  if (typeof token !== 'string' || token.length < 20 || token.length > 100) return false;
+  const record = await prisma.userToken.findUnique({ where: { tokenHash: hashToken(token) } });
+  if (!record || record.type !== type || record.userId !== userId || record.usedAt || record.expiresAt <= new Date()) {
+    return false;
+  }
+  const { count } = await prisma.userToken.updateMany({
+    where: { id: record.id, usedAt: null },
+    data: { usedAt: new Date() },
+  });
+  return count === 1;
 }
 
 // --- Limitation des tentatives (même table que la connexion admin, préfixe dédié) ---

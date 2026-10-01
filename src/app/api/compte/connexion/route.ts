@@ -1,10 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { verifyPassword } from '@/lib/password';
-import { normalizeEmail, recordAttempt, setUserSessionCookie, tooManyAttempts } from '@/lib/user-session';
+import {
+  consumeEmailTokenFor,
+  normalizeEmail,
+  recordAttempt,
+  setUserSessionCookie,
+  tooManyAttempts,
+} from '@/lib/user-session';
 
 // POST /api/compte/connexion — email + mot de passe. 5 échecs max par IP sur 15 minutes
 // (même mécanisme que la connexion admin, voir §7bis).
+// Confirmation d'email : le lien reçu par email ouvre /connexion?jeton=… et le jeton est envoyé
+// ici avec l'email et le mot de passe. L'adresse n'est confirmée QUE si le mot de passe est bon :
+// quelqu'un qui aurait créé un compte avec l'email d'une autre personne ne peut donc pas le faire
+// activer à son insu (voir §7sedecies). Le vrai propriétaire passe par « Mot de passe oublié ».
 export async function POST(req: NextRequest) {
   try {
     if (await tooManyAttempts('compte', req)) {
@@ -20,7 +30,7 @@ export async function POST(req: NextRequest) {
 
     const user = await prisma.user.findUnique({
       where: { email },
-      select: { id: true, role: true, passwordHash: true, emailVerifiedAt: true },
+      select: { id: true, role: true, passwordHash: true, emailVerifiedAt: true, sessionVersion: true },
     });
 
     if (!user || !(await verifyPassword(password, user.passwordHash))) {
@@ -28,7 +38,23 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Email ou mot de passe incorrect.' }, { status: 401 });
     }
 
-    if (!user.emailVerifiedAt) {
+    let confirmed = false;
+    if (!user.emailVerifiedAt && body?.confirmationToken) {
+      if (await consumeEmailTokenFor(body.confirmationToken, 'VERIFY_EMAIL', user.id)) {
+        await prisma.user.update({ where: { id: user.id }, data: { emailVerifiedAt: new Date() } });
+        confirmed = true;
+      } else {
+        return NextResponse.json(
+          {
+            error: 'Ce lien de confirmation est invalide ou a expiré. Demande un nouveau lien ci-dessous.',
+            code: 'EMAIL_NOT_VERIFIED',
+          },
+          { status: 403 }
+        );
+      }
+    }
+
+    if (!user.emailVerifiedAt && !confirmed) {
       return NextResponse.json(
         {
           error: "Ton adresse email n'est pas encore confirmée. Clique sur le lien reçu par email (pense à regarder dans les spams).",
@@ -38,7 +64,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const res = NextResponse.json({ ok: true, role: user.role });
+    const res = NextResponse.json({ ok: true, role: user.role, confirmed });
     await setUserSessionCookie(res, user);
     return res;
   } catch (error) {

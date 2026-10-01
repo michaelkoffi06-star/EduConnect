@@ -15,7 +15,7 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const denied = requireRole(request, ['SUPER_ADMIN', 'PEDAGOGIE']);
+  const denied = await requireRole(request, ['SUPER_ADMIN', 'PEDAGOGIE']);
   if (denied) return denied;
 
   try {
@@ -80,6 +80,6 @@ export async function GET(
     });
   } catch (error: any) {
     console.error('Erreur export instructeur (CSV):', error);
-    return NextResponse.json({ error: 'Erreur serveur', details: error.message }, { status: 500 });
+    return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
   }
 }

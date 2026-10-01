@@ -34,12 +34,23 @@ export default function ConnexionClient() {
   const [notVerified, setNotVerified] = useState(false);
   const [notice, setNotice] = useState<{ ok: boolean; text: string } | null>(null);
   const [next, setNext] = useState("/mon-compte");
+  // Jeton du lien de confirmation d'email : l'adresse est confirmée en même temps que la
+  // connexion, avec le mot de passe (voir §7sedecies de la doc)
+  const [confirmToken, setConfirmToken] = useState<string | null>(null);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     setNext(safeNext(params.get("suite")));
     const c = params.get("confirmation");
     if (c && CONFIRMATION_MESSAGES[c]) setNotice(CONFIRMATION_MESSAGES[c]);
+    const jeton = params.get("jeton");
+    if (jeton) {
+      setConfirmToken(jeton);
+      setNotice({
+        ok: true,
+        text: "Dernière étape : connecte-toi avec ton email et ton mot de passe pour confirmer ton adresse. Tu n'as pas créé ce compte ou tu as oublié le mot de passe ? Utilise « Mot de passe oublié ».",
+      });
+    }
   }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -52,7 +63,7 @@ export default function ConnexionClient() {
       const res = await fetch("/api/compte/connexion", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email, password, ...(confirmToken && { confirmationToken: confirmToken }) }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -61,7 +72,7 @@ export default function ConnexionClient() {
         return;
       }
       // Rechargement complet : l'en-tête et les pages relisent la session
-      window.location.href = next;
+      window.location.href = data.confirmed ? "/mon-compte?bienvenue=1" : next;
     } catch {
       setError("Impossible de contacter le serveur. Réessaie.");
     } finally {

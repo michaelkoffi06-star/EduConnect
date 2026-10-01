@@ -9,7 +9,7 @@ const authorForTeam = { select: { firstName: true, lastName: true, email: true, 
 
 // GET /api/bleSseD/forum — signalements à traiter + derniers sujets publiés
 export async function GET(req: NextRequest) {
-  const denied = requireRole(req, ['SUPER_ADMIN', 'PEDAGOGIE']);
+  const denied = await requireRole(req, ['SUPER_ADMIN', 'PEDAGOGIE']);
   if (denied) return denied;
   try {
     const [reports, threads] = await Promise.all([
@@ -40,7 +40,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ reports, threads });
   } catch (error: any) {
     console.error('Erreur API Admin Forum (GET):', error);
-    return NextResponse.json({ error: 'Erreur serveur', details: error.message }, { status: 500 });
+    return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
   }
 }
 
@@ -48,7 +48,7 @@ export async function GET(req: NextRequest) {
 // sujet ou une réponse (et clôt ses signalements), ou { action: 'dismiss', reportId } classe un
 // signalement sans suite.
 export async function PATCH(req: NextRequest) {
-  const denied = requireRole(req, ['SUPER_ADMIN', 'PEDAGOGIE']);
+  const denied = await requireRole(req, ['SUPER_ADMIN', 'PEDAGOGIE']);
   if (denied) return denied;
   try {
     const { action, threadId, postId, reportId } = await req.json().catch(() => ({}));
@@ -85,6 +85,6 @@ export async function PATCH(req: NextRequest) {
   } catch (error: any) {
     if (error.code === 'P2025') return NextResponse.json({ error: 'Élément introuvable.' }, { status: 404 });
     console.error('Erreur API Admin Forum (PATCH):', error);
-    return NextResponse.json({ error: 'Erreur serveur', details: error.message }, { status: 500 });
+    return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
   }
 }

@@ -13,6 +13,7 @@ export interface UserSessionPayload {
   sub: string;
   role: UserRole;
   exp: number;
+  v?: number; // version de session (User.sessionVersion) ; absente des anciens jetons = 0
 }
 
 function getSecretBytes(): Uint8Array {
@@ -54,8 +55,13 @@ function constantTimeEqual(a: string, b: string): boolean {
   return diff === 0;
 }
 
-export async function createUserSessionToken(user: { id: string; role: UserRole }): Promise<string> {
-  const payload = JSON.stringify({ sub: user.id, role: user.role, exp: Date.now() + USER_SESSION_MAX_AGE * 1000 });
+export async function createUserSessionToken(user: { id: string; role: UserRole; sessionVersion?: number }): Promise<string> {
+  const payload = JSON.stringify({
+    sub: user.id,
+    role: user.role,
+    v: user.sessionVersion ?? 0,
+    exp: Date.now() + USER_SESSION_MAX_AGE * 1000,
+  });
   const payloadB64 = bytesToBase64Url(new TextEncoder().encode(payload));
   const signature = await hmacSign(payloadB64);
   return `${payloadB64}.${signature}`;

@@ -5,7 +5,7 @@ import { requireRole } from '@/lib/admin-permissions';
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
-  const denied = requireRole(request, ['SUPER_ADMIN', 'ADMINISTRATIF']);
+  const denied = await requireRole(request, ['SUPER_ADMIN', 'ADMINISTRATIF']);
   if (denied) return denied;
   try {
     const requests = await prisma.matchRequest.findMany({
@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
   } catch (error: any) {
     console.error('Erreur API Admin MatchRequests (GET):', error);
     return NextResponse.json(
-      { error: 'Erreur serveur', details: error.message },
+      { error: 'Erreur serveur' },
       { status: 500 }
     );
   }

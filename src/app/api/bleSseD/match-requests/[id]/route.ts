@@ -6,7 +6,7 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const denied = requireRole(request, ['SUPER_ADMIN', 'ADMINISTRATIF']);
+  const denied = await requireRole(request, ['SUPER_ADMIN', 'ADMINISTRATIF']);
   if (denied) return denied;
   try {
     const { id } = await params;
@@ -25,7 +25,7 @@ export async function PATCH(
   } catch (error: any) {
     console.error('Erreur API Admin MatchRequests (PATCH):', error);
     return NextResponse.json(
-      { error: 'Erreur serveur', details: error.message },
+      { error: 'Erreur serveur' },
       { status: 500 }
     );
   }

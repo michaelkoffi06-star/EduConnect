@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { createEmailToken, normalizeEmail, recordAttempt, tooManyAttempts } from '@/lib/user-session';
 import { sendVerificationEmail } from '@/lib/user-emails';
+import { siteOrigin } from '@/lib/site';
 
 // POST /api/compte/renvoyer-confirmation — renvoie le lien de confirmation d'email.
 // Réponse identique que le compte existe ou non (ne révèle pas quels emails sont inscrits).
@@ -21,7 +22,7 @@ export async function POST(req: NextRequest) {
 
     if (user && !user.emailVerifiedAt) {
       const token = await createEmailToken(user.id, 'VERIFY_EMAIL');
-      await sendVerificationEmail(email, user.firstName, `${req.nextUrl.origin}/api/compte/confirmer?jeton=${token}`);
+      await sendVerificationEmail(email, user.firstName, `${siteOrigin(req)}/connexion?jeton=${token}`);
     }
     return NextResponse.json({ ok: true });
   } catch (error) {

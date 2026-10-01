@@ -59,7 +59,12 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Identifiant ou mot de passe incorrect.' }, { status: 401 });
   }
 
-  const token = await createSessionToken({ id: user!.id, username: user!.username, role: user!.role });
+  const token = await createSessionToken({
+    id: user!.id,
+    username: user!.username,
+    role: user!.role,
+    sessionVersion: user!.sessionVersion,
+  });
   const res = NextResponse.json({ ok: true, role: user!.role });
   res.cookies.set(SESSION_COOKIE_NAME, token, {
     httpOnly: true,

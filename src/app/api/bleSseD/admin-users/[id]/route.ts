@@ -9,13 +9,18 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const denied = requireRole(request, ['SUPER_ADMIN']);
+  const denied = await requireRole(request, ['SUPER_ADMIN']);
   if (denied) return denied;
   try {
     const { id } = await params;
     const { username, password, role } = await request.json();
 
-    const data: { username?: string; passwordHash?: string; role?: AdminRole } = {};
+    const data: {
+      username?: string;
+      passwordHash?: string;
+      role?: AdminRole;
+      sessionVersion?: { increment: number };
+    } = {};
 
     if (typeof username === 'string' && username.trim()) {
       data.username = username.trim();
@@ -36,6 +41,8 @@ export async function PATCH(
     if (Object.keys(data).length === 0) {
       return NextResponse.json({ error: 'Rien à modifier.' }, { status: 400 });
     }
+    // Mot de passe ou rôle changé : la personne est déconnectée partout (voir §7sedecies)
+    if (data.passwordHash || data.role) data.sessionVersion = { increment: 1 };
 
     const updated = await prisma.adminUser.update({
       where: { id },
@@ -52,7 +59,7 @@ export async function PATCH(
       return NextResponse.json({ error: 'Compte introuvable.' }, { status: 404 });
     }
     console.error('Erreur API Admin Users (PATCH):', error);
-    return NextResponse.json({ error: 'Erreur serveur', details: error.message }, { status: 500 });
+    return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
   }
 }
 
@@ -61,7 +68,7 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const denied = requireRole(request, ['SUPER_ADMIN']);
+  const denied = await requireRole(request, ['SUPER_ADMIN']);
   if (denied) return denied;
   try {
     const { id } = await params;
@@ -72,6 +79,6 @@ export async function DELETE(
       return NextResponse.json({ error: 'Compte introuvable.' }, { status: 404 });
     }
     console.error('Erreur API Admin Users (DELETE):', error);
-    return NextResponse.json({ error: 'Erreur serveur', details: error.message }, { status: 500 });
+    return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
   }
 }

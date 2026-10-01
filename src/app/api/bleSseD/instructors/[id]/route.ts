@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getResendClient } from '@/lib/resend';
 import { requireRole } from '@/lib/admin-permissions';
+import { escapeHtml } from '@/lib/user-emails';
 
 const VALID_STATUSES = ['PENDING', 'APPROVED', 'SUSPENDED'];
 
@@ -11,7 +12,7 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const denied = requireRole(request, ['SUPER_ADMIN', 'PEDAGOGIE']);
+  const denied = await requireRole(request, ['SUPER_ADMIN', 'PEDAGOGIE']);
   if (denied) return denied;
   try {
     const { id } = await params;
@@ -50,7 +51,7 @@ export async function PATCH(
           subject: '🎉 Votre profil EduConnect a été validé !',
           html: `
             <div style="font-family: sans-serif; padding: 20px; color: #333;">
-              <h2 style="color: #c9951a;">Félicitations ${updatedInstructor.firstName} !</h2>
+              <h2 style="color: #c9951a;">Félicitations ${escapeHtml(updatedInstructor.firstName)} !</h2>
               <p>Votre profil instructeur a été examiné et <strong>validé</strong> par notre équipe.</p>
               <p>Il est désormais visible par les familles à la recherche d'un tuteur sur EduConnect.</p>
               <p style="font-size: 12px; color: #888; margin-top: 24px;">
@@ -77,7 +78,7 @@ export async function PATCH(
     }
 
     return NextResponse.json(
-      { error: "Erreur serveur", details: error.message },
+      { error: "Erreur serveur" },
       { status: 500 }
     );
   }

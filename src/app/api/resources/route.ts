@@ -43,6 +43,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(resources.map(toPublicResource), { status: 200 });
   } catch (error: any) {
     console.error('Erreur API Resources (public):', error);
-    return NextResponse.json({ error: 'Erreur serveur', details: error.message }, { status: 500 });
+    return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
   }
 }
