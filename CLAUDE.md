@@ -44,6 +44,8 @@ bloquant (`next build` ne lance pas le lint), ne pas chercher à tout corriger a
 - Le schéma s'applique avec **`prisma db push`, jamais `prisma migrate`** : le dossier
   `prisma/migrations` est un reste du début du projet, une commande `migrate` proposerait de
   réinitialiser la base.
+- Prisma 7 : `db push` ne régénère **pas** le client. Après un changement de schéma, lancer
+  `npx prisma generate` avant `npx tsc --noEmit`, sinon tsc signale les nouveaux champs comme inexistants.
 - **Schéma modifié ⇒ le pousser sur Neon AVANT de fusionner dans `main`**, sinon la production plante :
   `DATABASE_URL="<url directe Neon, sans -pooler>" npx prisma db push`. Neon peut répondre `P1001`
   quand il se réveille : relancer.
