@@ -55,3 +55,15 @@ npx prisma db push               # applique le schéma sur la base locale
   `src/lib/user-auth.ts`) ; toute route réservée commence par `getCurrentUser(request)`
   (`src/lib/user-session.ts`), et `isApprovedInstructor()` pour le marché et la salle des profs.
   Corrigés dans le bucket R2 **privé**. Voir §7quindecies.
+- `next/image` : toute qualité utilisée (`quality={…}`) doit figurer dans `images.qualities` de
+  `next.config.ts` (actuellement `[70, 75]`) — sinon Next.js 16 répond 400 et l'image ne s'affiche pas
+  (c'est ce qui masquait la photo de l'étagère en production).
+- Design des pages comptes/forum/espace instructeur : composants communs dans `src/components/compte/ui.tsx`
+  (fonds photo Unsplash dans `public/images/comptes/`, crédits en §7quindecies). Choix de Michaël :
+  **photos de fond immobiles** (pas de zoom ni de glissement), **cartes flottantes droites**
+  (`animate-float-y`, sans rotation), fondu entre les pages via `src/components/PageTransition.tsx`.
+- Ne jamais laisser de `filter`/`transform` actif en permanence sur un conteneur de page (même `blur(0px)`) :
+  ça dérègle les éléments `position: fixed` et `backdrop-blur` à l'intérieur — revenir à `none` au repos.
+- `npm run lint` signale de nombreuses erreurs déjà présentes dans le code (`any`, setState dans un effet) ;
+  ce n'est pas bloquant (`next build` ne lance pas le lint). La vérification de référence : `npx tsc --noEmit`
+  puis `npm run build`.
