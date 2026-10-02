@@ -106,6 +106,7 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(true);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState('');
+  const [infoMsg, setInfoMsg] = useState('');
 
   const [requests, setRequests] = useState<MatchRequest[]>([]);
   const [requestsLoading, setRequestsLoading] = useState(true);
@@ -380,7 +381,7 @@ export default function AdminPage() {
       const presignRes = await fetch(`/api/bleSseD/instructors/${instructorId}/files/presign`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ kind, contentType: file.type }),
+        body: JSON.stringify({ kind, contentType: file.type, size: file.size }),
       });
       const presignData = await presignRes.json();
       if (!presignRes.ok) {
@@ -413,6 +414,29 @@ export default function AdminPage() {
       setErrorMsg("Impossible de contacter le serveur pour l'upload.");
     } finally {
       setUploadingFile(null);
+    }
+  };
+
+  // Remplace le lien personnel /modifier-profil d'un instructeur (s'il a pu fuiter) ;
+  // le nouveau lien part par email à l'instructeur, l'équipe ne le voit jamais.
+  const regenerateEditLink = async (id: string, name: string) => {
+    if (!window.confirm(`Remplacer le lien de modification de ${name} ? L'ancien lien cessera de fonctionner et le nouveau lui sera envoyé par email.`)) return;
+    setUpdatingId(id);
+    setErrorMsg('');
+    setInfoMsg('');
+    try {
+      const res = await fetch(`/api/bleSseD/instructors/${id}/edit-link`, { method: 'POST' });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error);
+      if (data.emailSent === false) {
+        setErrorMsg(`Le lien de ${name} a été remplacé, mais l'email n'est pas parti. Clique de nouveau sur « Nouveau lien » pour lui en envoyer un.`);
+      } else {
+        setInfoMsg(`Nouveau lien de modification envoyé par email à ${name}.`);
+      }
+    } catch (err) {
+      setErrorMsg((err instanceof Error && err.message) || 'Impossible de remplacer le lien.');
+    } finally {
+      setUpdatingId(null);
     }
   };
 
@@ -505,7 +529,7 @@ export default function AdminPage() {
                 />
               </div>
               <div>
-                <label className="block text-xs text-gray-400 mb-1">Nouveau mot de passe (optionnel, 6 caractères min.)</label>
+                <label className="block text-xs text-gray-400 mb-1">Nouveau mot de passe (optionnel, 12 caractères min.)</label>
                 <input
                   type="password"
                   value={accNewPassword}
@@ -608,6 +632,11 @@ export default function AdminPage() {
         {errorMsg && (
           <div className="mb-4 p-3 bg-red-900/30 border border-red-500/40 rounded-lg text-sm text-red-300">
             {errorMsg}
+          </div>
+        )}
+        {infoMsg && (
+          <div className="mb-4 p-3 bg-emerald-900/30 border border-emerald-500/40 rounded-lg text-sm text-emerald-300">
+            {infoMsg}
           </div>
         )}
 
@@ -753,6 +782,14 @@ export default function AdminPage() {
                             Remettre en attente
                           </button>
                         )}
+                        <button
+                          disabled={updatingId === inst.id}
+                          onClick={() => regenerateEditLink(inst.id, `${inst.firstName} ${inst.lastName}`)}
+                          title="Remplace le lien personnel /modifier-profil de l'instructeur et lui envoie le nouveau par email"
+                          className="px-3 py-1.5 text-xs font-semibold bg-transparent border border-[#2a4a6e] hover:bg-[#0d1f38] disabled:opacity-50 text-gray-300 rounded-lg transition"
+                        >
+                          Nouveau lien
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -962,7 +999,7 @@ export default function AdminPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs text-gray-400 mb-1">Mot de passe * (6 car. min.)</label>
+                  <label className="block text-xs text-gray-400 mb-1">Mot de passe * (12 car. min.)</label>
                   <input
                     type="password"
                     value={newAccPassword}

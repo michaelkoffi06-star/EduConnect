@@ -1,8 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireRole } from '@/lib/admin-permissions';
-import { hashPassword } from '@/lib/password';
+import { hashPassword, adminPasswordError } from '@/lib/password';
 import type { AdminRole } from '@prisma/client';
+
+// Refuse de retirer le rôle SUPER_ADMIN (rétrogradation ou suppression) au dernier compte qui l'a.
+async function lastSuperAdminError(id: string): Promise<string | null> {
+  const target = await prisma.adminUser.findUnique({ where: { id }, select: { role: true } });
+  if (target?.role !== 'SUPER_ADMIN') return null;
+  const superAdmins = await prisma.adminUser.count({ where: { role: 'SUPER_ADMIN' } });
+  return superAdmins <= 1 ? 'Impossible : il doit rester au moins un compte SUPER_ADMIN.' : null;
+}
 
 // PATCH /api/bleSseD/admin-users/[id] — modifier un compte (SUPER_ADMIN uniquement)
 export async function PATCH(
@@ -23,11 +31,15 @@ export async function PATCH(
     } = {};
 
     if (typeof username === 'string' && username.trim()) {
+      if (username.trim().length > 50) {
+        return NextResponse.json({ error: 'Identifiant trop long (50 caractères maximum).' }, { status: 400 });
+      }
       data.username = username.trim();
     }
     if (typeof password === 'string' && password.length > 0) {
-      if (password.length < 6) {
-        return NextResponse.json({ error: 'Le mot de passe doit faire au moins 6 caractères.' }, { status: 400 });
+      const pwdError = adminPasswordError(password);
+      if (pwdError) {
+        return NextResponse.json({ error: pwdError }, { status: 400 });
       }
       data.passwordHash = await hashPassword(password);
     }
@@ -40,6 +52,12 @@ export async function PATCH(
 
     if (Object.keys(data).length === 0) {
       return NextResponse.json({ error: 'Rien à modifier.' }, { status: 400 });
+    }
+    // Il doit toujours rester au moins un SUPER_ADMIN : sans lui, plus personne ne gère les comptes
+    // et la clé de secours (réservée au SUPER_ADMIN) ne sert plus à rien.
+    if (data.role && data.role !== 'SUPER_ADMIN') {
+      const blocked = await lastSuperAdminError(id);
+      if (blocked) return NextResponse.json({ error: blocked }, { status: 409 });
     }
     // Mot de passe ou rôle changé : la personne est déconnectée partout (voir §7sedecies)
     if (data.passwordHash || data.role) data.sessionVersion = { increment: 1 };
@@ -72,6 +90,11 @@ export async function DELETE(
   if (denied) return denied;
   try {
     const { id } = await params;
+    if (id === request.headers.get('x-admin-id')) {
+      return NextResponse.json({ error: 'Tu ne peux pas supprimer ton propre compte.' }, { status: 409 });
+    }
+    const blocked = await lastSuperAdminError(id);
+    if (blocked) return NextResponse.json({ error: blocked }, { status: 409 });
     await prisma.adminUser.delete({ where: { id } });
     return NextResponse.json({ success: true }, { status: 200 });
   } catch (error: any) {

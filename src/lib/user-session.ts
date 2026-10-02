@@ -2,6 +2,7 @@ import { createHash, randomBytes } from 'crypto';
 import { NextRequest, NextResponse } from 'next/server';
 import type { Prisma, UserTokenType } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
+import { clientIp, startAttempt } from '@/lib/rate-limit';
 import {
   USER_SESSION_COOKIE,
   USER_SESSION_MAX_AGE,
@@ -183,22 +184,11 @@ export async function consumeEmailTokenFor(token: unknown, type: UserTokenType, 
 
 // --- Limitation des tentatives (même table que la connexion admin, préfixe dédié) ---
 
+// Tentatives (connexion, mot de passe oublié, renvoi de confirmation) : 5 par IP sur 15 minutes.
+// Enregistrées AVANT la vérification (voir startAttempt, §7sedecies).
 const MAX_ATTEMPTS = 5;
 const WINDOW_MS = 15 * 60 * 1000;
 
-export function getClientIp(request: NextRequest): string {
-  const forwarded = request.headers.get('x-forwarded-for');
-  if (forwarded) return forwarded.split(',')[0].trim();
-  return 'unknown';
-}
-
-export async function tooManyAttempts(scope: string, request: NextRequest): Promise<boolean> {
-  const count = await prisma.loginAttempt.count({
-    where: { ip: `${scope}:${getClientIp(request)}`, createdAt: { gte: new Date(Date.now() - WINDOW_MS) } },
-  });
-  return count >= MAX_ATTEMPTS;
-}
-
-export async function recordAttempt(scope: string, request: NextRequest) {
-  await prisma.loginAttempt.create({ data: { ip: `${scope}:${getClientIp(request)}` } }).catch(() => {});
+export function startUserAttempt(scope: string, request: NextRequest) {
+  return startAttempt(`${scope}:${clientIp(request)}`, MAX_ATTEMPTS, WINDOW_MS);
 }

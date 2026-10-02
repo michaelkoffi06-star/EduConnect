@@ -76,6 +76,10 @@ bloquant (`next build` ne lance pas le lint), ne pas chercher à tout corriger a
 - URL d'envoi de fichier publique : vérifier que la cible n'appartient pas à un objet existant,
   signer la taille (`ContentLength`) et la revérifier à la finalisation (`objectSize()`).
 - Réponses d'erreur : jamais de `error.message` renvoyé au navigateur (seulement `console.error`).
+- `editToken` (lien `/modifier-profil`) : jamais renvoyé à l'équipe admin (`omit: { editToken: true }`) ;
+  seul l'instructeur le reçoit (email, « Mon compte »).
+- Limites de tentatives : `startAttempt()` / `rateLimit()` (enregistrer **puis** compter), jamais un
+  `count` suivi d'un `create`. Mot de passe d'un compte admin : `adminPasswordError()` (12 car. min.).
 - Audit de sécurité et corrections : §7sedecies.
 
 ## Architecture et conventions

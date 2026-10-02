@@ -3,17 +3,12 @@ import { scrypt, timingSafeEqual } from 'crypto';
 import { promisify } from 'util';
 import { createSessionToken, SESSION_COOKIE_NAME } from '@/lib/bleSseD-auth';
 import { prisma } from '@/lib/prisma';
+import { clientIp, startAttempt } from '@/lib/rate-limit';
 
 const scryptAsync = promisify(scrypt);
 
 const MAX_ATTEMPTS = 5;
 const WINDOW_MS = 15 * 60 * 1000; // 15 minutes
-
-function getClientIp(request: NextRequest): string {
-  const forwarded = request.headers.get('x-forwarded-for');
-  if (forwarded) return forwarded.split(',')[0].trim();
-  return 'unknown';
-}
 
 async function verifyPassword(password: string, stored: string): Promise<boolean> {
   const [saltHex, hashHex] = stored.split(':');
@@ -25,14 +20,11 @@ async function verifyPassword(password: string, stored: string): Promise<boolean
 }
 
 export async function POST(request: NextRequest) {
-  const ip = getClientIp(request);
-  const windowStart = new Date(Date.now() - WINDOW_MS);
+  // Tentative enregistrée AVANT la vérification (une rafale simultanée ne passe pas, §7sedecies) ;
+  // elle n'est retirée qu'en cas de succès : seuls les échecs comptent.
+  const attempt = await startAttempt(clientIp(request), MAX_ATTEMPTS, WINDOW_MS);
 
-  const recentFailures = await prisma.loginAttempt.count({
-    where: { ip, createdAt: { gte: windowStart } },
-  });
-
-  if (recentFailures >= MAX_ATTEMPTS) {
+  if (attempt.blocked) {
     return NextResponse.json(
       { error: 'Trop de tentatives. Réessaie dans 15 minutes.' },
       { status: 429 }
@@ -53,9 +45,9 @@ export async function POST(request: NextRequest) {
     !!user && user.role === 'SUPER_ADMIN' && (await verifyPassword(password, user.passwordHash));
 
   if (!isValid) {
-    await prisma.loginAttempt.create({ data: { ip } }).catch(() => {});
     return NextResponse.json({ error: 'Identifiant ou mot de passe incorrect.' }, { status: 401 });
   }
+  await attempt.release();
 
   const token = await createSessionToken({
     id: user!.id,

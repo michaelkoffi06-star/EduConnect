@@ -37,11 +37,11 @@ src/
 │   ├── bleSseD-auth.ts                 # Création/vérification du token de session (payload {sub, username, role, exp}, voir §7bis)
 │   ├── admin-permissions.ts            # getRoleFromHeaders() / requireRole() — contrôle d'accès par rôle (voir §7decies)
 │   ├── password.ts                     # hashPassword/verifyPassword (scrypt, format salt:hash) — partagé par tous les comptes admin
-│   ├── rate-limit.ts                   # rateLimit() : limite par IP des routes publiques (formulaires, inscriptions, envois de fichiers) — §7sedecies
+│   ├── rate-limit.ts                   # rateLimit() / startAttempt() : limites par IP (formulaires, inscriptions, envois de fichiers, connexions) — §7sedecies
 │   ├── site.ts                         # siteOrigin() : adresse officielle du site pour les liens envoyés par email — §7sedecies
 │   ├── library.ts                      # Bibliothèque : slugs, code de référence, forme publique d'une ressource, normalisation des liens
 │   ├── library-server.ts               # Bibliothèque : recherche d'une ressource par slug ou id (serveur uniquement)
-│   ├── r2.ts                           # Client S3/R2 + helpers upload/delete/get (voir §7ter), clés des corrigés (bucket privé)
+│   ├── r2.ts                           # Client S3/R2 + helpers upload/delete/get (voir §7ter), clés des corrigés (bucket privé), pending/ des inscriptions, uploadedFileError()
 │   ├── user-auth.ts / user-session.ts  # Comptes utilisateurs : cookie de session, compte connecté, jetons d'email (voir §7quindecies)
 │   ├── user-emails.ts                  # Emails aux comptes (confirmation, mot de passe oublié, instructeur retenu)
 │   └── market.ts / forum.ts            # Marché des instructeurs et forum : validation, règles d'accès
@@ -103,6 +103,7 @@ src/
 │           ├── admin-users/route.ts + [id]/       # CRUD des comptes admin, réservé SUPER_ADMIN (voir §7decies)
 │           ├── instructors/route.ts              # Liste complète (modération) — accès filtré par rôle via requireRole()
 │           ├── instructors/[id]/route.ts         # PATCH statut (APPROVED/SUSPENDED/PENDING)
+│           ├── instructors/[id]/edit-link/route.ts # POST — nouveau lien /modifier-profil envoyé par email à l'instructeur (SUPER_ADMIN, §7sedecies)
 │           ├── instructors/[id]/document/route.ts # Sert CNI/CV (protégé par le middleware)
 │           ├── instructors/[id]/export/route.ts  # GET — génère et télécharge la fiche CSV d'un instructeur (infos + historique de contrats, voir §7duodecies)
 │           ├── match-requests/route.ts + [id]/    # Gestion des demandes de mise en relation
@@ -668,6 +669,30 @@ Les jetons émis avant la correction (sans `v`) valent version 0 : personne n'es
 
 **Mise en production** : schéma modifié (`sessionVersion`) ⇒ `prisma db push` sur Neon avant la fusion dans `main`.
 
+### Deuxième passe (02/10/2026, branche `securite-2`)
+
+Nouvelle revue indépendante après la mise en ligne de la première. Pas de faille critique ; corrections du point haut et des points moyens, **sans changement de schéma** :
+
+**7. Lien de modification visible par toute l'équipe (haute).** `GET /api/bleSseD/instructors` renvoyait la fiche complète, `editToken` compris, aux trois rôles : un compte ADMINISTRATIF (lecture seule) pouvait récupérer le lien `/modifier-profil/…` de chaque instructeur et modifier sa fiche, son WhatsApp ou ses fichiers, durablement (le jeton ne changeait jamais). Désormais :
+- `editToken` n'est plus jamais renvoyé à l'équipe (`omit` Prisma sur la liste, le changement de statut et le remplacement de fichiers) ; ADMINISTRATIF ne reçoit pas non plus `cniUrl`/`cvUrl` ;
+- bouton **« Nouveau lien »** (panneau `/bleSseD`, SUPER_ADMIN) → `POST /api/bleSseD/instructors/[id]/edit-link` : nouveau jeton, l'ancien lien cesse de fonctionner, le nouveau part par email à l'instructeur (`sendNewEditLinkEmail`) — l'équipe ne le voit jamais. L'instructeur le retrouve aussi dans « Mon compte ».
+
+**8. Redirection après connexion.** `/connexion?suite=/\site.com` renvoyait vers un autre site après une vraie connexion (le navigateur lit `/\` comme `//`). `safeNext()` refuse antislash et caractères de contrôle et vérifie que l'URL reste sur le site.
+
+**9. Fichiers d'un instructeur.** Le remplacement de la photo/CNI/CV depuis l'admin (`instructors/[id]/files` et `/presign`) est réservé à **SUPER_ADMIN** (l'API acceptait aussi PEDAGOGIE, contrairement à la règle du §7decies), avec taille signée et revérifiée comme pour les routes publiques (`uploadedFileError()` de `lib/r2.ts`, partagé avec `/modifier-profil`).
+
+**10. Export CSV.** Une valeur commençant par `= + - @` (saisie dans le formulaire public) devenait une formule dans Excel : `csvEscape()` la préfixe d'une apostrophe. Conséquence visible : un numéro WhatsApp en `+225…` apparaît `'+225…` dans le tableur.
+
+**11. Limites de tentatives.** Le code comptait les tentatives puis enregistrait la nouvelle : 50 requêtes simultanées passaient toutes. `startAttempt()` (`lib/rate-limit.ts`) enregistre d'abord puis compte (au plus `max` passent) ; une connexion réussie retire sa tentative (`release()`), seuls les échecs comptent. Utilisé par `rateLimit()`, les connexions admin (`/bleSseD/login`, `/dev_edco_si/.../login`), la clé de secours et les comptes (`startUserAttempt()` : connexion, mot de passe oublié, renvoi de confirmation).
+
+**12. Comptes de l'équipe.**
+- Mot de passe de **12 caractères minimum** (`adminPasswordError()` de `lib/password.ts`) à la création, au changement et via la clé de secours ; les mots de passe existants restent valables jusqu'au prochain changement. Identifiant limité à 50 caractères.
+- Impossible de rétrograder ou supprimer le **dernier SUPER_ADMIN** (409), ni de supprimer son propre compte.
+
+**13. Envois de l'inscription instructeur.** On pouvait obtenir des URL d'envoi sans jamais finir l'inscription, et la photo arrivait directement dans le bucket **public**. Désormais tout arrive dans `pending/<id>/` du bucket **privé** (`pendingKey()`), et n'est déplacé vers l'emplacement définitif (`moveObject()`) qu'à la création de la fiche ; en cas d'échec de la création, les fichiers déplacés sont supprimés. **Règle de cycle de vie R2 à créer une fois** (tableau de bord Cloudflare → R2 → bucket privé → Settings → Object lifecycle rules) : préfixe `pending/`, suppression après 1 jour.
+
+**Reste à traiter (faible)** : l'inscription d'un compte révèle si un email est déjà inscrit (et le temps de réponse de la connexion aussi) ; la déconnexion n'invalide pas le cookie (seulement effacé du navigateur) ; vérification du mot de passe actuel sans limite ; pas de contrôle de l'en-tête `Origin` sur les requêtes POST ; comptes non confirmés jamais purgés (un email peut être « squatté ») ; coût scrypt par défaut ; signalements du forum sans limite, sujet signalé supprimable par son auteur ; `PATCH /api/instructors/edit/[token]` sans longueurs maximales ; pas d'en-têtes de sécurité (CSP, X-Frame-Options) ; `robots.txt` cite `/bleSseD` ; fichier `.~lock.README.md#` suivi par git ; `nodemailer` installé mais inutilisé.
+
 ---
 
 ## 8. Historique de conception (pour contexte)
@@ -714,7 +739,7 @@ La bibliothèque a ensuite été entièrement repensée (v2, voir §7quaterdecie
 
 Des comptes utilisateurs ont ensuite été ouverts aux élèves, aux parents et aux instructeurs (voir §7quindecies), avec trois nouveautés : des corrigés rattachés aux documents de la bibliothèque et réservés aux membres (le reste restant en libre accès), un marché d'annonces où l'équipe publie anonymement les besoins des familles et où les instructeurs approuvés se positionnent, et un forum d'entraide (questions des élèves, salle des profs entre instructeurs) modéré par signalement. Le travail a été mené sur la branche `espaces-comptes`. Ces nouvelles pages ont ensuite reçu un habillage plus moderne (photos libres de droits en fond, cartes en verre dépoli, apparitions en fondu et en cascade), vérifié par captures d'écran sur ordinateur et téléphone ; à cette occasion, la photo de fond de l'étagère, jusque-là jamais affichée à cause d'un réglage de qualité d'image refusé par Next.js 16, a été rétablie.
 
-Un audit de sécurité complet a ensuite été mené (voir §7sedecies) : il a révélé une faille grave (remplacement possible des fichiers d'un instructeur via la route publique d'envoi de fichiers) et plusieurs faiblesses (emails non échappés, absence de limite sur les formulaires publics, pré-détournement de compte, sessions non révoquées), toutes corrigées sur la branche `securite`.
+Un audit de sécurité complet a ensuite été mené (voir §7sedecies) : il a révélé une faille grave (remplacement possible des fichiers d'un instructeur via la route publique d'envoi de fichiers) et plusieurs faiblesses (emails non échappés, absence de limite sur les formulaires publics, pré-détournement de compte, sessions non révoquées), toutes corrigées sur la branche `securite`. Une deuxième revue indépendante, une fois ces corrections en ligne, a trouvé le lien secret de modification des instructeurs exposé à toute l'équipe admin, ainsi que plusieurs faiblesses moyennes (redirection après connexion, rôles sur les fichiers, export CSV, limites contournables par rafale, envois d'inscription orphelins) : corrigées sur la branche `securite-2`.
 
 Reste à traiter : l'analytics, le système de notation, et le pipeline de vérification automatique.
 

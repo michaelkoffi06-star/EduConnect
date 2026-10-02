@@ -1,16 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { timingSafeEqual } from 'crypto';
 import { prisma } from '@/lib/prisma';
-import { hashPassword } from '@/lib/password';
+import { clientIp, startAttempt } from '@/lib/rate-limit';
+import { hashPassword, adminPasswordError, ADMIN_PASSWORD_MIN } from '@/lib/password';
 
 const MAX_ATTEMPTS = 5;
 const WINDOW_MS = 15 * 60 * 1000; // 15 minutes
-
-function getClientIp(request: NextRequest): string {
-  const forwarded = request.headers.get('x-forwarded-for');
-  if (forwarded) return forwarded.split(',')[0].trim();
-  return 'unknown';
-}
 
 function safeEqual(a: string, b: string): boolean {
   const bufA = Buffer.from(a);
@@ -22,14 +17,11 @@ function safeEqual(a: string, b: string): boolean {
 // POST /api/bleSseD/forgot-password — réinitialise le mot de passe du super-admin
 // via une clé de récupération secrète (ADMIN_RECOVERY_KEY, connue uniquement du développeur).
 export async function POST(request: NextRequest) {
-  const ip = getClientIp(request);
-  const windowStart = new Date(Date.now() - WINDOW_MS);
+  // Tentative enregistrée AVANT la vérification (une rafale simultanée ne passe pas, §7sedecies) ;
+  // elle n'est retirée qu'en cas de succès : seuls les échecs comptent.
+  const attempt = await startAttempt(clientIp(request), MAX_ATTEMPTS, WINDOW_MS);
 
-  const recentFailures = await prisma.loginAttempt.count({
-    where: { ip, createdAt: { gte: windowStart } },
-  });
-
-  if (recentFailures >= MAX_ATTEMPTS) {
+  if (attempt.blocked) {
     return NextResponse.json(
       { error: 'Trop de tentatives. Réessaie dans 15 minutes.' },
       { status: 429 }
@@ -52,10 +44,10 @@ export async function POST(request: NextRequest) {
     typeof username !== 'string' ||
     typeof recoveryKey !== 'string' ||
     typeof newPassword !== 'string' ||
-    newPassword.length < 6
+    adminPasswordError(newPassword)
   ) {
     return NextResponse.json(
-      { error: 'Identifiant, clé de récupération et nouveau mot de passe (6 car. min.) requis.' },
+      { error: `Identifiant, clé de récupération et nouveau mot de passe (${ADMIN_PASSWORD_MIN} car. min.) requis.` },
       { status: 400 }
     );
   }
@@ -65,7 +57,6 @@ export async function POST(request: NextRequest) {
   const isValid = keyValid && !!user && user.role === 'SUPER_ADMIN';
 
   if (!isValid) {
-    await prisma.loginAttempt.create({ data: { ip } }).catch(() => {});
     // Message volontairement générique : ne révèle pas si l'identifiant existe ou si c'est la clé qui est fausse.
     return NextResponse.json({ error: 'Identifiant ou clé de récupération incorrect.' }, { status: 401 });
   }
@@ -76,6 +67,7 @@ export async function POST(request: NextRequest) {
     where: { id: user!.id },
     data: { passwordHash, sessionVersion: { increment: 1 } },
   });
+  await attempt.release();
 
   return NextResponse.json({ ok: true });
 }

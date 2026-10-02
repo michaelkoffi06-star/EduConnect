@@ -72,7 +72,7 @@ export function correctionKey(correctionId: string, ext: string) {
 // est envoyé directement du navigateur vers R2, sans passer par notre API.
 
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
-import { HeadObjectCommand } from '@aws-sdk/client-s3';
+import { HeadObjectCommand, CopyObjectCommand } from '@aws-sdk/client-s3';
 
 export function extFromMime(mime: string) {
   if (mime === 'application/pdf') return 'pdf';
@@ -137,6 +137,53 @@ export async function objectSize(bucket: string, key: string): Promise<number | 
 // Tailles maximales des fichiers envoyés par les instructeurs (mêmes valeurs que les formulaires)
 export const MAX_PHOTO_BYTES = 5 * 1024 * 1024;
 export const MAX_DOC_BYTES = 10 * 1024 * 1024;
+
+// Fichiers d'une inscription d'instructeur pas encore finalisée : "pending/<instructorId>/<kind>.<ext>",
+// TOUJOURS dans le bucket PRIVÉ. Ils ne sont copiés vers leur emplacement définitif (photo publique,
+// CNI/CV privés) qu'au moment où la fiche est créée. Une règle de cycle de vie R2 supprime le préfixe
+// "pending/" au bout d'un jour : un envoi jamais suivi d'une inscription ne reste ni public ni stocké
+// (voir §7sedecies).
+export function pendingKey(instructorId: string, kind: 'photo' | 'cni' | 'cv', ext: string) {
+  return `pending/${instructorId}/${kind}.${ext}`;
+}
+
+// Déplace un objet (copie puis suppression de l'original). Copie côté R2 quand c'est possible ;
+// sinon, repli sur lecture + écriture par le serveur (fichiers de 10 Mo au plus).
+export async function moveObject(
+  srcBucket: string,
+  srcKey: string,
+  dstBucket: string,
+  dstKey: string,
+  contentType: string
+) {
+  try {
+    await r2Client.send(new CopyObjectCommand({
+      Bucket: dstBucket,
+      Key: dstKey,
+      CopySource: `${srcBucket}/${srcKey.split('/').map(encodeURIComponent).join('/')}`,
+      ContentType: contentType,
+      MetadataDirective: 'REPLACE',
+    }));
+  } catch (copyError) {
+    console.warn('CopyObject R2 en échec, repli lecture + écriture :', copyError);
+    const file = await getFromR2(srcBucket, srcKey);
+    if (!file) throw new Error(`Fichier introuvable : ${srcKey}`);
+    await uploadToR2(dstBucket, dstKey, file.buffer, contentType);
+  }
+  await deleteFromR2(srcBucket, srcKey);
+}
+
+// Vérifie qu'un fichier envoyé par le navigateur est bien arrivé sur R2 et respecte la taille
+// maximale ; un fichier trop lourd est supprimé. Renvoie le message d'erreur, ou null si tout va bien.
+export async function uploadedFileError(bucket: string, key: string, maxBytes: number, label: string): Promise<string | null> {
+  const size = await objectSize(bucket, key);
+  if (size === null) return `L'upload ${label} n'a pas fini. Réessaie.`;
+  if (size > maxBytes) {
+    await deleteFromR2(bucket, key);
+    return `Fichier trop volumineux (${label}).`;
+  }
+  return null;
+}
 
 export async function objectExists(bucket: string, key: string): Promise<boolean> {
   try {

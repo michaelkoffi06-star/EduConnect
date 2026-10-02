@@ -29,12 +29,18 @@ function button(href: string, label: string): string {
     <p style="font-size: 12px; color: #888;">Si le bouton ne fonctionne pas, copiez ce lien dans votre navigateur :<br><a href="${href}">${href}</a></p>`;
 }
 
-async function send(to: string, subject: string, html: string) {
+// Renvoie true si Resend a accepté l'email (les appelants peuvent l'ignorer)
+async function send(to: string, subject: string, html: string): Promise<boolean> {
   try {
     const { error } = await getResendClient().emails.send({ from: FROM, to: [to], subject, html });
-    if (error) console.error(`⚠️ Email « ${subject} » non envoyé :`, JSON.stringify(error));
+    if (error) {
+      console.error(`⚠️ Email « ${subject} » non envoyé :`, JSON.stringify(error));
+      return false;
+    }
+    return true;
   } catch (err) {
     console.error(`⚠️ Email « ${subject} » non envoyé :`, err);
+    return false;
   }
 }
 
@@ -73,6 +79,20 @@ export function sendMarketSelectedEmail(to: string, firstName: string, offerTitl
       `<p>Bonne nouvelle : l'équipe EduConnect vous a retenu(e) pour l'annonce <strong>« ${escapeHtml(offerTitle)} »</strong>.</p>
        <p>Nous vous contactons très vite par WhatsApp pour organiser la suite.</p>
        ${button(link, 'Voir mon espace instructeur')}`
+    )
+  );
+}
+
+// Nouveau lien personnel de modification de profil (après régénération par l'équipe, §7sedecies)
+export function sendNewEditLinkEmail(to: string, firstName: string, link: string) {
+  return send(
+    to,
+    'Votre nouveau lien de modification de profil — EduConnect',
+    layout(
+      firstName,
+      `<p>Pour protéger votre fiche instructeur, l'équipe EduConnect a remplacé votre lien personnel de modification de profil. L'ancien lien ne fonctionne plus.</p>
+       ${button(link, 'Modifier mon profil')}
+       <p style="font-size: 12px; color: #888;">Conservez ce lien et ne le partagez avec personne : il permet de modifier votre fiche sans mot de passe. Vous pouvez aussi le retrouver dans votre espace « Mon compte ».</p>`
     )
   );
 }

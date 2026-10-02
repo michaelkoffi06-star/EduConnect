@@ -2,9 +2,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireRole } from '@/lib/admin-permissions';
 
+// Échappe une valeur CSV (séparateur « ; »). Une valeur qui commence par = + - @ (ou une tabulation /
+// un retour chariot) serait exécutée comme formule par Excel : on la préfixe d'une apostrophe
+// (le prénom, la commune… viennent du formulaire public d'inscription, voir §7sedecies).
 function csvEscape(value: string | number): string {
-  const str = String(value ?? '');
-  if (str.includes(';') || str.includes('"') || str.includes('\n')) {
+  let str = String(value ?? '');
+  if (typeof value === 'string' && /^[=+\-@\t\r]/.test(str)) str = `'${str}`;
+  if (str.includes(';') || str.includes('"') || str.includes('\n') || str.includes('\r')) {
     return `"${str.replace(/"/g, '""')}"`;
   }
   return str;

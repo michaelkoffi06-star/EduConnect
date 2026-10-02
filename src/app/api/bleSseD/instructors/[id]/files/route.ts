@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import {
   BUCKET_PHOTOS, BUCKET_PRIVATE, photoKey, privateKey, photoPublicUrl,
-  extFromMime, objectExists, deleteFromR2,
+  extFromMime, uploadedFileError, deleteFromR2, MAX_PHOTO_BYTES, MAX_DOC_BYTES,
 } from '@/lib/r2';
 import { requireRole } from '@/lib/admin-permissions';
 
@@ -11,12 +11,13 @@ const ALLOWED_DOC_TYPES = ['image/jpeg', 'image/png', 'application/pdf'];
 
 // PATCH /api/bleSseD/instructors/[id]/files
 // Le fichier a déjà été uploadé directement vers R2 via /files/presign.
-// Cette route vérifie son existence puis met à jour la fiche instructeur.
+// Cette route vérifie son existence et sa taille puis met à jour la fiche instructeur.
+// Réservée à SUPER_ADMIN : remplacer la CNI ou le CV d'un instructeur n'est pas du ressort de PEDAGOGIE.
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const denied = await requireRole(req, ['SUPER_ADMIN', 'PEDAGOGIE']);
+  const denied = await requireRole(req, ['SUPER_ADMIN']);
   if (denied) return denied;
   try {
     const { id } = await params;
@@ -39,9 +40,8 @@ export async function PATCH(
       }
       const newExt = extFromMime(photoType);
       const newKey = photoKey(id, newExt);
-      if (!(await objectExists(BUCKET_PHOTOS, newKey))) {
-        return NextResponse.json({ error: "L'upload de la photo n'a pas fini. Réessaie." }, { status: 400 });
-      }
+      const uploadError = await uploadedFileError(BUCKET_PHOTOS, newKey, MAX_PHOTO_BYTES, 'de la photo');
+      if (uploadError) return NextResponse.json({ error: uploadError }, { status: 400 });
       if (instructor.photoUrl && !instructor.photoUrl.endsWith(`${id}.${newExt}`)) {
         const oldExt = instructor.photoUrl.split('.').pop();
         if (oldExt) await deleteFromR2(BUCKET_PHOTOS, photoKey(id, oldExt));
@@ -55,9 +55,8 @@ export async function PATCH(
       }
       const newExt = extFromMime(cniType);
       const newKey = privateKey(id, 'cni', newExt);
-      if (!(await objectExists(BUCKET_PRIVATE, newKey))) {
-        return NextResponse.json({ error: "L'upload de la CNI n'a pas fini. Réessaie." }, { status: 400 });
-      }
+      const uploadError = await uploadedFileError(BUCKET_PRIVATE, newKey, MAX_DOC_BYTES, 'de la CNI');
+      if (uploadError) return NextResponse.json({ error: uploadError }, { status: 400 });
       if (instructor.cniUrl && instructor.cniUrl !== `cni.${newExt}`) {
         const oldExt = instructor.cniUrl.split('.').pop();
         if (oldExt) await deleteFromR2(BUCKET_PRIVATE, privateKey(id, 'cni', oldExt));
@@ -71,9 +70,8 @@ export async function PATCH(
       }
       const newExt = extFromMime(cvType);
       const newKey = privateKey(id, 'cv', newExt);
-      if (!(await objectExists(BUCKET_PRIVATE, newKey))) {
-        return NextResponse.json({ error: "L'upload du CV n'a pas fini. Réessaie." }, { status: 400 });
-      }
+      const uploadError = await uploadedFileError(BUCKET_PRIVATE, newKey, MAX_DOC_BYTES, 'du CV');
+      if (uploadError) return NextResponse.json({ error: uploadError }, { status: 400 });
       if (instructor.cvUrl && instructor.cvUrl !== `cv.${newExt}`) {
         const oldExt = instructor.cvUrl.split('.').pop();
         if (oldExt) await deleteFromR2(BUCKET_PRIVATE, privateKey(id, 'cv', oldExt));
@@ -81,7 +79,7 @@ export async function PATCH(
       updateData.cvUrl = `cv.${newExt}`;
     }
 
-    const updated = await prisma.instructor.update({ where: { id }, data: updateData });
+    const updated = await prisma.instructor.update({ where: { id }, data: updateData, omit: { editToken: true } });
     return NextResponse.json(updated, { status: 200 });
 
   } catch (error: any) {

@@ -13,6 +13,8 @@ import {
   extFromMime,
   objectSize,
   deleteFromR2,
+  pendingKey,
+  moveObject,
   MAX_PHOTO_BYTES,
   MAX_DOC_BYTES,
 } from '@/lib/r2';
@@ -25,9 +27,9 @@ const ALLOWED_PHOTO_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 const ALLOWED_DOC_TYPES = ['image/jpeg', 'image/png', 'application/pdf'];
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-// Les fichiers sont désormais uploadés directement vers R2 par le navigateur
-// (voir /api/register-instructor/presign), AVANT cet appel. Cette route se contente
-// de vérifier que les fichiers existent bien sur R2, puis crée la fiche instructeur.
+// Les fichiers sont envoyés directement vers R2 par le navigateur (voir /api/register-instructor/presign),
+// AVANT cet appel, dans "pending/<id>/" du bucket privé. Cette route vérifie leur présence et leur taille,
+// les déplace vers leur emplacement définitif, puis crée la fiche instructeur.
 export async function POST(req: NextRequest) {
   const limited = await rateLimit(req, 'inscription-instructeur', 10, HOUR);
   if (limited) return limited;
@@ -94,10 +96,16 @@ export async function POST(req: NextRequest) {
     const cniKey = privateKey(instructorId, 'cni', cniExt);
     const cvKey = privateKey(instructorId, 'cv', cvExt);
 
+    const pending = {
+      photo: pendingKey(instructorId, 'photo', photoExt),
+      cni: pendingKey(instructorId, 'cni', cniExt),
+      cv: pendingKey(instructorId, 'cv', cvExt),
+    };
+
     const [photoSize, cniSize, cvSize] = await Promise.all([
-      objectSize(BUCKET_PHOTOS, pKey),
-      objectSize(BUCKET_PRIVATE, cniKey),
-      objectSize(BUCKET_PRIVATE, cvKey),
+      objectSize(BUCKET_PRIVATE, pending.photo),
+      objectSize(BUCKET_PRIVATE, pending.cni),
+      objectSize(BUCKET_PRIVATE, pending.cv),
     ]);
 
     if (photoSize === null || cniSize === null || cvSize === null) {
@@ -108,46 +116,75 @@ export async function POST(req: NextRequest) {
     }
     // Revérification serveur de la taille (en plus de la taille signée dans l'URL d'envoi)
     if (photoSize > MAX_PHOTO_BYTES || cniSize > MAX_DOC_BYTES || cvSize > MAX_DOC_BYTES) {
+      await Promise.all(Object.values(pending).map((key) => deleteFromR2(BUCKET_PRIVATE, key)));
+      return NextResponse.json({ error: 'Un des fichiers est trop volumineux.' }, { status: 400 });
+    }
+
+    // Identifiant déjà pris entre-temps : on ne touche surtout pas aux fichiers de cet instructeur
+    const taken = await prisma.instructor.findUnique({ where: { id: instructorId }, select: { id: true } });
+    if (taken) {
+      return NextResponse.json({ error: 'Identifiant invalide.' }, { status: 409 });
+    }
+
+    // Les fichiers rejoignent leur emplacement définitif (la photo devient publique à ce moment-là).
+    // Si un déplacement échoue, on retire ceux qui ont réussi : aucun fichier sans fiche.
+    const moves = await Promise.allSettled([
+      moveObject(BUCKET_PRIVATE, pending.photo, BUCKET_PHOTOS, pKey, photoType),
+      moveObject(BUCKET_PRIVATE, pending.cni, BUCKET_PRIVATE, cniKey, cniType),
+      moveObject(BUCKET_PRIVATE, pending.cv, BUCKET_PRIVATE, cvKey, cvType),
+    ]);
+    if (moves.some((m) => m.status === 'rejected')) {
+      const finals: [string, string][] = [[BUCKET_PHOTOS, pKey], [BUCKET_PRIVATE, cniKey], [BUCKET_PRIVATE, cvKey]];
+      await Promise.all(
+        moves.map((m, i) => (m.status === 'fulfilled' ? deleteFromR2(finals[i][0], finals[i][1]) : Promise.resolve()))
+      );
+      console.error('Déplacement des fichiers d\'inscription en échec :', moves);
+      return NextResponse.json({ error: "L'enregistrement des fichiers a échoué. Réessaie." }, { status: 500 });
+    }
+
+    // Si la création échoue (email déjà pris…), on retire les fichiers déplacés : rien d'orphelin
+    let newInstructor;
+    try {
+      newInstructor = await prisma.instructor.create({
+        data: {
+          id: instructorId,
+          firstName,
+          lastName,
+          email,
+          whatsapp,
+          bio,
+          type: (type || 'ETUDIANT') as InstructorType,
+          levels: (levels || 'ALL') as AcademicLevel,
+          mode: (mode || 'DOMICILE') as TeachingMode,
+          city,
+          commune,
+          status: 'PENDING',
+          photoUrl: photoPublicUrl(pKey),
+          cniUrl: `cni.${cniExt}`,
+          cvUrl: `cv.${cvExt}`,
+          subjects: {
+            create: subjects.map((subjectId: string) => ({ subjectId })),
+          },
+          user: {
+            create: {
+              email: accountEmail,
+              passwordHash: await hashPassword(password),
+              role: 'INSTRUCTEUR',
+              firstName,
+              lastName,
+            },
+          },
+        },
+        include: { user: { select: { id: true } } },
+      });
+    } catch (createError) {
       await Promise.all([
         deleteFromR2(BUCKET_PHOTOS, pKey),
         deleteFromR2(BUCKET_PRIVATE, cniKey),
         deleteFromR2(BUCKET_PRIVATE, cvKey),
       ]);
-      return NextResponse.json({ error: 'Un des fichiers est trop volumineux.' }, { status: 400 });
+      throw createError;
     }
-
-    const newInstructor = await prisma.instructor.create({
-      data: {
-        id: instructorId,
-        firstName,
-        lastName,
-        email,
-        whatsapp,
-        bio,
-        type: (type || 'ETUDIANT') as InstructorType,
-        levels: (levels || 'ALL') as AcademicLevel,
-        mode: (mode || 'DOMICILE') as TeachingMode,
-        city,
-        commune,
-        status: 'PENDING',
-        photoUrl: photoPublicUrl(pKey),
-        cniUrl: `cni.${cniExt}`,
-        cvUrl: `cv.${cvExt}`,
-        subjects: {
-          create: subjects.map((subjectId: string) => ({ subjectId })),
-        },
-        user: {
-          create: {
-            email: accountEmail,
-            passwordHash: await hashPassword(password),
-            role: 'INSTRUCTEUR',
-            firstName,
-            lastName,
-          },
-        },
-      },
-      include: { user: { select: { id: true } } },
-    });
 
     const origin = siteOrigin(req);
     const editLink = `${origin}/modifier-profil/${newInstructor.editToken}`;

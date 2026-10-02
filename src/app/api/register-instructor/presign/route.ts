@@ -3,9 +3,7 @@ import { prisma } from '@/lib/prisma';
 import {
   getPresignedUploadUrl,
   extFromMime,
-  photoKey,
-  privateKey,
-  BUCKET_PHOTOS,
+  pendingKey,
   BUCKET_PRIVATE,
   MAX_PHOTO_BYTES,
   MAX_DOC_BYTES,
@@ -23,7 +21,10 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 // - l'identifiant ne doit appartenir à AUCUN instructeur existant (sinon n'importe qui pourrait
 //   remplacer la photo, la CNI ou le CV d'un instructeur déjà inscrit, leurs identifiants étant publics) ;
 // - la taille du fichier est bornée et signée avec l'URL ;
-// - nombre de demandes limité par IP.
+// - nombre de demandes limité par IP ;
+// - les fichiers arrivent dans "pending/" du bucket PRIVÉ (même la photo) : ils ne deviennent
+//   visibles qu'une fois la fiche créée par POST /api/register-instructor, et sont effacés par la
+//   règle de cycle de vie R2 si l'inscription n'est jamais finalisée.
 export async function POST(req: NextRequest) {
   const limited = await rateLimit(req, 'presign-inscription', 30, HOUR);
   if (limited) return limited;
@@ -56,11 +57,9 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const key = isPhoto
-      ? photoKey(instructorId, extFromMime(contentType))
-      : privateKey(instructorId, kind, extFromMime(contentType));
-    const uploadUrl = await getPresignedUploadUrl(isPhoto ? BUCKET_PHOTOS : BUCKET_PRIVATE, key, contentType, 300, size);
-    return NextResponse.json({ uploadUrl, key }, { status: 200 });
+    const key = pendingKey(instructorId, kind, extFromMime(contentType));
+    const uploadUrl = await getPresignedUploadUrl(BUCKET_PRIVATE, key, contentType, 300, size);
+    return NextResponse.json({ uploadUrl }, { status: 200 });
   } catch (error) {
     console.error('Erreur présignature upload :', error);
     return NextResponse.json({ error: 'Erreur serveur.' }, { status: 500 });

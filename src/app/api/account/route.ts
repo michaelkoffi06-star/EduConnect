@@ -3,6 +3,7 @@ import { scrypt, randomBytes, timingSafeEqual } from 'crypto';
 import { promisify } from 'util';
 import { verifySessionToken, createSessionToken, SESSION_COOKIE_NAME } from '@/lib/bleSseD-auth';
 import { prisma } from '@/lib/prisma';
+import { adminPasswordError } from '@/lib/password';
 
 const scryptAsync = promisify(scrypt);
 
@@ -55,8 +56,9 @@ export async function PATCH(request: NextRequest) {
       data.username = newUsername.trim();
     }
     if (typeof newPassword === 'string' && newPassword.length > 0) {
-      if (newPassword.length < 6) {
-        return NextResponse.json({ error: 'Le nouveau mot de passe doit faire au moins 6 caractères.' }, { status: 400 });
+      const pwdError = adminPasswordError(newPassword);
+      if (pwdError) {
+        return NextResponse.json({ error: pwdError }, { status: 400 });
       }
       data.passwordHash = await hashPassword(newPassword);
       // Déconnecte les sessions ouvertes ailleurs ; celle-ci reçoit un nouveau cookie (§7sedecies)

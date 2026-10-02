@@ -290,7 +290,7 @@ export default function PedagogiePage() {
                 />
               </div>
               <div>
-                <label className="block text-xs text-gray-400 mb-1">Nouveau mot de passe (optionnel, 6 caractères min.)</label>
+                <label className="block text-xs text-gray-400 mb-1">Nouveau mot de passe (optionnel, 12 caractères min.)</label>
                 <input
                   type="password"
                   value={accNewPassword}

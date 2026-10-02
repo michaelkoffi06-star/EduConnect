@@ -35,6 +35,7 @@ export async function PATCH(
     const updatedInstructor = await prisma.instructor.update({
       where: { id },
       data: { status },
+      omit: { editToken: true },
       include: {
         subjects: {
           include: { subject: true }

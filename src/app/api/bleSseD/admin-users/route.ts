@@ -2,7 +2,7 @@ export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireRole } from '@/lib/admin-permissions';
-import { hashPassword } from '@/lib/password';
+import { hashPassword, adminPasswordError } from '@/lib/password';
 
 // GET /api/bleSseD/admin-users — liste des comptes (SUPER_ADMIN uniquement)
 export async function GET(request: NextRequest) {
@@ -33,8 +33,12 @@ export async function POST(request: NextRequest) {
     if (!['SUPER_ADMIN', 'PEDAGOGIE', 'ADMINISTRATIF'].includes(role)) {
       return NextResponse.json({ error: 'Rôle invalide.' }, { status: 400 });
     }
-    if (password.length < 6) {
-      return NextResponse.json({ error: 'Le mot de passe doit faire au moins 6 caractères.' }, { status: 400 });
+    if (typeof username !== 'string' || username.trim().length > 50) {
+      return NextResponse.json({ error: 'Identifiant invalide (50 caractères maximum).' }, { status: 400 });
+    }
+    const pwdError = adminPasswordError(password);
+    if (pwdError) {
+      return NextResponse.json({ error: pwdError }, { status: 400 });
     }
 
     const passwordHash = await hashPassword(password);

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { createEmailToken, normalizeEmail, recordAttempt, tooManyAttempts } from '@/lib/user-session';
+import { createEmailToken, normalizeEmail, startUserAttempt } from '@/lib/user-session';
 import { sendVerificationEmail } from '@/lib/user-emails';
 import { siteOrigin } from '@/lib/site';
 
@@ -9,10 +9,9 @@ import { siteOrigin } from '@/lib/site';
 // Limité à 5 envois par IP sur 15 minutes.
 export async function POST(req: NextRequest) {
   try {
-    if (await tooManyAttempts('renvoi', req)) {
+    if ((await startUserAttempt('renvoi', req)).blocked) {
       return NextResponse.json({ error: 'Trop de demandes. Réessaie dans 15 minutes.' }, { status: 429 });
     }
-    await recordAttempt('renvoi', req);
 
     const body = await req.json().catch(() => ({}));
     const email = normalizeEmail(body?.email);

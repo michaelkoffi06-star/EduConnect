@@ -4,9 +4,8 @@ import { verifyPassword } from '@/lib/password';
 import {
   consumeEmailTokenFor,
   normalizeEmail,
-  recordAttempt,
   setUserSessionCookie,
-  tooManyAttempts,
+  startUserAttempt,
 } from '@/lib/user-session';
 
 // POST /api/compte/connexion — email + mot de passe. 5 échecs max par IP sur 15 minutes
@@ -17,7 +16,8 @@ import {
 // activer à son insu (voir §7sedecies). Le vrai propriétaire passe par « Mot de passe oublié ».
 export async function POST(req: NextRequest) {
   try {
-    if (await tooManyAttempts('compte', req)) {
+    const attempt = await startUserAttempt('compte', req);
+    if (attempt.blocked) {
       return NextResponse.json({ error: 'Trop de tentatives. Réessaie dans 15 minutes.' }, { status: 429 });
     }
 
@@ -34,9 +34,10 @@ export async function POST(req: NextRequest) {
     });
 
     if (!user || !(await verifyPassword(password, user.passwordHash))) {
-      await recordAttempt('compte', req);
       return NextResponse.json({ error: 'Email ou mot de passe incorrect.' }, { status: 401 });
     }
+    // Mot de passe correct : cette tentative ne compte pas comme un échec
+    await attempt.release();
 
     let confirmed = false;
     if (!user.emailVerifiedAt && body?.confirmationToken) {

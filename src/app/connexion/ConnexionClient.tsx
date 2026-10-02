@@ -20,9 +20,18 @@ const CONFIRMATION_MESSAGES: Record<string, { ok: boolean; text: string }> = {
   expiree: { ok: false, text: "Ce lien de confirmation a expiré. Connecte-toi pour en recevoir un nouveau." },
 };
 
-// N'accepte qu'un chemin interne (évite de rediriger vers un autre site après la connexion)
+// N'accepte qu'un chemin interne (évite de rediriger vers un autre site après la connexion).
+// « /\site.com » ou « /<tabulation>/site.com » sont lus comme « //site.com » par les navigateurs :
+// on refuse donc antislash et caractères de contrôle, puis on vérifie que l'URL reste sur le site.
 function safeNext(raw: string | null): string {
-  return raw && raw.startsWith("/") && !raw.startsWith("//") ? raw : "/mon-compte";
+  const fallback = "/mon-compte";
+  if (!raw || !raw.startsWith("/") || raw.startsWith("//") || /[\\\u0000-\u001f\u007f]/.test(raw)) return fallback;
+  try {
+    const url = new URL(raw, window.location.origin);
+    return url.origin === window.location.origin ? url.pathname + url.search + url.hash : fallback;
+  } catch {
+    return fallback;
+  }
 }
 
 export default function ConnexionClient() {

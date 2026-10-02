@@ -123,7 +123,7 @@ export default function AdminLoginPage() {
                 type="password"
                 value={recNewPassword}
                 onChange={(e) => setRecNewPassword(e.target.value)}
-                placeholder="Nouveau mot de passe (6 car. min.)"
+                placeholder="Nouveau mot de passe (12 car. min.)"
                 className="w-full px-4 py-2.5 rounded-lg bg-[#0d1f38] border border-[#2a4a6e] text-white mb-4 focus:outline-none focus:border-[#c9951a]"
               />
               <button

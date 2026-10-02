@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { createEmailToken, normalizeEmail, recordAttempt, tooManyAttempts } from '@/lib/user-session';
+import { createEmailToken, normalizeEmail, startUserAttempt } from '@/lib/user-session';
 import { sendPasswordResetEmail } from '@/lib/user-emails';
 import { siteOrigin } from '@/lib/site';
 
@@ -8,10 +8,9 @@ import { siteOrigin } from '@/lib/site';
 // Réponse identique que le compte existe ou non. Limité à 5 demandes par IP sur 15 minutes.
 export async function POST(req: NextRequest) {
   try {
-    if (await tooManyAttempts('oubli', req)) {
+    if ((await startUserAttempt('oubli', req)).blocked) {
       return NextResponse.json({ error: 'Trop de demandes. Réessaie dans 15 minutes.' }, { status: 429 });
     }
-    await recordAttempt('oubli', req);
 
     const body = await req.json().catch(() => ({}));
     const email = normalizeEmail(body?.email);
