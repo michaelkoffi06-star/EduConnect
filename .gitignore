@@ -43,3 +43,6 @@ yarn-error.log*
 instructeurs-liens.csv
 export-instructeurs.js
 create-admin-user.js
+
+# fichiers de verrou LibreOffice
+.~lock*
