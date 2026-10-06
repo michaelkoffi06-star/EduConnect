@@ -376,6 +376,8 @@ Cette route réutilise la même logique de validation et d'upload R2 que `bleSse
 
 **Prérequis Cloudflare** : politique CORS sur les deux buckets (`educonnect-photos`, `educonnect-private`), autorisant `PUT`/`GET`/`HEAD` depuis `educonnect-ci.org` (et `localhost:3000` pour le développement) — sans ça, le navigateur bloque les requêtes vers R2 par sécurité.
 
+Conséquence : les envois de fichiers (bibliothèque, corrigés, photos/CNI/CV) ne fonctionnent que depuis `https://educonnect-ci.org` (ou `localhost:3000`). Depuis l'adresse technique d'un déploiement Vercel (`…vercel.app`), ou depuis l'adresse réseau du PC en développement (`192.168.x.x:3000`), R2 refuse la requête préalable (403) et le formulaire affiche « NetworkError when attempting to fetch resource. » (incident du 02/10/2026, ajout d'un document depuis l'adresse Vercel). Ces adresses ne sont pas ajoutées à la règle CORS : celle d'un déploiement Vercel change à chaque fois.
+
 **Conséquence sur la validation** : le serveur ne voit plus jamais les octets bruts d'une photo, donc la vérification des dimensions minimales (800×800px), auparavant faite en lisant les en-têtes binaires côté serveur, est désormais faite **côté navigateur** (`src/lib/image-utils.ts`, via un élément `<img>` et `naturalWidth`/`naturalHeight`).
 
 ---

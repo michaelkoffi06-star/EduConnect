@@ -108,5 +108,8 @@ bloquant (`next build` ne lance pas le lint), ne pas chercher à tout corriger a
   `rm -rf .next` puis relancer.
 - Sur téléphone, page affichée mais sans JavaScript (menu inactif, contenus absents) : l'adresse du PC
   doit être couverte par `allowedDevOrigins` dans `next.config.ts`.
+- Envoi de fichier en échec avec « NetworkError » : le site est ouvert sur une adresse `…vercel.app` (ou
+  l'adresse réseau du PC) que la règle CORS de R2 n'autorise pas. Travailler sur `https://educonnect-ci.org`
+  (ou `localhost:3000` en local), §7septies.
 - Après un push sur `main`, vérifier dans Vercel que le déploiement marqué **Production** est bien
   celui du dernier commit (un ancien déploiement peut y rester).
