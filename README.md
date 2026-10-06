@@ -97,6 +97,9 @@ Tout le détail (architecture, modèle de données, choix passés, sécurité, h
 **[`docs/documentation.md`](docs/documentation.md)**. Les consignes de travail pour Claude Code sont
 dans [`CLAUDE.md`](CLAUDE.md).
 
+Pour **comprendre** comment le projet est construit (requêtes, base de données, fichiers, sessions,
+sécurité), avec un glossaire des termes clés : **[`docs/guide-du-projet.md`](docs/guide-du-projet.md)**.
+
 ## Sécurité
 
 Pour signaler une faille, passer par le formulaire de contact de
