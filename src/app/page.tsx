@@ -3,6 +3,7 @@ import SiteHeader from "@/components/SiteHeader";
 import ScrollReveal from "@/components/ScrollReveal";
 import AnimatedCounter from "@/components/AnimatedCounter";
 import { prisma } from "@/lib/prisma";
+import { CONTACT_EMAIL, CONTACT_PHONES, CONTACT_VCARD_PATH, GMAIL_COMPOSE_URL } from "@/lib/contact";
 
 export const metadata = {
   title: "EduConnect - Trouvez le tuteur idéal pour votre enfant",
@@ -16,6 +17,48 @@ const HOW_IT_WORKS = [
   { title: "Parcourez les profils", desc: "Consultez les instructeurs disponibles par matière." },
   { title: "Faites votre choix", desc: "Sélectionnez celui qui correspond aux besoins de votre enfant." },
   { title: "On s'occupe du reste", desc: "L'équipe EduConnect organise la mise en relation." },
+];
+
+// Les espaces du site au-delà de la mise en relation (section « Plus qu'une mise en relation »)
+const DISCOVER = [
+  {
+    href: "/bibliotheque",
+    title: "Bibliothèque",
+    desc: "Cours, exercices et vidéos rangés par matière et par niveau, à lire sur téléphone ou à télécharger.",
+    tag: "Accès libre",
+    image: "/images/vitrine/bibliotheque.jpg",
+  },
+  {
+    href: "/bibliotheque/corriges",
+    title: "Corrigés",
+    desc: "Les corrigés des exercices de la bibliothèque, pour vérifier son travail en autonomie.",
+    tag: "Avec un compte",
+    image: "/images/vitrine/corriges.jpg",
+  },
+  {
+    href: "/forum",
+    title: "Forum d'entraide",
+    desc: "Élèves, parents et instructeurs posent leurs questions et s'entraident, matière par matière.",
+    tag: "Lecture libre",
+    image: "/images/vitrine/forum.jpg",
+  },
+  {
+    href: "/espace-instructeur",
+    title: "Espace instructeur",
+    desc: "Les annonces des familles et la salle des profs, pour les instructeurs dont le profil est validé.",
+    tag: "Instructeurs",
+    image: "/images/vitrine/espace-instructeur.jpg",
+  },
+];
+
+// Liens du pied de page vers toutes les pages publiques
+const EXPLORE_LINKS = [
+  { href: "/trouver-un-tuteur", label: "Trouver un tuteur" },
+  { href: "/bibliotheque", label: "Bibliothèque" },
+  { href: "/bibliotheque/corriges", label: "Corrigés" },
+  { href: "/forum", label: "Forum" },
+  { href: "/inscription", label: "Créer un compte" },
+  { href: "/register-instructor", label: "Devenir instructeur" },
 ];
 
 export default async function HomePage() {
@@ -50,6 +93,14 @@ export default async function HomePage() {
       "@type": "Country",
       name: "Côte d'Ivoire",
     },
+    email: CONTACT_EMAIL,
+    contactPoint: CONTACT_PHONES.map((p) => ({
+      "@type": "ContactPoint",
+      telephone: p.tel,
+      contactType: "customer service",
+      areaServed: "CI",
+      availableLanguage: "French",
+    })),
     sameAs: [
       "https://www.facebook.com/profile.php?id=100090481355986",
     ],
@@ -215,6 +266,57 @@ export default async function HomePage() {
         </div>
       </section>
 
+      <section id="decouvrir" className="py-20 bg-[#faf8f2] border-y border-[#eee6d3]">
+        <div className="max-w-6xl mx-auto px-6">
+          <ScrollReveal>
+            <div className="text-center max-w-2xl mx-auto mb-12">
+              <h2 className="font-[family-name:var(--font-cinzel)] text-2xl md:text-3xl">Plus qu&apos;une mise en relation</h2>
+              <p className="text-gray-600 text-sm mt-3">
+                EduConnect accompagne aussi les élèves entre deux cours : des ressources pour réviser,
+                des corrigés pour s&apos;entraîner, et une communauté pour avancer ensemble.
+              </p>
+            </div>
+          </ScrollReveal>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            {DISCOVER.map((item, i) => (
+              <ScrollReveal key={item.href} delay={i * 100}>
+                <Link
+                  href={item.href}
+                  className="group flex flex-col h-full bg-white rounded-3xl overflow-hidden border border-[#eee6d3] shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
+                >
+                  <div className="relative aspect-[16/10] bg-[#f1ecdd]">
+                    <img src={item.image} alt="" loading="lazy" className="w-full h-full object-cover" />
+                    <span className="absolute top-3 left-3 text-[11px] font-semibold bg-white/90 text-[#8a6510] px-2.5 py-1 rounded-full">
+                      {item.tag}
+                    </span>
+                  </div>
+                  <div className="flex flex-col flex-1 p-5">
+                    <h3 className="font-semibold text-base mb-1.5">{item.title}</h3>
+                    <p className="text-gray-600 text-sm leading-relaxed flex-1">{item.desc}</p>
+                    <span className="mt-4 text-sm font-semibold text-[#c9951a] group-hover:underline">Découvrir →</span>
+                  </div>
+                </Link>
+              </ScrollReveal>
+            ))}
+          </div>
+
+          <ScrollReveal>
+            <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-3 text-sm">
+              <span className="text-gray-600">Un compte suffit pour accéder aux corrigés et au forum.</span>
+              <div className="flex gap-3">
+                <Link href="/inscription" className="px-5 py-2 rounded-full bg-[#0d1b3e] text-white font-semibold hover:-translate-y-0.5 hover:shadow-lg transition-all">
+                  Créer un compte
+                </Link>
+                <Link href="/connexion" className="px-5 py-2 rounded-full border border-[#0d1b3e]/15 text-[#0d1b3e] font-semibold hover:bg-[#0d1b3e]/5 transition-all">
+                  Se connecter
+                </Link>
+              </div>
+            </div>
+          </ScrollReveal>
+        </div>
+      </section>
+
       <section className="relative bg-[#0d1b3e] py-16 overflow-hidden">
         <div
           className="absolute inset-0 opacity-[0.07]"
@@ -236,7 +338,7 @@ export default async function HomePage() {
       </section>
 
       <footer id="contact" className="max-w-6xl mx-auto px-6 py-14">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10">
           <div>
             <div className="font-[family-name:var(--font-cinzel)] text-lg mb-2">
               Edu<span className="text-[#c9951a]">Connect</span>
@@ -244,12 +346,34 @@ export default async function HomePage() {
             <p className="text-gray-600 text-sm">Innovation for academic success.</p>
           </div>
           <div>
+            <h4 className="text-xs font-semibold text-[#c9951a] uppercase tracking-widest mb-3">Explorer</h4>
+            <ul className="text-sm text-gray-600 space-y-1.5">
+              {EXPLORE_LINKS.map((l) => (
+                <li key={l.href}>
+                  <Link href={l.href} className="hover:text-[#c9951a]">{l.label}</Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div>
             <h4 className="text-xs font-semibold text-[#c9951a] uppercase tracking-widest mb-3">Contact</h4>
             <ul className="text-sm text-gray-600 space-y-1.5">
-              <li>+225 07 58 52 93 23</li>
-              <li>+225 07 88 08 22 45</li>
-              <li>+225 05 75 53 52 97</li>
-              <li>jk4177234@gmail.com</li>
+              {CONTACT_PHONES.map((p) => (
+                <li key={p.tel}>
+                  <a href={`tel:${p.tel}`} className="hover:text-[#c9951a]">{p.display}</a>
+                </li>
+              ))}
+              <li>
+                <a href={`mailto:${CONTACT_EMAIL}`} className="hover:text-[#c9951a] break-all">{CONTACT_EMAIL}</a>
+                <a href={GMAIL_COMPOSE_URL} target="_blank" rel="noopener noreferrer" className="block text-xs text-[#8a6510] hover:underline mt-0.5">
+                  Écrire depuis Gmail
+                </a>
+              </li>
+              <li className="pt-1">
+                <a href={CONTACT_VCARD_PATH} download="EduConnect.vcf" className="inline-block text-xs font-semibold text-[#0d1b3e] border border-[#0d1b3e]/15 rounded-full px-3 py-1.5 hover:bg-[#0d1b3e]/5">
+                  Enregistrer nos contacts
+                </a>
+              </li>
             </ul>
           </div>
           <div>

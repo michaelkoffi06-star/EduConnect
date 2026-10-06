@@ -1,4 +1,5 @@
 import SiteHeader from '@/components/SiteHeader';
+import { CONTACT_EMAIL } from '@/lib/contact';
 
 export const metadata = {
   title: 'EduConnect - Confidentialité et protection des données',
@@ -82,7 +83,7 @@ export default function ConfidentialitePage() {
             <h2 className={titleClass}>Vos droits</h2>
             <p className={textClass}>
               Vous pouvez à tout moment demander l'accès, la correction, ou la suppression de vos données en nous
-              contactant à <a href="mailto:jk4177234@gmail.com" className="text-[#c9951a] hover:underline">jk4177234@gmail.com</a>.
+              contactant à <a href={`mailto:${CONTACT_EMAIL}`} className="text-[#c9951a] hover:underline">{CONTACT_EMAIL}</a>.
               Les instructeurs peuvent aussi modifier eux-mêmes leurs informations via leur lien personnel de profil.
             </p>
           </div>

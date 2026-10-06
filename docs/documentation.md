@@ -38,6 +38,7 @@ src/
 │   ├── admin-permissions.ts            # getRoleFromHeaders() / requireRole() — contrôle d'accès par rôle (voir §7decies)
 │   ├── password.ts                     # hashPassword/verifyPassword (scrypt, format salt:hash) — partagé par tous les comptes admin
 │   ├── rate-limit.ts                   # rateLimit() / startAttempt() : limites par IP (formulaires, inscriptions, envois de fichiers, connexions) — §7sedecies
+│   ├── contact.ts                      # Coordonnées publiques (email, téléphones, fiche vCard) — §7septdecies
 │   ├── site.ts                         # siteOrigin() : adresse officielle du site pour les liens envoyés par email — §7sedecies
 │   ├── library.ts                      # Bibliothèque : slugs, code de référence, forme publique d'une ressource, normalisation des liens
 │   ├── library-server.ts               # Bibliothèque : recherche d'une ressource par slug ou id (serveur uniquement)
@@ -697,6 +698,19 @@ Nouvelle revue indépendante après la mise en ligne de la première. Pas de fai
 
 ---
 
+## 7septdecies. Vitrine : les autres espaces du site et contacts cliquables
+
+Branche `vitrine` (octobre 2026). L'accueil (`src/app/page.tsx`) ne parlait que de la mise en relation ; il présente maintenant aussi les espaces ajoutés depuis.
+
+- **Section « Plus qu'une mise en relation »** (`#decouvrir`, entre « Comment ça marche » et l'appel final) : quatre cartes cliquables (constante `DISCOVER`) vers la bibliothèque, les corrigés, le forum et l'espace instructeur, chacune avec une étiquette d'accès (« Accès libre », « Avec un compte », « Lecture libre », « Instructeurs »), puis deux boutons « Créer un compte » / « Se connecter ». Images allégées pour le mobile dans `public/images/vitrine/` (800 px de large au plus, moins de 100 Ko), tirées des photos de la bibliothèque et des pages comptes.
+- **Pied de page** sur quatre colonnes : nouvelle colonne « Explorer » (constante `EXPLORE_LINKS`) avec les liens vers toutes les pages publiques.
+- **Contacts cliquables** : numéros en liens `tel:` (ouvrent le composeur du téléphone), adresse en lien `mailto:` (ouvre l'application de messagerie, Gmail sur Android) plus un lien « Écrire depuis Gmail » (fenêtre de rédaction de Gmail dans le navigateur, utile sur ordinateur), et un bouton « Enregistrer nos contacts » qui télécharge une fiche vCard (`public/educonnect.vcf`) que le téléphone propose d'ajouter au répertoire.
+- **Nouvelle adresse de contact : `educonnect.ci@gmail.com`**, à la place de l'ancienne adresse personnelle, sur l'accueil et la page de confidentialité.
+- Coordonnées centralisées dans `src/lib/contact.ts` (`CONTACT_EMAIL`, `CONTACT_PHONES`, `GMAIL_COMPOSE_URL`, `CONTACT_VCARD_PATH`) ; **la fiche `public/educonnect.vcf` reprend les mêmes valeurs et doit être modifiée en même temps.** Les données structurées (JSON-LD) de l'accueil incluent désormais l'email et les numéros (`contactPoint`).
+- Les notifications envoyées à l'équipe partent toujours vers `ADMIN_NOTIFICATION_EMAIL` (variable Vercel), indépendante de l'adresse affichée.
+
+---
+
 ## 8. Historique de conception (pour contexte)
 
 Le projet a démarré comme deux choses séparées : une vitrine statique HTML/CSS/JS, et une app Next.js indépendante pour la gestion des instructeurs. Elles ont été fusionnées dans un seul projet Next.js pour simplifier le déploiement et la maintenance. Le design a ensuite évolué d'un thème sombre "glassmorphism" chargé vers un style plus sobre (fond blanc, moins de sections), avec un header unique simplifié (logo + menu hamburger) partagé entre toutes les pages sauf l'admin, resté en thème sombre.
@@ -742,6 +756,8 @@ La bibliothèque a ensuite été entièrement repensée (v2, voir §7quaterdecie
 Des comptes utilisateurs ont ensuite été ouverts aux élèves, aux parents et aux instructeurs (voir §7quindecies), avec trois nouveautés : des corrigés rattachés aux documents de la bibliothèque et réservés aux membres (le reste restant en libre accès), un marché d'annonces où l'équipe publie anonymement les besoins des familles et où les instructeurs approuvés se positionnent, et un forum d'entraide (questions des élèves, salle des profs entre instructeurs) modéré par signalement. Le travail a été mené sur la branche `espaces-comptes`. Ces nouvelles pages ont ensuite reçu un habillage plus moderne (photos libres de droits en fond, cartes en verre dépoli, apparitions en fondu et en cascade), vérifié par captures d'écran sur ordinateur et téléphone ; à cette occasion, la photo de fond de l'étagère, jusque-là jamais affichée à cause d'un réglage de qualité d'image refusé par Next.js 16, a été rétablie.
 
 Un audit de sécurité complet a ensuite été mené (voir §7sedecies) : il a révélé une faille grave (remplacement possible des fichiers d'un instructeur via la route publique d'envoi de fichiers) et plusieurs faiblesses (emails non échappés, absence de limite sur les formulaires publics, pré-détournement de compte, sessions non révoquées), toutes corrigées sur la branche `securite`. Une deuxième revue indépendante, une fois ces corrections en ligne, a trouvé le lien secret de modification des instructeurs exposé à toute l'équipe admin, ainsi que plusieurs faiblesses moyennes (redirection après connexion, rôles sur les fichiers, export CSV, limites contournables par rafale, envois d'inscription orphelins) : corrigées sur la branche `securite-2`.
+
+La vitrine a ensuite été complétée (voir §7septdecies) pour présenter la bibliothèque, les corrigés, le forum et l'espace instructeur, avec des contacts cliquables (appel, email, fiche contact à enregistrer) et une nouvelle adresse de contact, `educonnect.ci@gmail.com`.
 
 Reste à traiter : l'analytics, le système de notation, et le pipeline de vérification automatique.
 
