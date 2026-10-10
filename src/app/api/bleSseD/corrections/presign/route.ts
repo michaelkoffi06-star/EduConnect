@@ -8,7 +8,7 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 // POST /api/bleSseD/corrections/presign — URL d'upload direct navigateur → R2 (bucket privé)
 // pour le fichier d'un corrigé (voir §7septies et §7quindecies)
 export async function POST(req: NextRequest) {
-  const denied = await requireRole(req, ['SUPER_ADMIN', 'PEDAGOGIE']);
+  const denied = await requireRole(req, ['SUPER_ADMIN', 'PEDAGOGIE', 'ADMINISTRATIF']);
   if (denied) return denied;
   try {
     const { correctionId, contentType } = await req.json();

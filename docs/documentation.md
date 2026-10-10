@@ -78,7 +78,7 @@ src/
 │   ├── pedagogie/
 │   │   └── page.tsx                    # Panneau PEDAGOGIE : Instructeurs (lecture/statut, sans re-upload fichiers), Bibliothèque (complet), Contrats (voir §7undecies), Mon compte
 │   ├── administratif/
-│   │   └── page.tsx                    # Panneau ADMINISTRATIF : Demandes (complet), Instructeurs (lecture seule), Bibliothèque (lecture seule), Mon compte
+│   │   └── page.tsx                    # Panneau ADMINISTRATIF : Demandes (complet), Instructeurs (lecture seule), Bibliothèque (complet, depuis octobre 2026), Mon compte
 │   └── dev_edco_si/san_other/
 │       └── login/page.tsx              # Connexion partagée PEDAGOGIE / ADMINISTRATIF, redirige selon le rôle renvoyé (voir §7decies)
 ├── api/
@@ -421,7 +421,7 @@ Conséquence : les envois de fichiers (bibliothèque, corrigés, photos/CNI/CV) 
 |---|---|---|
 | `SUPER_ADMIN` | `/bleSseD` | Accès complet : Instructeurs (y compris re-upload de fichiers), Demandes, Suggestions, Liste d'attente, Bibliothèque, Contrats, Comptes (gestion de tous les comptes admin) |
 | `PEDAGOGIE` | `/pedagogie` | Instructeurs (liste, changement de statut, liens CNI/CV — **sans** re-upload de fichiers), Bibliothèque (complet), Contrats (création + saisie mensuelle) |
-| `ADMINISTRATIF` | `/administratif` | Demandes (complet), Instructeurs (lecture seule), Bibliothèque (lecture seule) |
+| `ADMINISTRATIF` | `/administratif` | Demandes (complet), Instructeurs (lecture seule), Bibliothèque (complet depuis octobre 2026 : documents, chapitres, corrigés, couleurs) |
 
 Les onglets Suggestions et Liste d'attente restent réservés au `SUPER_ADMIN` (accessibles uniquement depuis `/bleSseD`). Chaque panneau dispose aussi d'un onglet "Mon compte" (voir §7terdecies).
 
@@ -527,7 +527,7 @@ Cette route est rate-limitée comme les routes de connexion (voir §7bis), et re
 
 **Liens externes** : les adresses saisies sans `https://` (ex. « anglaisefacile.com ») étaient prises pour des pages du site (404). Elles sont normalisées (`normalizeExternalUrl`, seuls http/https acceptés) à l'enregistrement et à la lecture.
 
-**Admin** (`LibraryManager.tsx`, onglet Bibliothèque de `/bleSseD` et `/pedagogie`, lecture seule dans `/administratif`) : couleurs des matières, création/modification/suppression des chapitres, rattachement d'une ressource à un chapitre et position dans le classeur (modifiables directement dans le tableau), compteurs vues/téléchargements, code de référence.
+**Admin** (`LibraryManager.tsx`, onglet Bibliothèque des trois panneaux, avec les mêmes droits pour les trois rôles depuis octobre 2026) : couleurs des matières, création/modification/suppression des chapitres, rattachement d'une ressource à un chapitre et position dans le classeur (modifiables directement dans le tableau), compteurs vues/téléchargements, code de référence.
 
 **Mise en production** (faite le 28/09/2026) : `npx prisma db push` sur Neon (URL directe) — l'avertissement sur les contraintes d'unicité `slug`/`refNumber` est sans risque, aucune ressource n'ayant de slug et `refNumber` étant auto-généré —, puis `scripts/backfill-resource-slugs.mjs` sur Neon (64 ressources), puis fusion de la branche `bibliotheque-v2` dans `main`.
 
@@ -758,6 +758,8 @@ Des comptes utilisateurs ont ensuite été ouverts aux élèves, aux parents et 
 Un audit de sécurité complet a ensuite été mené (voir §7sedecies) : il a révélé une faille grave (remplacement possible des fichiers d'un instructeur via la route publique d'envoi de fichiers) et plusieurs faiblesses (emails non échappés, absence de limite sur les formulaires publics, pré-détournement de compte, sessions non révoquées), toutes corrigées sur la branche `securite`. Une deuxième revue indépendante, une fois ces corrections en ligne, a trouvé le lien secret de modification des instructeurs exposé à toute l'équipe admin, ainsi que plusieurs faiblesses moyennes (redirection après connexion, rôles sur les fichiers, export CSV, limites contournables par rafale, envois d'inscription orphelins) : corrigées sur la branche `securite-2`.
 
 La vitrine a ensuite été complétée (voir §7septdecies) pour présenter la bibliothèque, les corrigés, le forum et l'espace instructeur, avec des contacts cliquables (appel, email, fiche contact à enregistrer) et une nouvelle adresse de contact, `educonnect.ci@gmail.com`.
+
+Le rôle ADMINISTRATIF a ensuite reçu les mêmes droits que SUPER_ADMIN et PEDAGOGIE sur la bibliothèque (ajout, modification et suppression des documents, chapitres et corrigés, couleurs des matières) : routes `/api/bleSseD/resources/**`, `chapters/**`, `corrections/**` et `subjects/[id]` ouvertes aux trois rôles, onglet Bibliothèque de `/administratif` en mode édition.
 
 Reste à traiter : l'analytics, le système de notation, et le pipeline de vérification automatique.
 

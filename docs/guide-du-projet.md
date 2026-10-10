@@ -431,7 +431,7 @@ besoin.
 |---|---|
 | SUPER_ADMIN | Tout ; seul à gérer les comptes de l'équipe, les suggestions, la liste d'attente, les liens de modification et le remplacement des fichiers des instructeurs |
 | PEDAGOGIE | Valider les instructeurs et consulter leurs CNI et CV, gérer la bibliothèque, les contrats, modérer le forum |
-| ADMINISTRATIF | Gérer les demandes des familles et le marché ; voir les instructeurs en lecture seule |
+| ADMINISTRATIF | Gérer les demandes des familles, le marché et la bibliothèque ; voir les instructeurs en lecture seule |
 
 ---
 

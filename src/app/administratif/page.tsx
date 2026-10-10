@@ -158,7 +158,7 @@ export default function AdministratifPage() {
           <span className="inline-block px-3 py-1 rounded-full bg-[#c9951a]/15 text-[#c9951a] text-xs font-bold uppercase tracking-wide mr-3">
             Administratif
           </span>
-          <span className="text-gray-400 text-sm">Demandes de mise en relation, et consultation instructeurs/bibliothèque.</span>
+          <span className="text-gray-400 text-sm">Demandes de mise en relation, gestion de la bibliothèque et consultation des instructeurs.</span>
         </div>
         <div className="flex gap-2">
           <button
@@ -255,7 +255,7 @@ export default function AdministratifPage() {
               tab === 'resources' ? 'border-[#c9951a] text-[#c9951a]' : 'border-transparent text-gray-400 hover:text-white'
             }`}
           >
-            Bibliothèque <span className="text-gray-500 text-xs">(lecture seule)</span>
+            Bibliothèque
           </button>
           <button
             onClick={() => setTab('market')}
@@ -391,7 +391,7 @@ export default function AdministratifPage() {
           )
         )}
 
-        {tab === 'resources' && <LibraryManager canEdit={false} />}
+        {tab === 'resources' && <LibraryManager canEdit />}
         {tab === 'market' && <MarketManager />}
       </main>
     </div>

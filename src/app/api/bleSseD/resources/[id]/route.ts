@@ -14,7 +14,7 @@ export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const denied = await requireRole(req, ['SUPER_ADMIN', 'PEDAGOGIE']);
+  const denied = await requireRole(req, ['SUPER_ADMIN', 'PEDAGOGIE', 'ADMINISTRATIF']);
   if (denied) return denied;
   try {
     const { id } = await params;
@@ -76,7 +76,7 @@ export async function DELETE(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const denied = await requireRole(req, ['SUPER_ADMIN', 'PEDAGOGIE']);
+  const denied = await requireRole(req, ['SUPER_ADMIN', 'PEDAGOGIE', 'ADMINISTRATIF']);
   if (denied) return denied;
   try {
     const { id } = await params;

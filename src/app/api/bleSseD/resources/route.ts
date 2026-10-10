@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
 
 // POST /api/bleSseD/resources — création après upload (si fichier) ou directe (si lien)
 export async function POST(req: NextRequest) {
-  const denied = await requireRole(req, ['SUPER_ADMIN', 'PEDAGOGIE']);
+  const denied = await requireRole(req, ['SUPER_ADMIN', 'PEDAGOGIE', 'ADMINISTRATIF']);
   if (denied) return denied;
   try {
     const body = await req.json();

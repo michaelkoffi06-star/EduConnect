@@ -12,7 +12,7 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const denied = await requireRole(request, ['SUPER_ADMIN', 'PEDAGOGIE']);
+  const denied = await requireRole(request, ['SUPER_ADMIN', 'PEDAGOGIE', 'ADMINISTRATIF']);
   if (denied) return denied;
   try {
     const { id } = await params;
@@ -80,7 +80,7 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const denied = await requireRole(request, ['SUPER_ADMIN', 'PEDAGOGIE']);
+  const denied = await requireRole(request, ['SUPER_ADMIN', 'PEDAGOGIE', 'ADMINISTRATIF']);
   if (denied) return denied;
   try {
     const { id } = await params;

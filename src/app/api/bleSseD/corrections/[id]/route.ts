@@ -18,7 +18,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 
 // DELETE /api/bleSseD/corrections/[id] — retire le corrigé (fichier R2 compris)
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const denied = await requireRole(req, ['SUPER_ADMIN', 'PEDAGOGIE']);
+  const denied = await requireRole(req, ['SUPER_ADMIN', 'PEDAGOGIE', 'ADMINISTRATIF']);
   if (denied) return denied;
   try {
     const { id } = await params;

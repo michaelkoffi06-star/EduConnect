@@ -11,7 +11,7 @@ const ALLOWED_TYPES = ['application/pdf', 'image/jpeg', 'image/png'];
 
 // POST /api/bleSseD/resources/presign — protégé par le middleware (voir §7bis)
 export async function POST(req: NextRequest) {
-  const denied = await requireRole(req, ['SUPER_ADMIN', 'PEDAGOGIE']);
+  const denied = await requireRole(req, ['SUPER_ADMIN', 'PEDAGOGIE', 'ADMINISTRATIF']);
   if (denied) return denied;
   try {
     const { resourceId, contentType } = await req.json();

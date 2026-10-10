@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
 
 // POST /api/bleSseD/chapters — création d'un chapitre
 export async function POST(request: NextRequest) {
-  const denied = await requireRole(request, ['SUPER_ADMIN', 'PEDAGOGIE']);
+  const denied = await requireRole(request, ['SUPER_ADMIN', 'PEDAGOGIE', 'ADMINISTRATIF']);
   if (denied) return denied;
   try {
     const { title, subjectId, level, classe, order } = await request.json();
