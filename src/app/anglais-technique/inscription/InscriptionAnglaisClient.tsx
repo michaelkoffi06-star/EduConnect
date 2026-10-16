@@ -74,8 +74,16 @@ export default function InscriptionAnglaisClient({ openPlans }: { openPlans: Eng
     const values = new FormData(e.currentTarget);
     setError("");
     setAccountExists(false);
+    // Le bouton reste cliquable : on explique ce qui manque au lieu de le griser sans rien dire
     if (!manual || !plan) {
-      setError("Choisis un manuel et une formule.");
+      setError(
+        !manual && !plan
+          ? "Choisis d'abord un manuel (étape 1) et une formule (étape 2)."
+          : !manual
+            ? "Choisis d'abord un manuel (étape 1)."
+            : "Choisis d'abord une formule (étape 2)."
+      );
+      document.getElementById(!manual ? "etape-manuel" : "etape-formule")?.scrollIntoView({ behavior: "smooth", block: "center" });
       return;
     }
     if (!user && values.get("password") !== values.get("confirm")) {
@@ -202,12 +210,12 @@ export default function InscriptionAnglaisClient({ openPlans }: { openPlans: Eng
   return shell(
     <form onSubmit={handleSubmit} className="space-y-6">
       <div>
-        <p className={labelClass}>1. Le manuel</p>
+        <p id="etape-manuel" className={labelClass}>1. Le manuel</p>
         <div className="grid sm:grid-cols-2 gap-3 stagger">
           {(Object.keys(MANUALS) as EnglishManual[]).map((m, i) => {
             const selected = manual === m;
             return (
-              <button key={m} type="button" style={{ "--i": i } as React.CSSProperties} onClick={() => setManual(m)} aria-pressed={selected} className={optionClass(selected)}>
+              <button key={m} type="button" style={{ "--i": i } as React.CSSProperties} onClick={() => { setManual(m); setError(""); }} aria-pressed={selected} className={optionClass(selected)}>
                 {selected && <Check />}
                 <span className={`w-10 h-10 rounded-xl flex items-center justify-center ${selected ? "bg-[#c9951a] text-white" : "bg-[#faf3e0] text-[#8a6510]"}`}>
                   {MANUAL_ICONS[m]}
@@ -221,7 +229,7 @@ export default function InscriptionAnglaisClient({ openPlans }: { openPlans: Eng
       </div>
 
       <div>
-        <p className={labelClass}>2. La formule</p>
+        <p id="etape-formule" className={labelClass}>2. La formule</p>
         <div className="grid sm:grid-cols-2 gap-3 stagger">
           {(Object.keys(PLANS) as EnglishPlan[]).map((p, i) => {
             const info = PLANS[p];
@@ -233,7 +241,7 @@ export default function InscriptionAnglaisClient({ openPlans }: { openPlans: Eng
                 type="button"
                 disabled={!open}
                 style={{ "--i": i } as React.CSSProperties}
-                onClick={() => setPlan(p)}
+                onClick={() => { setPlan(p); setError(""); }}
                 aria-pressed={selected}
                 className={optionClass(selected, !open)}
               >
@@ -316,7 +324,7 @@ export default function InscriptionAnglaisClient({ openPlans }: { openPlans: Eng
         </ErrorBox>
       )}
 
-      <button type="submit" disabled={state === "loading" || !manual || !plan} className={primaryBtn}>
+      <button type="submit" disabled={state === "loading"} className={primaryBtn}>
         {state === "loading" ? "Inscription en cours..." : "S'inscrire et passer au paiement"}
       </button>
       <p className="text-xs text-gray-500 text-center">
