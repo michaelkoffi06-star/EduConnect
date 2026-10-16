@@ -2,10 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { verifySessionToken, SESSION_COOKIE_NAME, type AdminRole } from '@/lib/bleSseD-auth';
 import { verifyUserSessionToken, USER_SESSION_COOKIE } from '@/lib/user-auth';
 
-// Pages réservées aux comptes utilisateurs (élèves, parents, instructeurs — voir §7quindecies).
+// Pages réservées aux comptes utilisateurs (élèves, parents, instructeurs, apprenants — §7quindecies, §7novodecies).
 // Le middleware vérifie seulement la signature du cookie ; les droits fins (email confirmé,
 // instructeur approuvé) sont vérifiés par les routes API et les pages elles-mêmes.
-const USER_PAGES = ['/mon-compte', '/espace-instructeur'];
+const USER_PAGES = ['/mon-compte', '/espace-instructeur', '/anglais-technique/mon-abonnement'];
 
 // S'applique à toutes les routes sauf les fichiers statiques Next.js et le dossier marketing
 // (logo, assets de l'ancienne vitrine), pour que la page de maintenance puisse afficher le logo.
@@ -85,12 +85,14 @@ export async function middleware(request: NextRequest) {
 
   // --- Mode maintenance : bloque tout le reste du site (public + API publiques)
   // tant que MAINTENANCE_MODE=true, sans toucher au code.
-  // Exceptions : suggestions et soutien restent accessibles même pendant la maintenance.
+  // Exceptions : suggestions et soutien restent accessibles même pendant la maintenance, ainsi que
+  // les tâches planifiées (/api/cron/**, protégées par CRON_SECRET) pour que les abonnements expirent à l'heure.
   const maintenanceMode = process.env.MAINTENANCE_MODE === 'true';
   const isExemptFromMaintenance =
     pathname === '/suggestions' ||
     pathname === '/soutenir' ||
-    pathname === '/api/feedback';
+    pathname === '/api/feedback' ||
+    pathname.startsWith('/api/cron/');
 
   if (maintenanceMode && pathname !== '/maintenance' && !isExemptFromMaintenance) {
     if (pathname.startsWith('/api/')) {

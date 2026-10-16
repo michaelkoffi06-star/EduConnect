@@ -96,3 +96,121 @@ export function sendNewEditLinkEmail(to: string, firstName: string, link: string
     )
   );
 }
+
+// --- Anglais technique (§7novodecies) ---
+
+// Instructions de paiement après une inscription (compte déjà confirmé)
+export function sendEnglishPaymentInstructionsEmail(
+  to: string,
+  firstName: string,
+  planLabel: string,
+  amount: string,
+  reference: string,
+  numbers: { label: string; number: string }[],
+  link: string
+) {
+  const list = numbers.map((n) => `<li><strong>${escapeHtml(n.label)}</strong> : ${escapeHtml(n.number)}</li>`).join('');
+  return send(
+    to,
+    'Ton inscription en anglais technique — EduConnect',
+    layout(
+      firstName,
+      `<p>Ton inscription à la formule <strong>${escapeHtml(planLabel)}</strong> est enregistrée. Pour l'activer, envoie <strong>${escapeHtml(amount)}</strong> sur l'un de ces numéros :</p>
+       <ul>${list}</ul>
+       <p>Indique la référence <strong>${escapeHtml(reference)}</strong> dans le motif du paiement, puis saisis l'identifiant de ta transaction sur ton espace :</p>
+       ${button(link, 'Déclarer mon paiement')}`
+    )
+  );
+}
+
+export function sendEnglishActivatedEmail(to: string, firstName: string, planLabel: string, endDate: string, link: string) {
+  return send(
+    to,
+    'Ton abonnement est actif — EduConnect',
+    layout(
+      firstName,
+      `<p>Paiement reçu, merci ! Ta formule <strong>${escapeHtml(planLabel)}</strong> est active jusqu'au <strong>${escapeHtml(endDate)}</strong>.</p>
+       ${button(link, 'Commencer à apprendre')}`
+    )
+  );
+}
+
+export function sendEnglishPaymentRejectedEmail(to: string, firstName: string, note: string, link: string) {
+  return send(
+    to,
+    'Ton paiement n’a pas pu être confirmé — EduConnect',
+    layout(
+      firstName,
+      `<p>L'équipe EduConnect n'a pas pu confirmer ton paiement.</p>
+       ${note ? `<p><strong>Motif :</strong> ${escapeHtml(note)}</p>` : ''}
+       <p>Vérifie l'identifiant de ta transaction et déclare-le à nouveau, ou réponds à cet email si besoin.</p>
+       ${button(link, 'Voir mon abonnement')}`
+    )
+  );
+}
+
+export function sendEnglishReminderEmail(to: string, firstName: string, planLabel: string, endDate: string, link: string) {
+  return send(
+    to,
+    'Ton abonnement se termine dans une semaine — EduConnect',
+    layout(
+      firstName,
+      `<p>Ta formule <strong>${escapeHtml(planLabel)}</strong> se termine le <strong>${escapeHtml(endDate)}</strong>.</p>
+       <p>Pour continuer sans interruption, renouvelle-la dès maintenant :</p>
+       ${button(link, 'Renouveler mon abonnement')}`
+    )
+  );
+}
+
+// Annonce d'un nouveau contenu. Envoi groupé (100 emails par appel à Resend) ; renvoie le nombre accepté.
+export async function sendEnglishAnnouncementEmails(
+  recipients: { email: string; firstName: string; unsubscribeLink: string }[],
+  title: string,
+  message: string,
+  link: string | null
+): Promise<number> {
+  let sent = 0;
+  for (let i = 0; i < recipients.length; i += 100) {
+    const batch = recipients.slice(i, i + 100).map((r) => ({
+      from: FROM,
+      to: [r.email],
+      subject: `${title} — EduConnect`,
+      html: layout(
+        r.firstName,
+        `<h3 style="color: #0d1b3e;">${escapeHtml(title)}</h3>
+         <p style="white-space: pre-line;">${escapeHtml(message)}</p>
+         ${link ? button(escapeHtml(link), 'Découvrir') : ''}
+         <p style="font-size: 12px; color: #888;">Tu reçois cet email car tu as accepté les nouveautés de l'anglais technique EduConnect. <a href="${r.unsubscribeLink}">Ne plus recevoir ces emails</a>.</p>`
+      ),
+    }));
+    try {
+      const { error } = await getResendClient().batch.send(batch);
+      if (error) console.error('⚠️ Annonce anglais technique : lot non envoyé :', JSON.stringify(error));
+      else sent += batch.length;
+    } catch (err) {
+      console.error('⚠️ Annonce anglais technique : lot non envoyé :', err);
+    }
+  }
+  return sent;
+}
+
+// Alerte à l'équipe : un apprenant a déclaré un paiement à vérifier
+export function sendEnglishPaymentDeclaredAlert(learner: string, planLabel: string, amount: string, reference: string, method: string, transactionId: string) {
+  const to = process.env.ADMIN_NOTIFICATION_EMAIL;
+  if (!to) {
+    console.error("ADMIN_NOTIFICATION_EMAIL n'est pas défini : alerte de paiement non envoyée.");
+    return Promise.resolve(false);
+  }
+  return send(
+    to,
+    `Paiement à vérifier : ${reference}`,
+    `<div style="font-family: sans-serif; padding: 20px; color: #333;">
+       <h2 style="color: #c9951a;">Paiement déclaré (anglais technique)</h2>
+       <p><strong>Apprenant :</strong> ${escapeHtml(learner)}</p>
+       <p><strong>Formule :</strong> ${escapeHtml(planLabel)} · ${escapeHtml(amount)}</p>
+       <p><strong>Référence :</strong> ${escapeHtml(reference)}</p>
+       <p><strong>Moyen :</strong> ${escapeHtml(method)} · <strong>transaction :</strong> ${escapeHtml(transactionId)}</p>
+       <p>À valider dans /administratif, onglet « Anglais technique ».</p>
+     </div>`
+  );
+}

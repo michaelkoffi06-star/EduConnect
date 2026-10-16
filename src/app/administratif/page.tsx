@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import LibraryManager from '@/components/admin/LibraryManager';
 import MarketManager from '@/components/admin/MarketManager';
+import EnglishSubscriptionsManager from '@/components/admin/EnglishSubscriptionsManager';
 
 interface MatchRequest {
   id: string;
@@ -27,7 +28,7 @@ interface Instructor {
   subjects: InstructorSubject[];
 }
 
-type Tab = 'requests' | 'instructors' | 'resources' | 'market';
+type Tab = 'requests' | 'instructors' | 'resources' | 'market' | 'english';
 
 const REQUEST_STATUS_STYLES: Record<string, string> = {
   NEW: 'bg-amber-900/40 text-amber-300 border-amber-500/40',
@@ -265,6 +266,14 @@ export default function AdministratifPage() {
           >
             Marché
           </button>
+          <button
+            onClick={() => setTab('english')}
+            className={`px-4 py-2.5 text-sm font-semibold border-b-2 -mb-px transition ${
+              tab === 'english' ? 'border-[#c9951a] text-[#c9951a]' : 'border-transparent text-gray-400 hover:text-white'
+            }`}
+          >
+            Anglais technique
+          </button>
         </div>
 
         {errorMsg && (
@@ -393,6 +402,7 @@ export default function AdministratifPage() {
 
         {tab === 'resources' && <LibraryManager canEdit />}
         {tab === 'market' && <MarketManager />}
+        {tab === 'english' && <EnglishSubscriptionsManager />}
       </main>
     </div>
   );

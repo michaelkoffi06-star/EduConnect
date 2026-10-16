@@ -31,7 +31,7 @@ Le projet est un **monolithe Next.js unique** : le site vitrine (marketing) et l
 
 ```
 src/
-├── middleware.ts                       # Protège /bleSseD, /pedagogie, /administratif et leurs API (voir §7bis/§7decies) ; /mon-compte et /espace-instructeur (comptes utilisateurs, §7quindecies)
+├── middleware.ts                       # Protège /bleSseD, /pedagogie, /administratif et leurs API (voir §7bis/§7decies) ; /mon-compte, /espace-instructeur et /anglais-technique/mon-abonnement (comptes utilisateurs, §7quindecies)
 ├── lib/
 │   ├── prisma.ts                       # Client Prisma (singleton, adaptateur pg)
 │   ├── bleSseD-auth.ts                 # Création/vérification du token de session (payload {sub, username, role, exp}, voir §7bis)
@@ -44,7 +44,9 @@ src/
 │   ├── library-server.ts               # Bibliothèque : recherche d'une ressource par slug ou id (serveur uniquement)
 │   ├── r2.ts                           # Client S3/R2 + helpers upload/delete/get (voir §7ter), clés des corrigés (bucket privé), pending/ des inscriptions, uploadedFileError()
 │   ├── user-auth.ts / user-session.ts  # Comptes utilisateurs : cookie de session, compte connecté, jetons d'email (voir §7quindecies)
-│   ├── user-emails.ts                  # Emails aux comptes (confirmation, mot de passe oublié, instructeur retenu)
+│   ├── user-emails.ts                  # Emails aux comptes (confirmation, mot de passe oublié, instructeur retenu, anglais technique)
+│   ├── english-plans.ts                # Anglais technique : manuels, formules (durées, prix), moyens de paiement — importable côté client (§7novodecies)
+│   ├── english.ts                      # Anglais technique, serveur : numéros de paiement, référence AT-XXXXXX, dates, lien de désinscription signé (§7novodecies)
 │   └── market.ts / forum.ts            # Marché des instructeurs et forum : validation, règles d'accès
 ├── app/
 │   ├── inscription/ , connexion/       # Création de compte (élève/parent/instructeur) et connexion — page.tsx + <Nom>Client.tsx
@@ -53,7 +55,10 @@ src/
 │   ├── espace-instructeur/             # Marché des annonces, instructeurs approuvés — privé
 │   ├── forum/ , forum/[id]/            # Forum (Questions, Salle des profs) et page d'un sujet
 │   ├── bibliotheque/corriges/          # Étagère des corrigés, réservée aux comptes
-│   ├── anglais-technique/              # Manuels d'anglais technique : présentation et liste des chapitres (§7octodecies)
+│   ├── anglais-technique/              # Manuels d'anglais technique : présentation, chapitres et formules pro (§7octodecies, §7novodecies)
+│   │   ├── inscription/                # Inscription à la version pro (manuel, formule, études, compte) — §7novodecies
+│   │   ├── mon-abonnement/             # Statut, paiement Mobile Money, renouvellement, nouveautés — privé
+│   │   └── nouveautes/                 # Désinscription des emails « nouveautés » (lien signé)
 │   ├── layout.tsx                      # Layout racine : métadonnées globales (Open Graph, Twitter Card, favicon, vérification Bing/Google — voir §7novies)
 │   ├── page.tsx                        # Vitrine (accueil), données structurées JSON-LD (EducationalOrganization), lien WhatsApp du footer (voir §8)
 │   ├── sitemap.ts                      # Génère /sitemap.xml (routes publiques, voir §7novies)
@@ -79,7 +84,7 @@ src/
 │   ├── pedagogie/
 │   │   └── page.tsx                    # Panneau PEDAGOGIE : Instructeurs (lecture/statut, sans re-upload fichiers), Bibliothèque (complet), Contrats (voir §7undecies), Mon compte
 │   ├── administratif/
-│   │   └── page.tsx                    # Panneau ADMINISTRATIF : Demandes (complet), Instructeurs (lecture seule), Bibliothèque (complet, depuis octobre 2026), Mon compte
+│   │   └── page.tsx                    # Panneau ADMINISTRATIF : Demandes (complet), Instructeurs (lecture seule), Bibliothèque (complet, depuis octobre 2026), Marché, Anglais technique, Mon compte
 │   └── dev_edco_si/san_other/
 │       └── login/page.tsx              # Connexion partagée PEDAGOGIE / ADMINISTRATIF, redirige selon le rôle renvoyé (voir §7decies)
 ├── api/
@@ -118,8 +123,12 @@ src/
 │           ├── contracts/route.ts + [id]/ + [id]/entries/ # CRUD contrats instructeur/matière/niveau + saisie mensuelle (voir §7undecies)
 │           ├── corrections/ + presign/ + [id]/    # Corrigés : upload vers R2 privé, aperçu, retrait (voir §7quindecies)
 │           ├── market-offers/ + [id]/ , market-interests/[id]/ # Marché : annonces et décisions sur les candidatures
+│           ├── english-subscriptions/ + [id]/     # Anglais technique : liste, validation/refus des paiements, annulation (§7novodecies)
+│           ├── english-announcements/route.ts     # Anglais technique : annonce « nouveau contenu » par email
 │           └── forum/route.ts                     # Modération : signalements, masquer/rétablir
 │       ├── compte/**                         # Comptes utilisateurs : inscription, connexion, confirmation, mot de passe (voir §7quindecies)
+│       ├── anglais/**                        # Anglais technique : inscription, abonnements, déclaration de paiement, préférences, désinscription (§7novodecies)
+│       ├── cron/anglais-abonnements/route.ts # Tâche quotidienne Vercel (vercel.json) : expiration et rappel « fin dans 7 jours »
 │       ├── corrections/ + [id]/              # Corrigés pour les comptes connectés (liste, URL signée)
 │       ├── espace-instructeur/annonces/**    # Marché côté instructeur (annonces, candidature)
 │       └── forum/**                          # Sujets, réponses, suppressions, signalements
@@ -130,6 +139,7 @@ src/
 │   ├── FileDropzone.tsx   # Zone de glisser-déposer réutilisable (register-instructor, modifier-profil)
 │   ├── admin/LibraryManager.tsx     # Onglet Bibliothèque commun aux 3 panneaux admin (canEdit), colonne Corrigé
 │   ├── admin/MarketManager.tsx      # Onglet Marché (/bleSseD, /administratif)
+│   ├── admin/EnglishSubscriptionsManager.tsx # Onglet Anglais technique (/bleSseD, /administratif) : paiements à vérifier, annonces
 │   ├── admin/ForumModeration.tsx    # Onglet Forum (/bleSseD, /pedagogie)
 │   ├── compte/ui.tsx                # Styles et composants des pages de comptes, hook useAccount()
 │   ├── forum/shared.tsx             # Auteur + badge, dates relatives du forum
@@ -170,7 +180,9 @@ private-uploads/
 - **`AdminRole`** *(enum)* — `SUPER_ADMIN` / `PEDAGOGIE` / `ADMINISTRATIF`.
 - **`Contract`** — un engagement instructeur/matière/niveau (`instructorId`, `subjectId`, `level`), créé et suivi depuis le panneau Pédagogie. Porte plusieurs `ContractEntry` (un par mois suivi).
 - **`ContractEntry`** — une entrée mensuelle d'un contrat : `month` (date, premier du mois), `studentCount`, `sessionCount`, `amountReceived`. Unique par `(contractId, month)` — une seule entrée par mois et par contrat, modifiable (upsert) plutôt que dupliquée.
-- **`User`** + **`UserRole`** *(enum `ELEVE`/`PARENT`/`INSTRUCTEUR`)* — compte du site (distinct d'`AdminUser`) : email unique en minuscules, `passwordHash`, prénom/nom, `classe` (élève), `emailVerifiedAt` (connexion impossible avant confirmation), `instructorId` (unique : compte instructeur ↔ fiche `Instructor`, supprimé avec la fiche), `sessionVersion` (incrémenté au changement de mot de passe, §7sedecies). Voir §7quindecies.
+- **`User`** + **`UserRole`** *(enum `ELEVE`/`PARENT`/`INSTRUCTEUR`/`APPRENANT`)* — compte du site (distinct d'`AdminUser`) : email unique en minuscules, `passwordHash`, prénom/nom, `classe` (élève), `emailVerifiedAt` (connexion impossible avant confirmation), `instructorId` (unique : compte instructeur ↔ fiche `Instructor`, supprimé avec la fiche), `sessionVersion` (incrémenté au changement de mot de passe, §7sedecies). Voir §7quindecies. Pour l'anglais technique (§7novodecies) : `studyField` (études ou métier, texte libre) et `englishNewsOptIn` (emails « nouveautés »).
+- **`EnglishSubscription`** + **`EnglishManual`** *(`A`/`B`)*, **`EnglishPlan`** *(`AUTONOME`/`GUIDE`/`SPRINT`/`COACHE`)*, **`EnglishSubscriptionStatus`** *(`PENDING_PAYMENT`/`PAYMENT_DECLARED`/`ACTIVE`/`EXPIRED`/`CANCELLED`)* — abonnement d'un compte à un manuel d'anglais technique : prix figé à l'inscription (`priceFcfa`), `reference` unique à mettre dans le motif du paiement, moyen et identifiant de transaction déclarés par l'apprenant, `adminNote` (motif de refus), `validatedBy`, `startsAt`/`endsAt`, `reminderSentAt`. §7novodecies.
+- **`EnglishAnnouncement`** — annonce « nouveau contenu » envoyée par l'équipe (titre, message, lien, nombre d'emails acceptés, auteur).
 - **`UserToken`** + **`UserTokenType`** *(`VERIFY_EMAIL`/`RESET_PASSWORD`)* — jeton à usage unique envoyé par email ; seule l'empreinte SHA-256 (`tokenHash`) est stockée, avec `expiresAt`/`usedAt`.
 - **`Correction`** — corrigé d'une `Resource` (un seul par ressource, `resourceId` unique) : `fileExt`, compteurs vues/téléchargements. Fichier dans le bucket R2 privé, `corrections/<id>.<ext>`.
 - **`MarketOffer`** + **`MarketOfferStatus`** *(`OPEN`/`FILLED`/`CLOSED`)* — annonce du marché des instructeurs, publiée par l'équipe (matière, niveau, classe, mode, lieu, rythme, rémunération, description — jamais les coordonnées de la famille).
@@ -226,6 +238,8 @@ R2_SECRET_ACCESS_KEY=       # voir §7ter
 R2_BUCKET_PHOTOS=           # voir §7ter
 R2_BUCKET_PRIVATE=          # voir §7ter
 R2_PUBLIC_URL_PHOTOS=       # voir §7ter
+ENGLISH_PAYMENT_NUMBERS=    # anglais technique, §7novodecies : "WAVE=+225 …;ORANGE_MONEY=+225 …" (vide = inscriptions fermées)
+CRON_SECRET=                # tâche quotidienne Vercel, §7novodecies (chaîne aléatoire, ex. openssl rand -base64 32)
 ```
 
 **Créer un compte admin en local** (script non commité, voir §7decies) :
@@ -357,7 +371,7 @@ Cette route réutilise la même logique de validation et d'upload R2 que `bleSse
 
 **Build Vercel** : le script `build` a été modifié en `prisma generate && next build` — Prisma 7 requiert cette génération explicite car une politique de sécurité npm sur Vercel bloque l'exécution automatique du `postinstall` de Prisma.
 
-**Mode maintenance** : contrôlé par la variable d'environnement `MAINTENANCE_MODE` (`true`/`false`), lue dans `src/middleware.ts`. Quand actif, tout le site public est remplacé par `/maintenance`, **sauf** `/bleSseD/**` (accès équipe toujours possible) et `/suggestions`, `/soutenir`, `/api/feedback` (exemptés explicitement pour rester joignables même avant l'ouverture officielle). Changer la variable sur Vercel puis redéployer (`vercel --prod` ou "Redeploy" dans le tableau de bord) suffit à basculer, sans toucher au code.
+**Mode maintenance** : contrôlé par la variable d'environnement `MAINTENANCE_MODE` (`true`/`false`), lue dans `src/middleware.ts`. Quand actif, tout le site public est remplacé par `/maintenance`, **sauf** `/bleSseD/**` (accès équipe toujours possible) et `/suggestions`, `/soutenir`, `/api/feedback` (exemptés explicitement pour rester joignables même avant l'ouverture officielle), ainsi que les tâches planifiées `/api/cron/**` (§7novodecies). Changer la variable sur Vercel puis redéployer (`vercel --prod` ou "Redeploy" dans le tableau de bord) suffit à basculer, sans toucher au code.
 
 **Incident notable (variables d'environnement)** : `DATABASE_URL` s'est retrouvée vide sur Vercel après une manipulation des variables d'environnement via la CLI, provoquant une erreur 500 générale (Prisma retombant sur `localhost:5432` par défaut). Point de vigilance pour la suite : vérifier l'ensemble des variables d'environnement après toute manipulation CLI (`vercel env rm`/`add`), pas seulement celle qu'on modifie intentionnellement.
 
@@ -655,6 +669,9 @@ Revue de toutes les routes API (66) et du middleware, faite le 01/10/2026 ; corr
 | `/api/contact`, `/api/contact-message`, `/api/feedback` | 5 / heure |
 | `/api/waitlist` | 10 / heure |
 | `/api/compte/inscription` | 5 / heure |
+| `/api/anglais/inscription` (§7novodecies) | 5 / heure |
+| `/api/anglais/abonnements/[id]/paiement` | 10 / heure |
+| `/api/anglais/nouveautes` | 20 / heure |
 | `/api/register-instructor` | 10 / heure |
 | `/api/register-instructor/presign`, `/api/instructors/edit/[token]/files/presign` | 30 / heure |
 
@@ -718,7 +735,31 @@ Branche `anglais-technique` (octobre 2026). Premier contenu des manuels bilingue
 - **Chapitres** : chaque chapitre est une **page HTML autonome** dans `public/lecons/<dossier>/index.html` (styles, scripts et logo intégrés, aucune dépendance au reste du site), servie telle quelle par Vercel. Le logo de la page renvoie vers `/anglais-technique`. Le chapitre 1 (*Introducing Yourself and Your IT Background*, A1, 2 leçons) est **en accès libre** : c'est le produit d'appel.
 - **Audios** : `public/lecons/<dossier>/audio/aNN.mp3`, un fichier par bouton (identifiant `data-id` dans la page). **Aucune voix de synthèse** : tant qu'un fichier manque, son bouton s'affiche en pointillés « audio en cours d'enregistrement » et s'active dès que le fichier est déposé (la page vérifie sa présence par une requête `HEAD`). Les enregistrements bruts sont nettoyés et convertis par Claude avant d'être déposés.
 - La page enregistre seulement des préférences locales (onglet ouvert, brouillons, cases cochées) dans le `localStorage` du navigateur, préfixe `ec-ch01-`. Rien n'est envoyé au serveur.
-- **À venir (chapitres payants)** : comptes apprenants, paiement Mobile Money, leçons et audios dans R2 privé servis par URL signée, filigrane au nom de l'acheteur, enregistrement de la voix des apprenants. Les chapitres payants ne devront **pas** être placés dans `public/`, qui est accessible à tous.
+- **À venir (chapitres payants)** : leçons et audios dans R2 privé servis par URL signée aux abonnés actifs, filigrane au nom de l'acheteur, enregistrement de la voix des apprenants. Les chapitres payants ne devront **pas** être placés dans `public/`, qui est accessible à tous. Les comptes apprenants et le paiement sont en place depuis le §7novodecies.
+
+---
+
+## 7novodecies. Anglais technique : inscriptions et abonnements (version pro)
+
+Branche `abonnements-anglais` (octobre 2026), partie de `anglais-technique`. Les personnes intéressées par la version pro s'inscrivent (email, prénom, nom, études ou métier, manuel et formule), paient par Mobile Money, et l'équipe valide le paiement à la main en attendant un agrégateur (CinetPay, Kkiapay…).
+
+**Formules** (`src/lib/english-plans.ts`, toutes à durée fixe) : Autonome 12 mois, Parcours guidé 3 mois, Sprint 3 semaines, Coaché 3 mois, pour le manuel A ou le manuel B. Les prix (`priceFcfa`) valent `null` tant qu'ils ne sont pas décidés : la formule s'affiche « bientôt disponible ». **Une formule n'ouvre que si son prix est fixé ET qu'au moins un numéro de paiement est configuré** (`ENGLISH_PAYMENT_NUMBERS`, format `WAVE=+225 …;ORANGE_MONEY=+225 …;MTN_MONEY=…;MOOV_MONEY=…`). Pour ouvrir : remplacer `null` par le montant, renseigner la variable sur Vercel, redéployer.
+
+**Comptes** : nouveau rôle `APPRENANT` (badge « Apprenant » sur le forum, accès aux corrigés comme les autres comptes). Un compte existant (élève, parent, instructeur) peut aussi s'abonner sans changer de rôle. Les identifiants restent ceux des comptes du site (§7quindecies : email unique, mot de passe scrypt, confirmation d'email obligatoire).
+
+**Parcours** :
+1. `/anglais-technique/inscription` : manuel, formule, études/métier, case « nouveautés » ; sans session, prénom, nom, email, mot de passe. `POST /api/anglais/inscription` crée le compte `APPRENANT` et un abonnement `PENDING_PAYMENT` avec une référence `AT-XXXXXX`. Nouveau compte : email de confirmation dont le lien ramène, après connexion, sur « Mon abonnement » (`/connexion?jeton=…&suite=…` ; `ConnexionClient` respecte désormais `suite` après une confirmation). Compte déjà connecté : email avec les instructions de paiement. Email déjà utilisé sans session : refus (409, `ACCOUNT_EXISTS`) avec un lien « Se connecter » (pas de rattachement silencieux à un compte existant).
+2. `/anglais-technique/mon-abonnement` (privée, middleware) : montant, numéros, référence ; l'apprenant déclare le moyen et l'identifiant de transaction (`POST /api/anglais/abonnements/[id]/paiement` → `PAYMENT_DECLARED`, alerte à `ADMIN_NOTIFICATION_EMAIL`).
+3. Onglet **Anglais technique** de `/administratif` et `/bleSseD` (`EnglishSubscriptionsManager`, rôles `SUPER_ADMIN` et `ADMINISTRATIF`) : filtre par statut (par défaut « À vérifier »), recherche par référence, email, nom ou transaction. **Valider** → `ACTIVE`, dates calculées, email d'activation ; si l'apprenant a déjà un abonnement actif au même manuel (renouvellement), le nouveau démarre à sa fin. **Refuser** (motif obligatoire, envoyé à l'apprenant) → retour à `PENDING_PAYMENT`. **Annuler** sans email. Validation et refus sont des mises à jour conditionnelles : deux clics simultanés n'envoient qu'un email.
+4. Renouvellement depuis « Mon abonnement » (bouton dans les 30 derniers jours ou après la fin) : nouvelle inscription, même parcours.
+
+**Tâche quotidienne** (`vercel.json`, `GET /api/cron/anglais-abonnements` à 8 h UTC, soit 8 h à Abidjan) : passe en `EXPIRED` les abonnements arrivés à terme, envoie le rappel « fin dans une semaine » une seule fois (`reminderSentAt`, mise à jour conditionnelle), sauf si l'apprenant a déjà renouvelé. Vercel envoie `Authorization: Bearer <CRON_SECRET>` ; sans `CRON_SECRET` défini, la route refuse tout. Exemptée du mode maintenance. Test manuel : `curl -H "Authorization: Bearer <CRON_SECRET>" https://educonnect-ci.org/api/cron/anglais-abonnements`.
+
+**Nouveautés** : l'équipe envoie une annonce (titre, message, lien facultatif : chemin du site ou `https://`) depuis l'onglet ; destinataires : comptes confirmés ayant au moins un abonnement et `englishNewsOptIn`. Envoi groupé Resend (`batch.send`, lots de 100), annonce enregistrée (`EnglishAnnouncement`). Chaque email porte un lien `/anglais-technique/nouveautes?u=<id>&s=<signature>` : signature HMAC-SHA256 de l'id avec `USER_SESSION_SECRET` (repli `ADMIN_SESSION_SECRET`), vérifiée en temps constant ; la désinscription demande un clic (POST), car certaines messageries ouvrent les liens pour les analyser. L'apprenant peut aussi changer ce choix dans « Mon abonnement ».
+
+**Sécurité** : routes `/api/anglais/**` réservées au compte connecté (`getCurrentUser`) sauf l'inscription et la désinscription, limitées par IP (§7sedecies) ; longueurs maximales sur tous les champs ; textes saisis échappés dans les emails (`escapeHtml`) ; liens d'email via `siteOrigin()` ; aucun numéro de paiement en dur dans le dépôt public. **Le contenu payant n'est pas encore servi** : l'abonnement actif ouvrira l'accès aux chapitres dans R2 privé (§7octodecies, à faire).
+
+**Mise en production** : `npx prisma db push` sur Neon avant la fusion (nouvelles tables et enums, nouvelle valeur `APPRENANT`) ; variables Vercel `CRON_SECRET` et, à l'ouverture, `ENGLISH_PAYMENT_NUMBERS`.
 
 ---
 
@@ -772,6 +813,8 @@ La vitrine a ensuite été complétée (voir §7septdecies) pour présenter la b
 
 Le rôle ADMINISTRATIF a ensuite reçu les mêmes droits que SUPER_ADMIN et PEDAGOGIE sur la bibliothèque (ajout, modification et suppression des documents, chapitres et corrigés, couleurs des matières) : routes `/api/bleSseD/resources/**`, `chapters/**`, `corrections/**` et `subjects/[id]` ouvertes aux trois rôles, onglet Bibliothèque de `/administratif` en mode édition.
 
+Les manuels d'anglais technique pour l'informatique ont ensuite fait leur entrée sur le site (voir §7octodecies) : page `/anglais-technique` dans le menu, chapitre 1 gratuit en page autonome avec audios enregistrés (aucune voix de synthèse). Une version pro a suivi (§7novodecies, branche `abonnements-anglais`) : inscription avec études ou métier, formules à durée fixe, paiement Mobile Money déclaré par l'apprenant et validé par l'équipe en attendant un agrégateur, rappel automatique une semaine avant la fin et annonces des nouveaux contenus.
+
 Reste à traiter : l'analytics, le système de notation, et le pipeline de vérification automatique.
 
 ---
@@ -792,6 +835,8 @@ Fonctionnalités identifiées comme nécessaires au bon fonctionnement et à la 
 - **Badge de vérification à plusieurs niveaux**, au lieu d'un simple statut approuvé/suspendu — par exemple "Profil vérifié" (CNI/CV validés) vs "Profil vérifié + expérience confirmée" (références vérifiées par appel). Rassure les parents sur la qualité et différencie les meilleurs instructeurs.
 
 ### 9.3 Gestion (côté admin)
+
+- **Anglais technique** (§7novodecies) : servir les chapitres payants aux abonnés actifs (R2 privé, URL signée, filigrane), brancher un agrégateur de paiement (CinetPay, Kkiapay…) pour activer les abonnements sans validation manuelle, fixer les prix après le test du groupe pilote.
 
 - **Tableau de bord analytique** : au-delà du trafic (Vercel Analytics), un tableau montrant les matières les plus demandées, le taux de conversion demande → mise en relation réussie, et le temps moyen de traitement d'une candidature — pour piloter l'activité plutôt que seulement l'observer.
 - **Historique des candidatures rejetées/suspendues avec motif.** Utile si un instructeur repostule des mois plus tard : retrouver pourquoi il avait été refusé la première fois, sans avoir à s'en souvenir.

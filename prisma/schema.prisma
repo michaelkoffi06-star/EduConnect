@@ -271,6 +271,7 @@ enum UserRole {
   ELEVE
   PARENT
   INSTRUCTEUR
+  APPRENANT // Apprenant des manuels d'anglais technique (§7novodecies)
 }
 
 // 21. Compte utilisateur : élève, parent ou instructeur (email + mot de passe)
@@ -285,14 +286,17 @@ model User {
   emailVerifiedAt DateTime? // Connexion impossible tant que l'email n'est pas confirmé
   instructorId    String?   @unique // Compte INSTRUCTEUR : fiche instructeur liée (même email)
   sessionVersion  Int       @default(0) // Incrémenté au changement de mot de passe : déconnecte les autres sessions (§7sedecies)
+  studyField      String? // Anglais technique : études ou métier déclarés (texte libre, ex. "Licence réseaux")
+  englishNewsOptIn Boolean  @default(false) // Accepte les emails « nouveaux chapitres » de l'anglais technique
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 
-  instructor   Instructor?   @relation(fields: [instructorId], references: [id], onDelete: Cascade)
-  tokens       UserToken[]
-  forumThreads ForumThread[]
-  forumPosts   ForumPost[]
-  forumReports ForumReport[]
+  instructor           Instructor?           @relation(fields: [instructorId], references: [id], onDelete: Cascade)
+  tokens               UserToken[]
+  forumThreads         ForumThread[]
+  forumPosts           ForumPost[]
+  forumReports         ForumReport[]
+  englishSubscriptions EnglishSubscription[]
 }
 
 // 22. Jetons à usage unique envoyés par email (confirmation d'adresse, mot de passe oublié)
@@ -441,4 +445,65 @@ model ForumReport {
   reporter User        @relation(fields: [reporterId], references: [id], onDelete: Cascade)
 
   @@index([resolved, createdAt])
+}
+
+// 32. Anglais technique : manuel acheté (A réseaux, cybersécurité et télécoms ; B génie logiciel)
+enum EnglishManual {
+  A
+  B
+}
+
+// 33. Anglais technique : formule (durées et prix dans src/lib/english-plans.ts)
+enum EnglishPlan {
+  AUTONOME // rythme libre
+  GUIDE // parcours guidé à dates
+  SPRINT // programme court, un objectif
+  COACHE // avec coach
+}
+
+// 34. Cycle de vie d'un abonnement : créé → paiement déclaré par l'apprenant → validé par l'équipe → expiré
+enum EnglishSubscriptionStatus {
+  PENDING_PAYMENT // en attente du paiement
+  PAYMENT_DECLARED // l'apprenant a saisi l'identifiant de sa transaction, l'équipe vérifie
+  ACTIVE
+  EXPIRED
+  CANCELLED
+}
+
+// 35. Abonnement à un manuel d'anglais technique (§7novodecies). Paiement Mobile Money validé
+// à la main par l'équipe (/administratif) en attendant un agrégateur de paiement.
+model EnglishSubscription {
+  id             String                    @id @default(uuid())
+  userId         String
+  manual         EnglishManual
+  plan           EnglishPlan
+  status         EnglishSubscriptionStatus @default(PENDING_PAYMENT)
+  priceFcfa      Int // prix au moment de l'inscription
+  reference      String                    @unique // code à indiquer dans le paiement, ex. "AT-7KQ3PZ"
+  paymentMethod  String? // WAVE, ORANGE_MONEY, MTN_MONEY, MOOV_MONEY
+  transactionId  String? // identifiant de transaction saisi par l'apprenant
+  declaredAt     DateTime?
+  adminNote      String? // motif d'un refus, affiché à l'apprenant
+  validatedBy    String? // identifiant du compte admin qui a validé
+  startsAt       DateTime?
+  endsAt         DateTime?
+  reminderSentAt DateTime? // rappel « fin dans 7 jours » envoyé (une seule fois)
+  createdAt      DateTime                  @default(now())
+  updatedAt      DateTime                  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status, endsAt])
+}
+
+// 36. Annonce « nouveau contenu » envoyée par email aux apprenants qui l'ont accepté
+model EnglishAnnouncement {
+  id        String   @id @default(uuid())
+  title     String
+  message   String   @db.Text
+  link      String?
+  sentCount Int      @default(0)
+  sentBy    String? // identifiant du compte admin
+  createdAt DateTime @default(now())
 }

@@ -6,6 +6,7 @@ import SiteHeader from '@/components/SiteHeader';
 import { getImageDimensionsFromFile } from '@/lib/image-utils';
 import LibraryManager from '@/components/admin/LibraryManager';
 import MarketManager from '@/components/admin/MarketManager';
+import EnglishSubscriptionsManager from '@/components/admin/EnglishSubscriptionsManager';
 import ForumModeration from '@/components/admin/ForumModeration';
 
 interface Subject { id: string; name: string; }
@@ -52,7 +53,7 @@ interface WaitlistEntry {
 }
 
 type FilterOption = 'ALL' | 'PENDING' | 'APPROVED' | 'SUSPENDED';
-type AdminTab = 'instructors' | 'requests' | 'feedback' | 'waitlist' | 'resources' | 'market' | 'forum' | 'accounts';
+type AdminTab = 'instructors' | 'requests' | 'feedback' | 'waitlist' | 'resources' | 'market' | 'english' | 'forum' | 'accounts';
 
 interface AdminAccount {
   id: string;
@@ -612,6 +613,14 @@ export default function AdminPage() {
             Marché
           </button>
           <button
+            onClick={() => setTab('english')}
+            className={`px-4 py-2.5 text-sm font-semibold border-b-2 -mb-px transition ${
+              tab === 'english' ? 'border-[#c9951a] text-[#c9951a]' : 'border-transparent text-gray-400 hover:text-white'
+            }`}
+          >
+            Anglais technique
+          </button>
+          <button
             onClick={() => setTab('forum')}
             className={`px-4 py-2.5 text-sm font-semibold border-b-2 -mb-px transition ${
               tab === 'forum' ? 'border-[#c9951a] text-[#c9951a]' : 'border-transparent text-gray-400 hover:text-white'
@@ -984,6 +993,7 @@ export default function AdminPage() {
         )}
         {tab === 'resources' && <LibraryManager canEdit onCountChange={setResourceCount} />}
         {tab === 'market' && <MarketManager />}
+        {tab === 'english' && <EnglishSubscriptionsManager />}
         {tab === 'forum' && <ForumModeration />}
         {tab === 'accounts' && (
           <div className="space-y-6">

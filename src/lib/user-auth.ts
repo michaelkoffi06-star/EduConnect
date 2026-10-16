@@ -7,7 +7,7 @@
 export const USER_SESSION_COOKIE = 'user_session';
 export const USER_SESSION_MAX_AGE = 60 * 60 * 24 * 30; // 30 jours, en secondes
 
-export type UserRole = 'ELEVE' | 'PARENT' | 'INSTRUCTEUR';
+export type UserRole = 'ELEVE' | 'PARENT' | 'INSTRUCTEUR' | 'APPRENANT';
 
 export interface UserSessionPayload {
   sub: string;

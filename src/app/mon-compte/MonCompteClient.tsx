@@ -152,6 +152,7 @@ export default function MonCompteClient() {
     { href: "/forum", title: "Forum", text: "Poser une question, aider les autres.", icon: Icon.chat(20) },
     user.isApprovedInstructor && { href: "/forum?espace=profs", title: "Salle des profs", text: "L'espace d'échange entre instructeurs.", icon: Icon.users(20) },
     { href: "/bibliotheque", title: "Bibliothèque", text: "Cours, exercices, vidéos et liens.", icon: Icon.book(20) },
+    { href: "/anglais-technique/mon-abonnement", title: "Anglais technique", text: "Mon abonnement, le paiement et les nouveautés.", icon: Icon.sparkle(20), accent: user.role === "APPRENANT" },
     user.instructorEditPath && { href: user.instructorEditPath, title: "Ma fiche instructeur", text: "Bio, matières, photo… (repasse en validation).", icon: Icon.pen(20) },
   ].filter(Boolean) as { href: string; title: string; text: string; icon: React.ReactNode; accent?: boolean }[];
 

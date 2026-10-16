@@ -333,7 +333,7 @@ export function BackLink({ href, children }: { href: string; children: React.Rea
 
 // --- Compte connecté ---
 
-export type AccountRole = "ELEVE" | "PARENT" | "INSTRUCTEUR";
+export type AccountRole = "ELEVE" | "PARENT" | "INSTRUCTEUR" | "APPRENANT";
 
 export interface AccountUser {
   id: string;
@@ -352,6 +352,7 @@ export const ROLE_LABELS: Record<AccountRole, string> = {
   ELEVE: "Élève",
   PARENT: "Parent",
   INSTRUCTEUR: "Instructeur",
+  APPRENANT: "Apprenant",
 };
 
 // Compte connecté (null si personne), chargé une fois au montage de la page

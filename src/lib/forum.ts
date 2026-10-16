@@ -36,7 +36,7 @@ type AuthorRow = Prisma.UserGetPayload<{ select: typeof authorSelect }>;
 // Auteur tel qu'affiché : « Awa K. », avec un badge Instructeur seulement si la fiche est approuvée
 export function publicAuthor(a: AuthorRow) {
   const badge =
-    a.role === 'INSTRUCTEUR' ? (a.instructor?.status === 'APPROVED' ? 'Instructeur' : 'Membre') : a.role === 'PARENT' ? 'Parent' : 'Élève';
+    a.role === 'INSTRUCTEUR' ? (a.instructor?.status === 'APPROVED' ? 'Instructeur' : 'Membre') : a.role === 'PARENT' ? 'Parent' : a.role === 'APPRENANT' ? 'Apprenant' : 'Élève';
   return { id: a.id, name: displayName(a), badge };
 }
 

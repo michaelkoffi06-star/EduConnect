@@ -12,6 +12,8 @@ export default function robots(): MetadataRoute.Robots {
         "/mon-compte",
         "/espace-instructeur",
         "/reinitialiser-mot-de-passe",
+        "/anglais-technique/mon-abonnement",
+        "/anglais-technique/nouveautes",
       ],
     },
     sitemap: "https://educonnect-ci.org/sitemap.xml",
