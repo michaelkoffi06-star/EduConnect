@@ -13,6 +13,7 @@ const NAV_LINKS = [
   { href: "/#instructeurs", label: "Nos instructeurs" },
   { href: "/trouver-un-tuteur", label: "Trouver un tuteur" },
   { href: "/bibliotheque", label: "Bibliothèque" },
+  { href: "/anglais-technique", label: "Anglais technique" },
   { href: "/forum", label: "Forum" },
   { href: "/mon-compte", label: "Mon compte" },
   { href: "/inscription", label: "Créer un compte" },

@@ -13,6 +13,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { path: "/trouver-un-tuteur", priority: 0.9, changeFrequency: "daily" as const },
     { path: "/bibliotheque", priority: 0.8, changeFrequency: "weekly" as const },
     { path: "/bibliotheque/corriges", priority: 0.6, changeFrequency: "weekly" as const },
+    { path: "/anglais-technique", priority: 0.7, changeFrequency: "weekly" as const },
+    { path: "/lecons/chapitre-01/index.html", priority: 0.6, changeFrequency: "monthly" as const },
     { path: "/forum", priority: 0.7, changeFrequency: "daily" as const },
     { path: "/inscription", priority: 0.6, changeFrequency: "monthly" as const },
     { path: "/connexion", priority: 0.4, changeFrequency: "monthly" as const },

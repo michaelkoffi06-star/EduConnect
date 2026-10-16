@@ -1,0 +1,959 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Chapitre 1 · Introducing Yourself | Anglais technique EduConnect</title>
+<meta name="description" content="Chapitre gratuit d'anglais technique pour informaticiens : se présenter et parler de son parcours en informatique, avec audio et exercices corrigés.">
+<link rel="icon" href="/favicon.ico">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Ubuntu:ital,wght@0,400;0,500;0,700;1,400&family=Ubuntu+Mono:wght@400;700&display=swap">
+<style>
+/* Layout: one reading column (max 720px), brand bar, chapter hero with a "video call" tile, lesson tabs, then each lesson's steps as stacked sections. */
+:root {
+  --bg: #F5F7FB; --surface: #FFFFFF; --ink: #1C1C1C; --muted: #56657A; --line: #DCE2EE;
+  --brand: #0F2350; --brand-ink: #FFFFFF; --band: #0F2350; --band-ink: #FFFFFF;
+  --gold: #9A6F1F; --gold-bright: #B8862E; --gold-soft: #F7EFDF; --navy-soft: #E8EDF7;
+  --ok: #00804A; --ok-soft: #E3F4EA; --err: #B83226; --err-soft: #FBE9E7;
+  --font: "Ubuntu", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --mono: "Ubuntu Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  --radius: 10px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0B1226; --surface: #121B33; --ink: #E8ECF5; --muted: #9DABC0; --line: #263352;
+    --brand: #D9A94E; --brand-ink: #0B1226; --band: #091028; --band-ink: #F1F4FA;
+    --gold: #E2B661; --gold-bright: #D9A94E; --gold-soft: #2A2416; --navy-soft: #18233F;
+    --ok: #4FCB8B; --ok-soft: #12301F; --err: #F07A6A; --err-soft: #3A1914;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0B1226; --surface: #121B33; --ink: #E8ECF5; --muted: #9DABC0; --line: #263352;
+  --brand: #D9A94E; --brand-ink: #0B1226; --band: #091028; --band-ink: #F1F4FA;
+  --gold: #E2B661; --gold-bright: #D9A94E; --gold-soft: #2A2416; --navy-soft: #18233F;
+  --ok: #4FCB8B; --ok-soft: #12301F; --err: #F07A6A; --err-soft: #3A1914;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font); font-size: 16px; line-height: 1.6; margin: 0; }
+
+.band { background: var(--band); color: var(--band-ink); padding-inline: 16px; position: sticky; top: env(safe-area-inset-top, 0px); z-index: 40; }
+.band-inner { max-width: 720px; margin: 0 auto; display: flex; align-items: center; gap: 12px; padding-block: 10px; }
+.emblem { text-decoration: none;  width: 46px; height: 32px; flex: none; background: #FFFFFF; border-radius: 6px; display: grid; place-items: center; padding: 2px 4px; }
+.emblem img { width: 100%; height: auto; display: block; }
+.band-text { min-width: 0; display: flex; flex-direction: column; line-height: 1.25; }
+.band-text b { font-size: 15px; letter-spacing: 0.02em; }
+.band-text span { font-size: 12.5px; opacity: 0.82; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.copy-chip { margin-left: auto; flex: none; font-size: 11.5px; letter-spacing: 0.04em; border: 1px solid rgba(255,255,255,0.35); border-radius: 999px; padding: 3px 10px; white-space: nowrap; }
+
+main { max-width: 720px; margin: 0 auto; padding-inline: 16px; padding-block: 24px 48px; display: flex; flex-direction: column; gap: 32px; }
+.hero { display: flex; flex-direction: column; gap: 14px; }
+.meta { display: flex; flex-wrap: wrap; gap: 8px; }
+.tag { font-size: 12.5px; font-weight: 500; letter-spacing: 0.04em; padding: 3px 10px; border-radius: 999px; background: var(--navy-soft); color: var(--ink); }
+.tag.gold { background: var(--gold-soft); color: var(--gold); }
+h1 { font-size: clamp(28px, 6.6vw, 40px); line-height: 1.12; margin: 0; text-wrap: balance; letter-spacing: -0.01em; }
+.subtitle { margin: 0; color: var(--gold-bright); font-weight: 500; font-size: 18px; }
+.lede { margin: 0; color: var(--muted); max-width: 60ch; }
+
+/* Video-call tile */
+.call { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+.call-bar { display: flex; align-items: center; gap: 8px; padding: 8px 12px; font-size: 13px; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+.live { color: var(--err); font-weight: 700; letter-spacing: 0.06em; font-size: 12px; }
+.live::before { content: "●"; margin-right: 4px; }
+@media (prefers-reduced-motion: no-preference) { .live::before { animation: blink 1.6s ease-in-out infinite; } }
+@keyframes blink { 50% { opacity: 0.25; } }
+.call-bar span:last-child { color: var(--muted); margin-left: auto; font-family: var(--mono); }
+.tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; padding: 12px; }
+.tile { background: var(--navy-soft); border-radius: 8px; padding: 12px 8px; display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; min-width: 0; }
+.tile.speaking { outline: 2px solid var(--gold-bright); }
+.avatar { width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; font-weight: 700; background: var(--brand); color: var(--brand-ink); }
+.tile b { font-size: 14px; }
+.tile small { color: var(--muted); font-size: 12px; line-height: 1.3; }
+
+/* Tabs */
+.tabs { display: flex; gap: 8px; position: sticky; top: calc(env(safe-area-inset-top, 0px) + 52px); z-index: 30; background: var(--bg); padding-block: 8px; }
+.tab { flex: 1; min-width: 0; text-align: left; font: inherit; cursor: pointer; border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 8px; padding: 8px 12px; display: flex; flex-direction: column; line-height: 1.3; }
+.tab small { color: var(--muted); font-size: 12px; }
+.tab b { font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tab[aria-selected="true"] { background: var(--brand); border-color: var(--brand); color: var(--brand-ink); }
+.tab[aria-selected="true"] small { color: inherit; opacity: 0.8; }
+.lesson { display: flex; flex-direction: column; gap: 40px; }
+
+section { display: flex; flex-direction: column; gap: 14px; scroll-margin-top: 130px; }
+.eyebrow { font-size: 12px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--gold); display: flex; gap: 10px; align-items: baseline; }
+.eyebrow .n { font-family: var(--mono); font-size: 13px; letter-spacing: 0; color: var(--muted); }
+h2 { font-size: 24px; line-height: 1.25; margin: 0; text-wrap: balance; }
+h3 { font-size: 17px; margin: 0; }
+p { margin: 0; max-width: 65ch; }
+.fr { color: var(--muted); }
+.en { font-weight: 500; }
+ul.clean { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 6px; }
+
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+.panel.gold { background: var(--gold-soft); border-color: transparent; }
+.panel.navy { background: var(--navy-soft); border-color: transparent; }
+blockquote.local { margin: 0; padding: 14px 16px; border-left: 4px solid var(--gold-bright); background: var(--surface); border-radius: 0 var(--radius) var(--radius) 0; font-style: italic; }
+blockquote.local small { display: block; font-style: normal; color: var(--muted); margin-top: 6px; font-size: 13px; }
+
+button { font: inherit; cursor: pointer; }
+.btn { border: 1px solid var(--brand); background: var(--brand); color: var(--brand-ink); border-radius: 8px; padding: 8px 14px; font-weight: 500; font-size: 15px; }
+.btn.ghost { background: transparent; color: var(--ink); border-color: var(--line); }
+.btn:focus-visible, .say:focus-visible, .tab:focus-visible, select:focus-visible, input:focus-visible, textarea:focus-visible, .choice:focus-visible { outline: 3px solid var(--gold-bright); outline-offset: 2px; }
+.row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.say { border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 999px; width: 34px; height: 34px; flex: none; display: inline-grid; place-items: center; }
+.say svg { width: 16px; height: 16px; }
+.say.pending { opacity: 0.4; border-style: dashed; }
+.read-aloud { font-size: 13px; font-weight: 700; color: var(--gold); white-space: nowrap; }
+.say.playing { background: var(--gold-soft); border-color: var(--gold-bright); }
+
+.table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
+table { border-collapse: collapse; width: 100%; font-size: 15px; }
+table.vocab { min-width: 520px; }
+th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); font-weight: 500; }
+tr:last-child td { border-bottom: none; }
+td.term { font-weight: 700; white-space: nowrap; }
+td.term .row { flex-wrap: nowrap; }
+td .ex { color: var(--muted); font-size: 14px; }
+.mono { font-family: var(--mono); }
+
+.letters { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; }
+.letter { display: flex; gap: 10px; align-items: center; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; }
+.letter b { font-family: var(--mono); font-size: 22px; min-width: 1.2em; }
+.letter span { font-size: 14px; color: var(--muted); }
+
+.steps { display: flex; flex-direction: column; gap: 10px; }
+.step { display: grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items: start; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px 14px; }
+.step .k { font-family: var(--mono); font-weight: 700; color: var(--gold); padding-top: 2px; }
+.step .body { min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.formula { font-family: var(--mono); font-size: 18px; font-weight: 700; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.spoken { font-style: italic; }
+.conv-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; font-family: var(--mono); font-size: 18px; }
+input[type="number"], input[type="text"], select, textarea { font: inherit; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 7px 10px; }
+input[type="number"] { width: 84px; font-family: var(--mono); font-size: 18px; }
+input.wide { width: 100%; max-width: 420px; }
+.conv-out { font-weight: 700; font-variant-numeric: tabular-nums; }
+
+.phrases { display: grid; gap: 8px; }
+.phrase { display: flex; gap: 10px; align-items: center; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; }
+.phrase p { min-width: 0; }
+.phrase b { color: var(--gold); }
+.phrase .fr { display: block; font-size: 14px; }
+.pairs { display: grid; gap: 10px; }
+.pair { display: grid; gap: 4px; padding: 12px 14px; background: var(--surface); border-radius: 8px; border: 1px solid var(--line); }
+.pair .from { color: var(--muted); }
+.pair .to { display: flex; gap: 10px; align-items: center; font-weight: 500; }
+.pair .to p { min-width: 0; }
+.no { text-decoration: line-through; color: var(--err); }
+.yes { color: var(--ok); font-weight: 700; }
+
+.dialogue { display: flex; flex-direction: column; gap: 8px; }
+.line { display: grid; grid-template-columns: 64px 1fr auto; gap: 10px; align-items: start; padding: 8px 0; border-bottom: 1px dashed var(--line); }
+.line:last-child { border-bottom: none; }
+.who { font-weight: 700; font-size: 14px; padding-top: 2px; }
+.who.f { color: var(--gold); }
+.line .txt { min-width: 0; }
+.line .tr { color: var(--muted); font-size: 14px; margin-top: 2px; }
+
+.ex-block { display: flex; flex-direction: column; gap: 14px; }
+.q { display: flex; flex-direction: column; gap: 8px; }
+.q-title { font-weight: 500; }
+.choices { display: flex; flex-direction: column; gap: 6px; }
+.choice { text-align: left; background: var(--surface); color: var(--ink); border: 1px solid var(--line); border-radius: 8px; padding: 9px 12px; font-size: 15px; }
+.choice.right { border-color: var(--ok); background: var(--ok-soft); }
+.choice.wrong { border-color: var(--err); background: var(--err-soft); }
+.feedback { font-size: 14.5px; padding: 8px 12px; border-radius: 8px; }
+.feedback.ok { background: var(--ok-soft); color: var(--ink); border-left: 3px solid var(--ok); }
+.feedback.ko { background: var(--err-soft); color: var(--ink); border-left: 3px solid var(--err); }
+.gap-line { line-height: 2.4; }
+.gap-line select { padding: 4px 8px; }
+.score { font-family: var(--mono); font-weight: 700; }
+
+textarea { width: 100%; min-height: 130px; resize: vertical; line-height: 1.5; }
+.counter { font-family: var(--mono); font-size: 14px; color: var(--muted); }
+.check { display: flex; gap: 10px; align-items: flex-start; }
+.check input { margin-top: 5px; width: 18px; height: 18px; accent-color: var(--gold-bright); flex: none; }
+.model { border-left: 3px solid var(--gold-bright); padding: 10px 14px; background: var(--surface); border-radius: 0 8px 8px 0; display: flex; flex-direction: column; gap: 8px; }
+
+.form-grid { display: grid; gap: 10px; }
+.form-grid label { display: flex; flex-direction: column; gap: 4px; font-size: 14px; color: var(--muted); }
+.form-grid label span.en { color: var(--ink); }
+.card-out { border-radius: var(--radius); background: var(--band); color: var(--band-ink); padding: 18px; display: flex; flex-direction: column; gap: 8px; }
+.card-out .card-top { display: flex; gap: 12px; align-items: center; }
+.card-out .avatar { background: var(--gold-bright); color: #0F2350; }
+.card-out h3 { color: var(--band-ink); }
+.card-out p { font-size: 15px; }
+.card-out small { opacity: 0.75; font-size: 12px; }
+
+.next { border: 1px dashed var(--gold-bright); border-radius: var(--radius); padding: 14px 16px; display: flex; flex-direction: column; gap: 8px; }
+
+footer { max-width: 720px; margin: 0 auto; padding-inline: 16px; padding-block: 20px 32px; border-top: 1px solid var(--line); color: var(--muted); font-size: 13px; display: flex; flex-direction: column; gap: 4px; }
+footer b { color: var(--ink); }
+.toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(16px + env(safe-area-inset-bottom, 0px)); background: var(--band); color: var(--band-ink); padding: 10px 16px; border-radius: 8px; font-size: 14px; z-index: 60; max-width: calc(100% - 32px); }
+
+@media (max-width: 480px) {
+  .copy-chip { display: none; }
+  .line { grid-template-columns: 1fr auto; }
+  .line .who { grid-column: 1 / -1; padding-top: 0; }
+  .step { grid-template-columns: 1fr auto; }
+  .step .k { grid-column: 1 / -1; }
+  .tiles { gap: 6px; padding: 8px; }
+  .tile small { display: none; }
+}
+</style>
+</head>
+<body>
+
+
+<header class="band">
+  <div class="band-inner">
+    <a class="emblem" href="/anglais-technique" aria-label="Retour à Anglais technique EduConnect"><img alt="EduConnect" src="data:image/png;base64,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"></a>
+    <div class="band-text"><b>EduConnect</b><span>Technical English · Chapitre 1</span></div>
+    <div class="copy-chip">Chapitre offert</div>
+  </div>
+</header>
+
+<main>
+  <div class="hero">
+    <div class="meta">
+      <span class="tag">Chapitre commun aux deux manuels</span>
+      <span class="tag gold">Niveau A1</span>
+      <span class="tag">2 leçons · ≈ 90 min</span>
+    </div>
+    <h1>Introducing Yourself and Your IT Background</h1>
+    <p class="subtitle">Se présenter et parler de son parcours en informatique</p>
+    <p class="lede">Aya, étudiante en réseaux à Cocody, rejoint un hackathon en ligne avec des étudiants d'Accra. Elle doit se présenter en anglais. Toi aussi : à la fin du chapitre, tu sauras te présenter en 45 secondes et tu auras ta carte de profil en anglais.</p>
+    <div class="call" aria-label="Illustration : appel vidéo du hackathon">
+      <div class="call-bar"><span class="live">Live</span><span>Abidjan–Accra Student Hackathon</span><span>Team 4 · 00:42</span></div>
+      <div class="tiles">
+        <div class="tile"><div class="avatar">KM</div><b>Kwame</b><small>Organiser · Accra</small></div>
+        <div class="tile speaking"><div class="avatar">AK</div><b>Aya</b><small>Networking student · Abidjan</small></div>
+        <div class="tile"><div class="avatar">Y</div><b>Yao</b><small>Web developer · Yopougon</small></div>
+      </div>
+    </div>
+  </div>
+
+  <nav class="tabs" role="tablist" aria-label="Leçons du chapitre">
+    <button class="tab" type="button" role="tab" id="tab-1" aria-controls="lecon-1" aria-selected="true"><small>Leçon 1</small><b>Hello, I'm Aya</b></button>
+    <button class="tab" type="button" role="tab" id="tab-2" aria-controls="lecon-2" aria-selected="false"><small>Leçon 2</small><b>My IT background</b></button>
+  </nav>
+
+  <!-- ===================== LEÇON 1 ===================== -->
+  <div class="lesson" id="lecon-1" role="tabpanel" aria-labelledby="tab-1" data-lesson="Leçon 1 · Hello, I'm Aya">
+
+    <section>
+      <div class="eyebrow"><span class="n">01</span>Learning objectives</div>
+      <h2>À la fin de cette leçon, je peux…</h2>
+      <ul class="clean">
+        <li><span class="en">I can say my name, where I'm from and what I do.</span> <span class="fr">Dire mon nom, d'où je viens et ce que je fais.</span></li>
+        <li><span class="en">I can spell my name and my email address.</span> <span class="fr">Épeler mon nom et mon adresse e-mail.</span></li>
+        <li><span class="en">I can ask simple questions to meet someone.</span> <span class="fr">Poser des questions simples pour faire connaissance.</span></li>
+      </ul>
+    </section>
+
+    <section>
+      <div class="eyebrow"><span class="n">02</span>Warm-up</div>
+      <h2>Aya doit se présenter en anglais</h2>
+      <p>Ce soir, Aya participe à un hackathon en ligne entre Abidjan et Accra. L'organisateur, Kwame, est ghanéen : il parle anglais. Il demande à chaque participant de se présenter en 30 secondes. Aya écrit à son ami Yao :</p>
+      <blockquote class="local">« Yao, je vais dire quoi même ? Je connais les mots d'informatique, mais faire une phrase, c'est pas facile ! »<small>Français ivoirien · on apprend à le dire en anglais à l'étape 07.</small></blockquote>
+      <div class="q">
+        <p class="q-title">À ton avis, quelle phrase Aya peut-elle dire en premier ?</p>
+        <div class="row">
+          <button class="btn ghost" type="button" data-warm="1">Hello, my name is Aya.</button>
+          <button class="btn ghost" type="button" data-warm="1">Hi, I'm Aya.</button>
+        </div>
+        <p class="feedback ok" data-warm-fb hidden>Les deux sont justes ! « I'm Aya » est un peu plus détendu. Tu vas apprendre les deux.</p>
+      </div>
+    </section>
+
+    <section>
+      <div class="eyebrow"><span class="n">03</span>Key vocabulary</div>
+      <h2>Les mots pour se présenter</h2>
+      <p class="fr">Touche le haut-parleur pour écouter la prononciation britannique, enregistrée par ton formateur.</p>
+      <div class="table-wrap">
+        <table class="vocab">
+          <thead><tr><th>English</th><th>Français</th><th>Example</th></tr></thead>
+          <tbody>
+            <tr><td class="term"><div class="row"><button class="say" data-id="a01" type="button" data-say="first name" aria-label="Écouter"></button>first name</div></td><td>prénom</td><td class="ex">My first name is Aya.</td></tr>
+            <tr><td class="term"><div class="row"><button class="say" data-id="a02" type="button" data-say="surname" aria-label="Écouter"></button>surname</div></td><td>nom de famille</td><td class="ex">My surname is Kouamé.</td></tr>
+            <tr><td class="term"><div class="row"><button class="say" data-id="a03" type="button" data-say="I'm from" aria-label="Écouter"></button>I'm from…</div></td><td>je viens de…</td><td class="ex">I'm from Abidjan.</td></tr>
+            <tr><td class="term"><div class="row"><button class="say" data-id="a04" type="button" data-say="a student" aria-label="Écouter"></button>a student</div></td><td>un(e) étudiant(e)</td><td class="ex">I'm a student.</td></tr>
+            <tr><td class="term"><div class="row"><button class="say" data-id="a05" type="button" data-say="to study" aria-label="Écouter"></button>to study</div></td><td>étudier</td><td class="ex">I study computer science.</td></tr>
+            <tr><td class="term"><div class="row"><button class="say" data-id="a06" type="button" data-say="computer science" aria-label="Écouter"></button>computer science</div></td><td>informatique (la discipline)</td><td class="ex">Computer science is my subject.</td></tr>
+            <tr><td class="term"><div class="row"><button class="say" data-id="a07" type="button" data-say="networking" aria-label="Écouter"></button>networking</div></td><td>réseaux informatiques</td><td class="ex">I study networking.</td></tr>
+            <tr><td class="term"><div class="row"><button class="say" data-id="a08" type="button" data-say="university" aria-label="Écouter"></button>university</div></td><td>université</td><td class="ex">My university is in Cocody.</td></tr>
+            <tr><td class="term"><div class="row"><button class="say" data-id="a09" type="button" data-say="web developer" aria-label="Écouter"></button>web developer</div></td><td>développeur web</td><td class="ex">Yao is a web developer.</td></tr>
+            <tr><td class="term"><div class="row"><button class="say" data-id="a10" type="button" data-say="email address" aria-label="Écouter"></button>email address</div></td><td>adresse e-mail</td><td class="ex">What's your email address?</td></tr>
+            <tr><td class="term"><div class="row"><button class="say" data-id="a11" type="button" data-say="to spell" aria-label="Écouter"></button>to spell</div></td><td>épeler</td><td class="ex">How do you spell that?</td></tr>
+            <tr><td class="term"><div class="row"><button class="say" data-id="a12" type="button" data-say="team" aria-label="Écouter"></button>team</div></td><td>équipe</td><td class="ex">Welcome to the team!</td></tr>
+            <tr><td class="term"><div class="row"><button class="say" data-id="a13" type="button" data-say="Nice to meet you." aria-label="Écouter"></button>Nice to meet you.</div></td><td>Enchanté(e).</td><td class="ex">Nice to meet you, Kwame.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section>
+      <div class="eyebrow"><span class="n">04</span>Say it in English</div>
+      <h2>Épeler son nom et son adresse e-mail</h2>
+      <p>En informatique, on épelle tout le temps : un nom d'utilisateur, un mot de passe Wi-Fi, une adresse e-mail. Ces lettres trompent souvent les francophones :</p>
+      <div class="letters">
+        <div class="letter"><b>A</b><span>se dit « éï »</span></div>
+        <div class="letter"><b>E</b><span>se dit « i »</span></div>
+        <div class="letter"><b>I</b><span>se dit « aï »</span></div>
+        <div class="letter"><b>G</b><span>se dit « dji »</span></div>
+        <div class="letter"><b>J</b><span>se dit « djéï »</span></div>
+        <div class="letter"><b>R</b><span>se dit « â »</span></div>
+        <div class="letter"><b>Y</b><span>se dit « waï »</span></div>
+        <div class="letter"><b>H</b><span>se dit « éïtch »</span></div>
+      </div>
+      <div class="phrases">
+        <div class="phrase"><button class="say" data-id="a14" type="button" data-say="A. E. I." aria-label="Écouter A, E, I"></button><p><b>A · E · I</b><span class="fr">Les trois voyelles à ne pas confondre.</span></p></div>
+        <div class="phrase"><button class="say" data-id="a15" type="button" data-say="G. J." aria-label="Écouter G, J"></button><p><b>G · J</b><span class="fr">Inversées par rapport au français.</span></p></div>
+        <div class="phrase"><button class="say" data-id="a16" type="button" data-say="R. Y. H. W." aria-label="Écouter R, Y, H, W"></button><p><b>R · Y · H · W</b><span class="fr">W se dit « double-you ».</span></p></div>
+      </div>
+      <div class="panel navy">
+        <h3>Lire une adresse e-mail</h3>
+        <div class="table-wrap" style="border:none">
+          <table>
+            <thead><tr><th>Symbole</th><th>On dit</th></tr></thead>
+            <tbody>
+              <tr><td class="mono">@</td><td><b>at</b></td></tr>
+              <tr><td class="mono">.</td><td><b>dot</b></td></tr>
+              <tr><td class="mono">_</td><td><b>underscore</b></td></tr>
+              <tr><td class="mono">-</td><td><b>hyphen</b> (ou <b>dash</b>)</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="phrase"><button class="say" data-id="a17" type="button" data-say="aya dot kouame at example dot com" aria-label="Écouter l'adresse"></button><p><span class="mono">aya.kouame@example.com</span><span class="fr">« aya dot kouame at example dot com »</span></p></div>
+        <div class="phrase"><button class="say" data-id="a18" type="button" data-say="yao underscore dev at example dot com" aria-label="Écouter l'adresse"></button><p><span class="mono">yao_dev@example.com</span><span class="fr">« yao underscore dev at example dot com »</span></p></div>
+      </div>
+    </section>
+
+    <section>
+      <div class="eyebrow"><span class="n">05</span>Language focus</div>
+      <h2>Le verbe <i>be</i> et les questions pour faire connaissance</h2>
+      <p class="fr">En anglais, on se présente surtout avec le verbe <b>be</b> (être). À l'oral, on utilise la forme courte : <b>I'm</b> = I am, <b>you're</b> = you are, <b>he's</b> = he is, <b>she's</b> = she is.</p>
+      <div class="phrases">
+        <div class="phrase"><button class="say" data-id="a19" type="button" data-say="I'm a student. I study computer science." aria-label="Écouter"></button><p><b>I'm a</b> student. <b>I study</b> computer science.<span class="fr">Devant un métier : <b>a</b> ou <b>an</b>. Devant une matière : rien.</span></p></div>
+        <div class="phrase"><button class="say" data-id="a20" type="button" data-say="I'm from Abidjan, in Côte d'Ivoire." aria-label="Écouter"></button><p><b>I'm from</b> Abidjan, <b>in</b> Côte d'Ivoire.<span class="fr">« from » pour l'origine, « in » pour le pays.</span></p></div>
+        <div class="phrase"><button class="say" data-id="a21" type="button" data-say="What's your name? Where are you from? What do you do?" aria-label="Écouter"></button><p><b>What's</b> your name? <b>Where are</b> you from? <b>What do</b> you do?<span class="fr">Quel est ton nom ? D'où viens-tu ? Que fais-tu dans la vie ?</span></p></div>
+        <div class="phrase"><button class="say" data-id="a22" type="button" data-say="How do you spell that, please?" aria-label="Écouter"></button><p><b>How do you spell</b> that, please?<span class="fr">Comment ça s'écrit, s'il te plaît ?</span></p></div>
+      </div>
+      <div class="panel gold">
+        <h3>Piège pour les francophones</h3>
+        <div class="pairs">
+          <div class="pair"><span class="from">Je suis étudiant.</span><div class="to"><p><span class="no">I am student.</span> → <span class="yes">I'm a student.</span> Il faut l'article <b>a</b>.</p></div></div>
+          <div class="pair"><span class="from">J'ai 20 ans.</span><div class="to"><p><span class="no">I have 20 years.</span> → <span class="yes">I'm 20.</span> L'âge se dit avec <b>be</b>.</p></div></div>
+          <div class="pair"><span class="from">Je viens d'Abidjan.</span><div class="to"><p><span class="no">I come of Abidjan.</span> → <span class="yes">I'm from Abidjan.</span></p></div></div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <div class="eyebrow"><span class="n">06</span>Maths corner</div>
+      <h2>Combien de jours dure le hackathon ?</h2>
+      <p>Le hackathon dure <b>48 heures</b>. Une journée compte 24 heures. On divise :</p>
+      <div class="steps">
+        <div class="step"><span class="k">1</span><div class="body"><span class="formula">48 ÷ 24 = 2</span><span class="spoken">“Forty-eight divided by twenty-four equals two.”</span></div><button class="say" data-id="a23" type="button" data-say="Forty-eight divided by twenty-four equals two." aria-label="Écouter la phrase"></button></div>
+        <div class="step"><span class="k">2</span><div class="body"><span class="formula">48 h = 2 days</span><span class="spoken">“The hackathon lasts two days.”</span></div><button class="say" data-id="a24" type="button" data-say="The hackathon lasts two days." aria-label="Écouter la phrase"></button></div>
+      </div>
+      <div class="panel navy">
+        <p><b>÷</b> se dit <b>divided by</b> · <b>=</b> se dit <b>equals</b>. Les nombres de 21 à 99 prennent un trait d'union à l'écrit : <i>forty-eight, twenty-four</i>.</p>
+      </div>
+    </section>
+
+    <section>
+      <div class="eyebrow"><span class="n">07</span>Comment on dit ça en anglais ?</div>
+      <h2>Du français ivoirien à l'anglais</h2>
+      <p class="fr">Ces phrases sont parfaites entre amis. Face à un organisateur, un recruteur ou un client, on les dit autrement.</p>
+      <div class="pairs">
+        <div class="pair"><span class="from">« On dit quoi ? »</span><div class="to"><button class="say" data-id="a25" type="button" data-say="Hi! How are you?" aria-label="Écouter"></button><p>Hi! How are you?</p></div></div>
+        <div class="pair"><span class="from">« Je vais dire quoi même ? »</span><div class="to"><button class="say" data-id="a26" type="button" data-say="What should I say?" aria-label="Écouter"></button><p>What should I say?</p></div></div>
+        <div class="pair"><span class="from">« Je fais réseau. »</span><div class="to"><button class="say" data-id="a27" type="button" data-say="I study networking." aria-label="Écouter"></button><p>I study networking.</p></div></div>
+        <div class="pair"><span class="from">« Je suis en L2 info. »</span><div class="to"><button class="say" data-id="a28" type="button" data-say="I'm a second-year computer science student." aria-label="Écouter"></button><p>I'm a second-year computer science student.</p></div></div>
+      </div>
+    </section>
+
+    <section>
+      <div class="eyebrow"><span class="n">08</span>Reading and listening</div>
+      <h2>Le début du hackathon</h2>
+      <p class="fr">Écoute chaque réplique. La traduction est affichée ; masque-la pour t'entraîner.</p>
+      <div class="row"><button class="btn ghost" type="button" data-toggle-tr aria-pressed="true">Masquer la traduction</button><button class="btn" type="button" data-play-all>Écouter tout le dialogue</button></div>
+      <div class="panel dialogue">
+        <div class="line"><span class="who">Kwame</span><div class="txt"><p>Hello, everyone, and welcome! I'm Kwame, the organiser. I'm from Accra, in Ghana.</p><p class="tr">Bonjour à tous, et bienvenue ! Je suis Kwame, l'organisateur. Je viens d'Accra, au Ghana.</p></div><button class="say" data-id="a29" type="button" data-say="Hello, everyone, and welcome! I'm Kwame, the organiser. I'm from Accra, in Ghana." aria-label="Écouter"></button></div>
+        <div class="line"><span class="who f">Aya</span><div class="txt"><p>Hi, Kwame! My name is Aya Kouamé. I'm from Abidjan, in Côte d'Ivoire.</p><p class="tr">Salut, Kwame ! Je m'appelle Aya Kouamé. Je viens d'Abidjan, en Côte d'Ivoire.</p></div><button class="say" data-id="a30" type="button" data-say="Hi, Kwame! My name is Aya Kouamé. I'm from Abidjan, in Côte d'Ivoire." aria-label="Écouter"></button></div>
+        <div class="line"><span class="who">Kwame</span><div class="txt"><p>Nice to meet you, Aya. What do you do?</p><p class="tr">Enchanté, Aya. Que fais-tu dans la vie ?</p></div><button class="say" data-id="a31" type="button" data-say="Nice to meet you, Aya. What do you do?" aria-label="Écouter"></button></div>
+        <div class="line"><span class="who f">Aya</span><div class="txt"><p>I'm a student. I study networking at a university in Cocody.</p><p class="tr">Je suis étudiante. J'étudie les réseaux dans une université à Cocody.</p></div><button class="say" data-id="a32" type="button" data-say="I'm a student. I study networking at a university in Cocody." aria-label="Écouter"></button></div>
+        <div class="line"><span class="who">Kwame</span><div class="txt"><p>Great! How do you spell your surname, please?</p><p class="tr">Super ! Comment s'écrit ton nom de famille, s'il te plaît ?</p></div><button class="say" data-id="a33" type="button" data-say="Great! How do you spell your surname, please?" aria-label="Écouter"></button></div>
+        <div class="line"><span class="who f">Aya</span><div class="txt"><p>K-O-U-A-M-E. Kouamé.</p><p class="tr">K-O-U-A-M-E. Kouamé.</p></div><button class="say" data-id="a34" type="button" data-say="K. O. U. A. M. E. Kouamé." aria-label="Écouter"></button></div>
+        <div class="line"><span class="who">Kwame</span><div class="txt"><p>Thank you. And what's your email address?</p><p class="tr">Merci. Et quelle est ton adresse e-mail ?</p></div><button class="say" data-id="a35" type="button" data-say="Thank you. And what's your email address?" aria-label="Écouter"></button></div>
+        <div class="line"><span class="who f">Aya</span><div class="txt"><p>It's aya.kouame@example.com.</p><p class="tr">C'est aya.kouame@example.com.</p></div><button class="say" data-id="a36" type="button" data-say="It's aya dot kouame at example dot com." aria-label="Écouter"></button></div>
+        <div class="line"><span class="who">Yao</span><div class="txt"><p>Hello! I'm Yao. I'm from Yopougon. I'm not a student. I'm a web developer.</p><p class="tr">Bonjour ! Je suis Yao. Je viens de Yopougon. Je ne suis pas étudiant. Je suis développeur web.</p></div><button class="say" data-id="a37" type="button" data-say="Hello! I'm Yao. I'm from Yopougon. I'm not a student. I'm a web developer." aria-label="Écouter"></button></div>
+        <div class="line"><span class="who">Kwame</span><div class="txt"><p>Welcome to the team, Aya and Yao!</p><p class="tr">Bienvenue dans l'équipe, Aya et Yao !</p></div><button class="say" data-id="a38" type="button" data-say="Welcome to the team, Aya and Yao!" aria-label="Écouter"></button></div>
+      </div>
+    </section>
+
+    <section>
+      <div class="eyebrow"><span class="n">09</span>Practice</div>
+      <h2>À toi de jouer</h2>
+      <p class="fr">Correction immédiate, avec l'explication. Score : <span class="score" data-score>0 / 6</span></p>
+      <div class="panel ex-block">
+        <h3>A. Choisis la bonne réponse</h3>
+        <div class="q" data-answer="1" data-why="En anglais, on met « a » devant un métier ou un statut : I'm a student.">
+          <p class="q-title">1. « Je suis étudiant. »</p>
+          <div class="choices"><button class="choice" type="button">I am student.</button><button class="choice" type="button">I'm a student.</button><button class="choice" type="button">I have student.</button></div>
+          <p class="feedback" hidden></p>
+        </div>
+        <div class="q" data-answer="0" data-why="L'âge se dit avec « be » : I'm 20. « I have 20 years » est un calque du français.">
+          <p class="q-title">2. « J'ai 20 ans. »</p>
+          <div class="choices"><button class="choice" type="button">I'm 20.</button><button class="choice" type="button">I have 20 years.</button><button class="choice" type="button">I have 20.</button></div>
+          <p class="feedback" hidden></p>
+        </div>
+        <div class="q" data-answer="2" data-why="Kwame dit : « I'm from Accra, in Ghana. »">
+          <p class="q-title">3. Dans le dialogue, Kwame is from…</p>
+          <div class="choices"><button class="choice" type="button">Abidjan.</button><button class="choice" type="button">Lagos.</button><button class="choice" type="button">Accra.</button></div>
+          <p class="feedback" hidden></p>
+        </div>
+        <div class="q" data-answer="1" data-why="Yao dit : « I'm not a student. I'm a web developer. »">
+          <p class="q-title">4. What does Yao do?</p>
+          <div class="choices"><button class="choice" type="button">He's a networking student.</button><button class="choice" type="button">He's a web developer.</button><button class="choice" type="button">He's the organiser.</button></div>
+          <p class="feedback" hidden></p>
+        </div>
+      </div>
+      <div class="panel ex-block">
+        <h3>B. Écoute et écris l'adresse e-mail</h3>
+        <form class="q" data-dictation="ngozi.okafor@example.com" novalidate>
+          <div class="row"><button class="say" data-id="a39" type="button" data-say="Ngozi dot okafor at example dot com." aria-label="Écouter l'adresse"></button><span class="fr">5. Ngozi, une développeuse de Lagos, donne son adresse.</span></div>
+          <label class="fr" for="dict-1">Écris l'adresse comme elle s'écrit (avec @ et .)</label>
+          <div class="row"><input id="dict-1" class="wide" type="text" inputmode="email" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="…@example.com"><button class="btn" type="submit">Vérifier</button></div>
+          <p class="feedback" hidden></p>
+        </form>
+      </div>
+      <div class="panel ex-block">
+        <h3>C. Complète les questions</h3>
+        <div class="q" data-gaps="is|are|study" data-hint="« What's » = What is. Avec « you », on dit « are ». Après « I », le verbe study ne prend pas de -s.">
+          <p class="gap-line">6. What <select aria-label="Trou 1"><option value="">…</option><option>is</option><option>are</option><option>am</option></select> your name? Where <select aria-label="Trou 2"><option value="">…</option><option>is</option><option>are</option><option>do</option></select> you from? I <select aria-label="Trou 3"><option value="">…</option><option>study</option><option>studies</option><option>am study</option></select> computer science.</p>
+          <div class="row"><button class="btn" type="button" data-check-gaps>Vérifier</button></div>
+          <p class="feedback" hidden></p>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <div class="eyebrow"><span class="n">10</span>Speaking practice</div>
+      <h2>Présente-toi en 30 secondes</h2>
+      <p>C'est ton tour dans l'appel vidéo. Dis à voix haute, en 4 ou 5 phrases : ton nom, d'où tu viens, ce que tu fais, et épelle ton nom de famille.</p>
+      <p class="fr">Enregistre-toi avec ton téléphone, réécoute-toi, puis compare avec le modèle.</p>
+      <div class="row"><button class="btn ghost" type="button" data-reveal aria-expanded="false" data-open="Masquer le modèle" data-closed="Voir et écouter le modèle">Voir et écouter le modèle</button></div>
+      <div class="model" hidden>
+        <p>“Hello! My name is Moussa Koné. I'm from Bouaké, in Côte d'Ivoire. I'm a student. I study computer science at a university in Abidjan. My surname is Koné: K-O-N-E.”</p>
+        <div class="row"><button class="say" data-id="a40" type="button" data-say="Hello! My name is Moussa Koné. I'm from Bouaké, in Côte d'Ivoire. I'm a student. I study computer science at a university in Abidjan. My surname is Koné: K. O. N. E." aria-label="Écouter le modèle"></button><span class="fr">Écouter</span></div>
+      </div>
+    </section>
+
+    <section>
+      <div class="eyebrow"><span class="n">11</span>Professional communication</div>
+      <h2>Ton message dans le groupe WhatsApp du hackathon</h2>
+      <p>Kwame crée un groupe WhatsApp pour l'équipe. Écris ton message de présentation <b>en anglais</b>, en 30 à 50 mots.</p>
+      <label for="msg-1" class="fr">Ton message (enregistré sur cet appareil)</label>
+      <textarea id="msg-1" data-save="msg1" data-min="30" data-max="50" placeholder="Hi everyone! My name is…"></textarea>
+      <div class="row"><span class="counter" data-count-for="msg-1">0 mot</span></div>
+      <div class="panel">
+        <h3>Avant d'envoyer, vérifie :</h3>
+        <label class="check"><input type="checkbox" id="l1w1" data-save-check><span>Je dis mon nom et d'où je viens.</span></label>
+        <label class="check"><input type="checkbox" id="l1w2" data-save-check><span>Je dis ce que je fais : <i>I'm a student / I study… / I'm a…</i></span></label>
+        <label class="check"><input type="checkbox" id="l1w3" data-save-check><span>J'ai mis <i>a</i> devant mon métier ou mon statut.</span></label>
+        <label class="check"><input type="checkbox" id="l1w4" data-save-check><span>Je termine par une formule amicale : <i>Nice to meet you all!</i></span></label>
+      </div>
+      <div class="row"><button class="btn ghost" type="button" data-reveal aria-expanded="false" data-open="Masquer l'exemple" data-closed="Voir un exemple de message">Voir un exemple de message</button></div>
+      <div class="model" hidden>
+        <p>“Hi everyone! My name is Aya Kouamé. I'm from Abidjan, in Côte d'Ivoire. I'm a student. I study networking at a university in Cocody. My email address is aya.kouame@example.com. Nice to meet you all!” <span class="fr">(37 mots)</span></p>
+      </div>
+    </section>
+
+    <section>
+      <div class="eyebrow"><span class="n">12</span>Self-assessment</div>
+      <h2>Je peux…</h2>
+      <div class="panel">
+        <label class="check"><input type="checkbox" id="l1s1" data-save-check><span>…say my name, where I'm from and what I do. <span class="fr">dire mon nom, d'où je viens et ce que je fais.</span></span></label>
+        <label class="check"><input type="checkbox" id="l1s2" data-save-check><span>…spell my name and my email address. <span class="fr">épeler mon nom et mon adresse e-mail.</span></span></label>
+        <label class="check"><input type="checkbox" id="l1s3" data-save-check><span>…ask: What's your name? Where are you from? What do you do? <span class="fr">poser ces trois questions.</span></span></label>
+      </div>
+      <div class="next"><b>Leçon suivante : My IT background</b><p class="fr">Tu vas parler de tes études, de ce que tu sais faire en informatique et de ton objectif.</p><div class="row"><button class="btn" type="button" data-go="2">Aller à la leçon 2</button></div></div>
+    </section>
+  </div>
+
+  <!-- ===================== LEÇON 2 ===================== -->
+  <div class="lesson" id="lecon-2" role="tabpanel" aria-labelledby="tab-2" data-lesson="Leçon 2 · My IT background" hidden>
+
+    <section>
+      <div class="eyebrow"><span class="n">01</span>Learning objectives</div>
+      <h2>À la fin de cette leçon, je peux…</h2>
+      <ul class="clean">
+        <li><span class="en">I can say what I study and in which year.</span> <span class="fr">Dire ce que j'étudie et en quelle année.</span></li>
+        <li><span class="en">I can say what I can do and which tools I know.</span> <span class="fr">Dire ce que je sais faire et quels outils je connais.</span></li>
+        <li><span class="en">I can say what I'd like to do in the future.</span> <span class="fr">Dire ce que j'aimerais faire plus tard.</span></li>
+      </ul>
+    </section>
+
+    <section>
+      <div class="eyebrow"><span class="n">02</span>Warm-up</div>
+      <h2>« Background », c'est quoi ?</h2>
+      <p>Pour former les équipes, Kwame envoie un formulaire : <i>“Tell us about your IT background: your studies, your skills and your goals.”</i> Aya hésite sur le mot <b>background</b>.</p>
+      <div class="q">
+        <p class="q-title">Ici, « IT background » veut dire…</p>
+        <div class="row">
+          <button class="btn ghost" type="button" data-warm="0">ton fond d'écran</button>
+          <button class="btn ghost" type="button" data-warm="1">ton parcours en informatique</button>
+        </div>
+        <p class="feedback ok" data-warm-fb data-ok="Exact : background = parcours, expérience. IT = information technology, l'informatique." data-ko="Bien vu : « background » peut vouloir dire arrière-plan. Mais dans « IT background », il veut dire parcours, expérience." hidden></p>
+      </div>
+    </section>
+
+    <section>
+      <div class="eyebrow"><span class="n">03</span>Key vocabulary</div>
+      <h2>Les mots du parcours</h2>
+      <div class="table-wrap">
+        <table class="vocab">
+          <thead><tr><th>English</th><th>Français</th><th>Example</th></tr></thead>
+          <tbody>
+            <tr><td class="term"><div class="row"><button class="say" data-id="a41" type="button" data-say="background" aria-label="Écouter"></button>background</div></td><td>parcours, expérience</td><td class="ex">Tell us about your IT background.</td></tr>
+            <tr><td class="term"><div class="row"><button class="say" data-id="a42" type="button" data-say="skill" aria-label="Écouter"></button>skill</div></td><td>compétence</td><td class="ex">Networking is my main skill.</td></tr>
+            <tr><td class="term"><div class="row"><button class="say" data-id="a43" type="button" data-say="a bachelor's degree" aria-label="Écouter"></button>a bachelor's degree</div></td><td>une licence</td><td class="ex">I'm doing a bachelor's degree.</td></tr>
+            <tr><td class="term"><div class="row"><button class="say" data-id="a44" type="button" data-say="first year, second year, third year" aria-label="Écouter"></button>first / second / third year</div></td><td>1re / 2e / 3e année</td><td class="ex">I'm in my second year.</td></tr>
+            <tr><td class="term"><div class="row"><button class="say" data-id="a45" type="button" data-say="to code" aria-label="Écouter"></button>to code</div></td><td>programmer, coder</td><td class="ex">I can code in Python.</td></tr>
+            <tr><td class="term"><div class="row"><button class="say" data-id="a46" type="button" data-say="programming language" aria-label="Écouter"></button>programming language</div></td><td>langage de programmation</td><td class="ex">Python is a programming language.</td></tr>
+            <tr><td class="term"><div class="row"><button class="say" data-id="a47" type="button" data-say="tool" aria-label="Écouter"></button>tool</div></td><td>outil</td><td class="ex">Git is a useful tool.</td></tr>
+            <tr><td class="term"><div class="row"><button class="say" data-id="a48" type="button" data-say="to configure a router" aria-label="Écouter"></button>to configure a router</div></td><td>configurer un routeur</td><td class="ex">I can configure a router.</td></tr>
+            <tr><td class="term"><div class="row"><button class="say" data-id="a49" type="button" data-say="a bit" aria-label="Écouter"></button>a bit</div></td><td>un peu</td><td class="ex">I know a bit of Linux.</td></tr>
+            <tr><td class="term"><div class="row"><button class="say" data-id="a50" type="button" data-say="to be good at" aria-label="Écouter"></button>to be good at</div></td><td>être bon(ne) en</td><td class="ex">I'm good at maths.</td></tr>
+            <tr><td class="term"><div class="row"><button class="say" data-id="a51" type="button" data-say="an internship" aria-label="Écouter"></button>an internship</div></td><td>un stage</td><td class="ex">I'm looking for an internship.</td></tr>
+            <tr><td class="term"><div class="row"><button class="say" data-id="a52" type="button" data-say="network administrator" aria-label="Écouter"></button>network administrator</div></td><td>administrateur réseau</td><td class="ex">I'd like to be a network administrator.</td></tr>
+            <tr><td class="term"><div class="row"><button class="say" data-id="a53" type="button" data-say="goal" aria-label="Écouter"></button>goal</div></td><td>objectif</td><td class="ex">My goal is to work in cybersecurity.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section>
+      <div class="eyebrow"><span class="n">04</span>Say it in English</div>
+      <h2>Prononcer les noms de l'informatique</h2>
+      <p>Les noms d'outils et de langages ne se lisent pas comme en français. Les mêmes lettres reviennent : C, Q, L, H, T, M.</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Écrit</th><th>On dit</th><th></th></tr></thead>
+          <tbody>
+            <tr><td class="mono">C++</td><td>C plus plus</td><td><button class="say" data-id="a54" type="button" data-say="C plus plus" aria-label="Écouter C++"></button></td></tr>
+            <tr><td class="mono">C#</td><td>C sharp</td><td><button class="say" data-id="a55" type="button" data-say="C sharp" aria-label="Écouter C#"></button></td></tr>
+            <tr><td class="mono">SQL</td><td>S-Q-L, ou « sequel »</td><td><button class="say" data-id="a56" type="button" data-say="S. Q. L. Or: sequel." aria-label="Écouter SQL"></button></td></tr>
+            <tr><td class="mono">HTML</td><td>H-T-M-L</td><td><button class="say" data-id="a57" type="button" data-say="H. T. M. L." aria-label="Écouter HTML"></button></td></tr>
+            <tr><td class="mono">Linux</td><td>« linn-ux »</td><td><button class="say" data-id="a58" type="button" data-say="Linux" aria-label="Écouter Linux"></button></td></tr>
+            <tr><td class="mono">Wi-Fi</td><td>« waï-faï »</td><td><button class="say" data-id="a59" type="button" data-say="Wi-Fi" aria-label="Écouter Wi-Fi"></button></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section>
+      <div class="eyebrow"><span class="n">05</span>Language focus</div>
+      <h2><i>I can</i>, <i>I'm good at</i>, <i>I'd like to</i></h2>
+      <p class="fr">Trois structures suffisent pour parler de son parcours. Attention : après <b>can</b>, le verbe n'a jamais « to » ni « -s ».</p>
+      <div class="phrases">
+        <div class="phrase"><button class="say" data-id="a60" type="button" data-say="I can configure a router. I can't code very well yet." aria-label="Écouter"></button><p><b>I can</b> configure a router. <b>I can't</b> code very well <b>yet</b>.<span class="fr">Je sais configurer un routeur. Je ne sais pas encore très bien coder.</span></p></div>
+        <div class="phrase"><button class="say" data-id="a61" type="button" data-say="I know a bit of Python. I'm good at networking." aria-label="Écouter"></button><p><b>I know a bit of</b> Python. <b>I'm good at</b> networking.<span class="fr">Je connais un peu Python. Je suis bon(ne) en réseaux.</span></p></div>
+        <div class="phrase"><button class="say" data-id="a62" type="button" data-say="I'm in my second year. I'm doing a bachelor's degree in computer science." aria-label="Écouter"></button><p><b>I'm in my</b> second year. <b>I'm doing a</b> bachelor's degree in computer science.<span class="fr">Je suis en 2e année. Je prépare une licence en informatique.</span></p></div>
+        <div class="phrase"><button class="say" data-id="a63" type="button" data-say="I'd like to be a network administrator." aria-label="Écouter"></button><p><b>I'd like to be</b> a network administrator.<span class="fr">J'aimerais être administrateur réseau. « I'd like » est plus poli que « I want ».</span></p></div>
+      </div>
+      <div class="panel gold">
+        <h3>Piège pour les francophones</h3>
+        <div class="pairs">
+          <div class="pair"><span class="from">Je suis en licence.</span><div class="to"><p><span class="no">I'm in licence.</span> → <span class="yes">I'm doing a bachelor's degree.</span> En anglais, <i>licence</i> veut dire « permis, autorisation ».</p></div></div>
+          <div class="pair"><span class="from">Je cherche un stage.</span><div class="to"><p><span class="no">I'm looking for a stage.</span> → <span class="yes">I'm looking for an internship.</span> Un <i>stage</i>, c'est une scène de théâtre.</p></div></div>
+          <div class="pair"><span class="from">Je sais coder.</span><div class="to"><p><span class="no">I can to code.</span> → <span class="yes">I can code.</span></p></div></div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <div class="eyebrow"><span class="n">06</span>Maths corner</div>
+      <h2>Combien d'heures par semaine ?</h2>
+      <p>Aya s'entraîne à coder <b>2 heures par jour, 6 jours par semaine</b>. On multiplie :</p>
+      <div class="steps">
+        <div class="step"><span class="k">1</span><div class="body"><span class="formula">2 × 6 = 12</span><span class="spoken">“Two times six equals twelve.”</span></div><button class="say" data-id="a64" type="button" data-say="Two times six equals twelve." aria-label="Écouter la phrase"></button></div>
+        <div class="step"><span class="k">2</span><div class="body"><span class="formula">12 hours a week</span><span class="spoken">“I practise coding twelve hours a week.”</span></div><button class="say" data-id="a65" type="button" data-say="I practise coding twelve hours a week." aria-label="Écouter la phrase"></button></div>
+      </div>
+      <div class="panel converter">
+        <h3>Et toi ?</h3>
+        <div class="conv-row">
+          <label class="fr" for="hpd" style="font-family:var(--font);font-size:15px">Heures par jour</label>
+          <input id="hpd" type="number" min="1" max="16" step="1" value="2" inputmode="numeric">
+          <span>×</span>
+          <label class="fr" for="dpw" style="font-family:var(--font);font-size:15px">jours par semaine</label>
+          <input id="dpw" type="number" min="1" max="7" step="1" value="5" inputmode="numeric">
+          <span>=</span><span class="conv-out" id="hpw">10</span>
+        </div>
+        <div class="row"><span class="read-aloud">À toi de lire :</span><p class="spoken" id="hours-sentence">Two times five equals ten. I practise coding ten hours a week.</p></div>
+      </div>
+      <div class="panel navy"><p><b>×</b> se dit <b>times</b> (ou <b>multiplied by</b>) · <b>+</b> se dit <b>plus</b> · <b>−</b> se dit <b>minus</b>. En anglais britannique, le verbe s'écrit <i>to practise</i> et le nom <i>practice</i>.</p></div>
+    </section>
+
+    <section>
+      <div class="eyebrow"><span class="n">07</span>Comment on dit ça en anglais ?</div>
+      <h2>Parler de soi, version pro</h2>
+      <div class="pairs">
+        <div class="pair"><span class="from">« Je me débrouille en Python. »</span><div class="to"><button class="say" data-id="a66" type="button" data-say="I can write simple programs in Python." aria-label="Écouter"></button><p>I can write simple programs in Python.</p></div></div>
+        <div class="pair"><span class="from">« Je suis fort en réseau. »</span><div class="to"><button class="say" data-id="a67" type="button" data-say="I'm good at networking." aria-label="Écouter"></button><p>I'm good at networking.</p></div></div>
+        <div class="pair"><span class="from">« Je cherche stage. »</span><div class="to"><button class="say" data-id="a68" type="button" data-say="I'm looking for an internship." aria-label="Écouter"></button><p>I'm looking for an internship.</p></div></div>
+        <div class="pair"><span class="from">« Le code-là, c'est pas mon fort. »</span><div class="to"><button class="say" data-id="a69" type="button" data-say="Coding isn't my strongest skill yet." aria-label="Écouter"></button><p>Coding isn't my strongest skill yet.</p></div></div>
+      </div>
+    </section>
+
+    <section>
+      <div class="eyebrow"><span class="n">08</span>Reading and listening</div>
+      <h2>Kwame forme les équipes</h2>
+      <div class="row"><button class="btn ghost" type="button" data-toggle-tr aria-pressed="true">Masquer la traduction</button><button class="btn" type="button" data-play-all>Écouter tout le dialogue</button></div>
+      <div class="panel dialogue">
+        <div class="line"><span class="who">Kwame</span><div class="txt"><p>Aya, can you tell me about your IT background?</p><p class="tr">Aya, peux-tu me parler de ton parcours en informatique ?</p></div><button class="say" data-id="a70" type="button" data-say="Aya, can you tell me about your IT background?" aria-label="Écouter"></button></div>
+        <div class="line"><span class="who f">Aya</span><div class="txt"><p>Sure. I'm in my second year. I'm doing a bachelor's degree in computer science.</p><p class="tr">Bien sûr. Je suis en deuxième année. Je prépare une licence en informatique.</p></div><button class="say" data-id="a71" type="button" data-say="Sure. I'm in my second year. I'm doing a bachelor's degree in computer science." aria-label="Écouter"></button></div>
+        <div class="line"><span class="who">Kwame</span><div class="txt"><p>What can you do?</p><p class="tr">Qu'est-ce que tu sais faire ?</p></div><button class="say" data-id="a72" type="button" data-say="What can you do?" aria-label="Écouter"></button></div>
+        <div class="line"><span class="who f">Aya</span><div class="txt"><p>I can configure a router, and I know a bit of Linux. I can't code very well yet.</p><p class="tr">Je sais configurer un routeur, et je connais un peu Linux. Je ne sais pas encore très bien coder.</p></div><button class="say" data-id="a73" type="button" data-say="I can configure a router, and I know a bit of Linux. I can't code very well yet." aria-label="Écouter"></button></div>
+        <div class="line"><span class="who">Kwame</span><div class="txt"><p>That's OK. Which programming languages do you know?</p><p class="tr">Pas de souci. Quels langages de programmation connais-tu ?</p></div><button class="say" data-id="a74" type="button" data-say="That's OK. Which programming languages do you know?" aria-label="Écouter"></button></div>
+        <div class="line"><span class="who f">Aya</span><div class="txt"><p>A bit of Python and some HTML.</p><p class="tr">Un peu de Python et un peu de HTML.</p></div><button class="say" data-id="a75" type="button" data-say="A bit of Python and some H. T. M. L." aria-label="Écouter"></button></div>
+        <div class="line"><span class="who">Kwame</span><div class="txt"><p>Good. And what would you like to do in the future?</p><p class="tr">Bien. Et qu'aimerais-tu faire plus tard ?</p></div><button class="say" data-id="a76" type="button" data-say="Good. And what would you like to do in the future?" aria-label="Écouter"></button></div>
+        <div class="line"><span class="who f">Aya</span><div class="txt"><p>I'd like to be a network administrator. Right now, I'm looking for an internship.</p><p class="tr">J'aimerais être administratrice réseau. En ce moment, je cherche un stage.</p></div><button class="say" data-id="a77" type="button" data-say="I'd like to be a network administrator. Right now, I'm looking for an internship." aria-label="Écouter"></button></div>
+        <div class="line"><span class="who">Kwame</span><div class="txt"><p>Great. You can work on the network part of our project, with Yao.</p><p class="tr">Super. Tu peux travailler sur la partie réseau de notre projet, avec Yao.</p></div><button class="say" data-id="a78" type="button" data-say="Great. You can work on the network part of our project, with Yao." aria-label="Écouter"></button></div>
+      </div>
+    </section>
+
+    <section>
+      <div class="eyebrow"><span class="n">09</span>Practice</div>
+      <h2>À toi de jouer</h2>
+      <p class="fr">Correction immédiate, avec l'explication. Score : <span class="score" data-score>0 / 6</span></p>
+      <div class="panel ex-block">
+        <h3>A. Choisis la bonne réponse</h3>
+        <div class="q" data-answer="0" data-why="Après « can », le verbe est à la forme de base : pas de « to », pas de « -ing ».">
+          <p class="q-title">1. I can ___ in Python.</p>
+          <div class="choices"><button class="choice" type="button">code</button><button class="choice" type="button">to code</button><button class="choice" type="button">coding</button></div>
+          <p class="feedback" hidden></p>
+        </div>
+        <div class="q" data-answer="2" data-why="La licence française se dit « bachelor's degree ». « Licence » en anglais veut dire permis ou autorisation.">
+          <p class="q-title">2. « Je prépare une licence en informatique. »</p>
+          <div class="choices"><button class="choice" type="button">I'm in licence of computer science.</button><button class="choice" type="button">I have a computer science licence.</button><button class="choice" type="button">I'm doing a bachelor's degree in computer science.</button></div>
+          <p class="feedback" hidden></p>
+        </div>
+        <div class="q" data-answer="1" data-why="Un stage = an internship. « Stage » en anglais désigne une scène ou une étape.">
+          <p class="q-title">3. « Je cherche un stage. »</p>
+          <div class="choices"><button class="choice" type="button">I'm looking for a stage.</button><button class="choice" type="button">I'm looking for an internship.</button><button class="choice" type="button">I'm looking for a training.</button></div>
+          <p class="feedback" hidden></p>
+        </div>
+        <div class="q" data-answer="0" data-why="Aya dit : « I'd like to be a network administrator. »">
+          <p class="q-title">4. What would Aya like to be?</p>
+          <div class="choices"><button class="choice" type="button">A network administrator.</button><button class="choice" type="button">A web developer.</button><button class="choice" type="button">A teacher.</button></div>
+          <p class="feedback" hidden></p>
+        </div>
+      </div>
+      <div class="panel ex-block">
+        <h3>B. Calcule, puis lis le résultat</h3>
+        <form class="q" data-calc="21" data-why="3 × 7 = 21. On dit : “Three times seven equals twenty-one. Yao practises coding twenty-one hours a week.”" novalidate>
+          <p>5. Yao code <b>3 heures par jour, 7 jours sur 7</b>. Combien d'heures par semaine ?</p>
+          <div class="row"><input id="calc-2" type="text" inputmode="numeric" autocomplete="off" style="width:90px" aria-label="Nombre d'heures"><span>hours a week</span><button class="btn" type="submit">Vérifier</button></div>
+          <p class="feedback" hidden></p>
+        </form>
+      </div>
+      <div class="panel ex-block">
+        <h3>C. Complète la présentation de Yao</h3>
+        <div class="q" data-gaps="at|to|well" data-hint="On dit « good at » + domaine ; « I'd like to » + verbe ; « very well » = très bien.">
+          <p class="gap-line">6. I'm good <select aria-label="Trou 1"><option value="">…</option><option>at</option><option>in</option><option>on</option></select> web design. I'd like <select aria-label="Trou 2"><option value="">…</option><option>to</option><option>of</option><option>for</option></select> work for a start-up. I can't configure a server very <select aria-label="Trou 3"><option value="">…</option><option>good</option><option>well</option><option>fine</option></select> yet.</p>
+          <div class="row"><button class="btn" type="button" data-check-gaps>Vérifier</button></div>
+          <p class="feedback" hidden></p>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <div class="eyebrow"><span class="n">10</span>Speaking practice</div>
+      <h2>Ton parcours en 45 secondes</h2>
+      <p>Kwame te demande : <i>“Tell me about your IT background.”</i> Réponds en 5 phrases : ton année d'études, une chose que tu sais faire, une que tu ne sais pas encore faire, un langage ou outil que tu connais, et ton objectif.</p>
+      <div class="row"><button class="btn ghost" type="button" data-reveal aria-expanded="false" data-open="Masquer le modèle" data-closed="Voir et écouter le modèle">Voir et écouter le modèle</button></div>
+      <div class="model" hidden>
+        <p>“I'm in my first year. I'm doing a bachelor's degree in computer science. I can use Windows and Linux, and I know a bit of Python. I can't configure a server yet. I'd like to be a cybersecurity analyst.”</p>
+        <div class="row"><button class="say" data-id="a79" type="button" data-say="I'm in my first year. I'm doing a bachelor's degree in computer science. I can use Windows and Linux, and I know a bit of Python. I can't configure a server yet. I'd like to be a cybersecurity analyst." aria-label="Écouter le modèle"></button><span class="fr">Écouter (Moussa)</span></div>
+      </div>
+    </section>
+
+    <section>
+      <div class="eyebrow"><span class="n">11</span>Professional communication</div>
+      <h2>Ta carte de profil en anglais</h2>
+      <p>Remplis le formulaire de Kwame <b>en anglais</b>. Ta carte se construit en direct. Garde-la : c'est la première pièce de ton projet final, la présentation de ton propre projet informatique.</p>
+      <div class="panel form-grid">
+        <label for="p-name"><span class="en">Name</span><input id="p-name" type="text" data-profile placeholder="Aya Kouamé"></label>
+        <label for="p-from"><span class="en">I'm from…</span><input id="p-from" type="text" data-profile placeholder="Abidjan, Côte d'Ivoire"></label>
+        <label for="p-study"><span class="en">Studies or job</span><input id="p-study" type="text" data-profile placeholder="I'm in my second year of a bachelor's degree in computer science."></label>
+        <label for="p-can"><span class="en">I can…</span><input id="p-can" type="text" data-profile placeholder="configure a router"></label>
+        <label for="p-know"><span class="en">I know… (languages, tools)</span><input id="p-know" type="text" data-profile placeholder="a bit of Python, Linux"></label>
+        <label for="p-goal"><span class="en">I'd like to be…</span><input id="p-goal" type="text" data-profile placeholder="a network administrator"></label>
+      </div>
+      <div class="card-out" aria-live="polite">
+        <div class="card-top"><div class="avatar" id="card-initials">AK</div><div><h3 id="card-name">Aya Kouamé</h3><small id="card-from">Abidjan, Côte d'Ivoire</small></div></div>
+        <p id="card-text">I'm in my second year of a bachelor's degree in computer science. I can configure a router. I know a bit of Python, Linux. I'd like to be a network administrator.</p>
+        <small>My tech profile · EduConnect Technical English</small>
+      </div>
+      <div class="panel">
+        <h3>Vérifie ta carte :</h3>
+        <label class="check"><input type="checkbox" id="l2w1" data-save-check><span>Après <i>I can</i>, mon verbe n'a ni « to » ni « -s ».</span></label>
+        <label class="check"><input type="checkbox" id="l2w2" data-save-check><span>J'ai écrit <i>bachelor's degree</i> et non <i>licence</i>.</span></label>
+        <label class="check"><input type="checkbox" id="l2w3" data-save-check><span>Mon objectif commence par <i>a</i> ou <i>an</i> : <i>a network administrator, an IT consultant</i>.</span></label>
+      </div>
+    </section>
+
+    <section>
+      <div class="eyebrow"><span class="n">12</span>Self-assessment</div>
+      <h2>Je peux…</h2>
+      <div class="panel">
+        <label class="check"><input type="checkbox" id="l2s1" data-save-check><span>…say what I study and in which year. <span class="fr">dire ce que j'étudie et en quelle année.</span></span></label>
+        <label class="check"><input type="checkbox" id="l2s2" data-save-check><span>…say what I can and can't do. <span class="fr">dire ce que je sais et ne sais pas encore faire.</span></span></label>
+        <label class="check"><input type="checkbox" id="l2s3" data-save-check><span>…say what I'd like to do in the future. <span class="fr">dire mon objectif professionnel.</span></span></label>
+        <label class="check"><input type="checkbox" id="l2s4" data-save-check><span>…read “2 × 6 = 12” aloud in English. <span class="fr">lire une multiplication à voix haute.</span></span></label>
+      </div>
+      <div class="next"><b>Bravo, tu as fini le chapitre 1 !</b><p class="fr">Tu sais te présenter et parler de ton parcours en anglais. Dans le chapitre 2, tu apprendras à construire des phrases correctes pour décrire un système.</p></div>
+    </section>
+  </div>
+</main>
+
+<footer>
+  <span><b>© EduConnect CI</b> · educonnect-ci.org · Innovation for Academic Success</span>
+  <span>Chapitre 1 offert · Technical English for IT · Version pilote d'octobre 2026</span>
+</footer>
+
+<div class="toast" id="toast" role="status" hidden></div>
+
+<script id="recorded-audio">window.RECORDED_AUDIO = {};</script>
+<script>
+(function () {
+  "use strict";
+  var SPEAKER = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4z" fill="currentColor"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/></svg>';
+  var KEY = "ec-ch01-";
+  function load(k, d) { try { var v = localStorage.getItem(KEY + k); return v === null ? d : v; } catch (e) { return d; } }
+  function save(k, v) { try { localStorage.setItem(KEY + k, v); } catch (e) {} }
+
+  var toastEl = document.getElementById("toast"), toastTimer;
+  function toast(m) { toastEl.textContent = m; toastEl.hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(function () { toastEl.hidden = true; }, 3200); }
+
+  // ---------- audio: recorded voice first, synthetic voice as fallback ----------
+  var synth = null, voice = null, missing = {}, current = null;
+  function pickVoice() {
+    if (!synth) return;
+    var vs = synth.getVoices() || [];
+    voice = vs.find(function (v) { return v.lang === "en-GB"; }) || vs.find(function (v) { return /^en[-_]GB/i.test(v.lang); }) || vs.find(function (v) { return /^en/i.test(v.lang); }) || null;
+  }
+  if (synth) { pickVoice(); if (synth.onvoiceschanged !== undefined) synth.onvoiceschanged = pickVoice; }
+  function stopAll() {
+    if (current) { try { current.pause(); } catch (e) {} current = null; }
+    if (synth) synth.cancel();
+    document.querySelectorAll(".say.playing").forEach(function (b) { b.classList.remove("playing"); });
+  }
+  // No synthetic voice: an audio that is not recorded yet says so.
+  function speak(text, btn, onend) {
+    toast("Cet audio est en cours d'enregistrement.");
+    if (onend) onend();
+  }
+  function play(text, btn, onend) {
+    var id = btn && btn.getAttribute("data-id");
+    if (!id || missing[id]) { speak(text, btn, onend); return; }
+    stopAll();
+    var rec = window.RECORDED_AUDIO || {};
+    var a = new Audio(rec[id] || ("audio/" + id + ".mp3")), fell = false;
+    function fallback() { if (fell) return; fell = true; missing[id] = true; if (current === a) current = null; speak(text, btn, onend); }
+    current = a; btn.classList.add("playing");
+    a.onended = function () { btn.classList.remove("playing"); if (current === a) current = null; if (onend) onend(); };
+    a.onerror = fallback;
+    var pr = a.play(); if (pr && pr.catch) pr.catch(fallback);
+  }
+  document.querySelectorAll(".say").forEach(function (b) { b.innerHTML = SPEAKER; });
+  document.addEventListener("click", function (e) {
+    var b = e.target.closest(".say[data-say]");
+    if (b) play(b.getAttribute("data-say"), b);
+  });
+
+  // ---------- tabs ----------
+  var tabs = Array.prototype.slice.call(document.querySelectorAll(".tab"));
+  function show(n, scroll) {
+    tabs.forEach(function (t, i) {
+      var on = i === n - 1;
+      t.setAttribute("aria-selected", String(on));
+      document.getElementById(t.getAttribute("aria-controls")).hidden = !on;
+    });
+    stopAll();
+    save("tab", String(n));
+    if (scroll) document.querySelector(".tabs").scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+  tabs.forEach(function (t, i) { t.addEventListener("click", function () { show(i + 1, false); }); });
+  document.querySelectorAll("[data-go]").forEach(function (b) { b.addEventListener("click", function () { show(+b.getAttribute("data-go"), true); }); });
+  var hash = (location.hash || "").replace("#", "");
+  show(hash === "lecon-2" ? 2 : hash === "lecon-1" ? 1 : (+load("tab", "1") || 1), false);
+
+  // ---------- dialogues ----------
+  document.querySelectorAll("[data-toggle-tr]").forEach(function (btn) {
+    var panel = btn.closest("section").querySelector(".dialogue");
+    btn.addEventListener("click", function () {
+      var on = btn.getAttribute("aria-pressed") !== "true";
+      btn.setAttribute("aria-pressed", String(on));
+      btn.textContent = on ? "Masquer la traduction" : "Afficher la traduction";
+      panel.querySelectorAll(".tr").forEach(function (p) { p.hidden = !on; });
+    });
+  });
+  document.querySelectorAll("[data-play-all]").forEach(function (btn) {
+    var buttons = Array.prototype.slice.call(btn.closest("section").querySelectorAll(".dialogue .say"));
+    btn.addEventListener("click", function () {
+      var i = 0;
+      (function next() { if (i >= buttons.length) return; var b = buttons[i++]; if (b.classList.contains("pending")) { next(); return; } play(b.getAttribute("data-say"), b, next); })();
+    });
+  });
+
+  // ---------- warm-ups ----------
+  document.querySelectorAll("[data-warm]").forEach(function (b) {
+    b.addEventListener("click", function () {
+      var fb = b.closest(".q").querySelector("[data-warm-fb]");
+      var ok = b.getAttribute("data-warm") === "1";
+      if (fb.hasAttribute("data-ok")) { fb.textContent = fb.getAttribute(ok ? "data-ok" : "data-ko"); fb.className = "feedback " + (ok ? "ok" : "ko"); }
+      fb.hidden = false;
+    });
+  });
+
+  // ---------- scoring (per lesson) ----------
+  function scorer(lesson) {
+    var results = {}, el = lesson.querySelector("[data-score]");
+    return function (id, ok) { results[id] = ok; var n = 0; for (var k in results) if (results[k]) n++; el.textContent = n + " / 6"; };
+  }
+  function feedback(fb, ok, text) { fb.hidden = false; fb.className = "feedback " + (ok ? "ok" : "ko"); fb.textContent = text; }
+
+  document.querySelectorAll(".lesson").forEach(function (lesson) {
+    var set = scorer(lesson);
+    lesson.querySelectorAll(".q[data-answer]").forEach(function (q, qi) {
+      var answer = +q.getAttribute("data-answer"), fb = q.querySelector(".feedback"), choices = q.querySelectorAll(".choice");
+      choices.forEach(function (c, i) {
+        c.addEventListener("click", function () {
+          choices.forEach(function (o) { o.classList.remove("right", "wrong"); });
+          var ok = i === answer;
+          c.classList.add(ok ? "right" : "wrong");
+          if (!ok) choices[answer].classList.add("right");
+          feedback(fb, ok, (ok ? "Correct. " : "Pas tout à fait. ") + q.getAttribute("data-why"));
+          set("mc" + qi, ok);
+        });
+      });
+    });
+    lesson.querySelectorAll("form[data-dictation]").forEach(function (f) {
+      f.addEventListener("submit", function (e) {
+        e.preventDefault();
+        var want = f.getAttribute("data-dictation");
+        var got = f.querySelector("input").value.toLowerCase().replace(/\s+/g, "");
+        var ok = got === want;
+        feedback(f.querySelector(".feedback"), ok, ok ? "Correct : " + want + ". « dot » = point, « at » = @." : "Réécoute : on entend « ngozi dot okafor at example dot com ». « dot » = point, « at » = @. La réponse : " + want);
+        set("dict", ok);
+      });
+    });
+    lesson.querySelectorAll("form[data-calc]").forEach(function (f) {
+      f.addEventListener("submit", function (e) {
+        e.preventDefault();
+        var got = parseFloat(f.querySelector("input").value.replace(",", "."));
+        var ok = got === +f.getAttribute("data-calc");
+        feedback(f.querySelector(".feedback"), ok, (ok ? "Correct. " : "Pas tout à fait. ") + f.getAttribute("data-why"));
+        set("calc", ok);
+      });
+    });
+    lesson.querySelectorAll(".q[data-gaps]").forEach(function (q) {
+      var want = q.getAttribute("data-gaps").split("|");
+      q.querySelector("[data-check-gaps]").addEventListener("click", function () {
+        var sel = q.querySelectorAll("select"), ok = true;
+        sel.forEach(function (s, i) { if (s.value !== want[i]) ok = false; });
+        feedback(q.querySelector(".feedback"), ok, ok ? "Parfait, les trois sont justes." : "Indice : " + q.getAttribute("data-hint"));
+        set("gaps", ok);
+      });
+    });
+  });
+
+  // ---------- reveal models ----------
+  document.querySelectorAll("[data-reveal]").forEach(function (btn) {
+    var box = btn.closest(".row").nextElementSibling;
+    btn.addEventListener("click", function () {
+      var open = box.hidden; box.hidden = !open;
+      btn.setAttribute("aria-expanded", String(open));
+      btn.textContent = btn.getAttribute(open ? "data-open" : "data-closed");
+    });
+  });
+
+  // ---------- numbers to British English words ----------
+  var ONES = ["zero","one","two","three","four","five","six","seven","eight","nine","ten","eleven","twelve","thirteen","fourteen","fifteen","sixteen","seventeen","eighteen","nineteen"];
+  var TENS = ["","","twenty","thirty","forty","fifty","sixty","seventy","eighty","ninety"];
+  function words(n) {
+    if (n < 20) return ONES[n];
+    if (n < 100) { var o = n % 10; return TENS[Math.floor(n / 10)] + (o ? "-" + ONES[o] : ""); }
+    var r = n % 100; return ONES[Math.floor(n / 100)] + " hundred" + (r ? " and " + words(r) : "");
+  }
+  function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+  var hpd = document.getElementById("hpd"), dpw = document.getElementById("dpw"), hpw = document.getElementById("hpw"), hs = document.getElementById("hours-sentence");
+  hpd.value = load("hpd", "2"); dpw.value = load("dpw", "5");
+  function hours() {
+    var a = parseInt(hpd.value, 10), b = parseInt(dpw.value, 10);
+    if (!(a >= 1 && a <= 16) || !(b >= 1 && b <= 7)) { hpw.textContent = "—"; hs.textContent = "Entre de 1 à 16 heures par jour et de 1 à 7 jours."; return; }
+    var t = a * b;
+    hpw.textContent = String(t);
+    hs.textContent = cap(words(a)) + " times " + words(b) + " equals " + words(t) + ". I practise coding " + words(t) + (t === 1 ? " hour" : " hours") + " a week.";
+    save("hpd", hpd.value); save("dpw", dpw.value);
+  }
+  hpd.addEventListener("input", hours); dpw.addEventListener("input", hours); hours();
+
+  // ---------- writing: word counters and saved drafts ----------
+  document.querySelectorAll("textarea[data-save]").forEach(function (ta) {
+    var counter = document.querySelector('[data-count-for="' + ta.id + '"]');
+    var min = +ta.getAttribute("data-min"), max = +ta.getAttribute("data-max");
+    ta.value = load(ta.getAttribute("data-save"), "");
+    function count() {
+      var n = (ta.value.trim().match(/\S+/g) || []).length;
+      counter.textContent = n + (n > 1 ? " mots" : " mot") + (n >= min && n <= max ? " · longueur idéale" : n > max ? " · un peu long" : " · objectif : " + min + " à " + max);
+    }
+    ta.addEventListener("input", function () { count(); save(ta.getAttribute("data-save"), ta.value); });
+    count();
+  });
+  document.querySelectorAll("[data-save-check]").forEach(function (el) {
+    el.checked = load(el.id, "0") === "1";
+    el.addEventListener("change", function () { save(el.id, el.checked ? "1" : "0"); });
+  });
+
+  // ---------- profile card ----------
+  var fields = ["p-name", "p-from", "p-study", "p-can", "p-know", "p-goal"].map(function (id) { return document.getElementById(id); });
+  fields.forEach(function (f) { f.value = load(f.id, ""); });
+  function val(f) { return (f.value || f.placeholder).trim().replace(/[.\s]+$/, ""); }
+  function sentence(s) { s = s.trim(); return s ? cap(s) + "." : ""; }
+  function card() {
+    var name = val(fields[0]);
+    document.getElementById("card-name").textContent = name;
+    document.getElementById("card-from").textContent = val(fields[1]);
+    document.getElementById("card-initials").textContent = name.split(/\s+/).map(function (w) { return w.charAt(0); }).join("").slice(0, 2).toUpperCase() || "?";
+    var can = val(fields[3]).replace(/^i can\s+/i, ""), know = val(fields[4]).replace(/^i know\s+/i, ""), goal = val(fields[5]).replace(/^i'?d like to be\s+/i, "");
+    document.getElementById("card-text").textContent = [sentence(val(fields[2])), "I can " + can + ".", "I know " + know + ".", "I'd like to be " + goal + "."].join(" ");
+    fields.forEach(function (f) { save(f.id, f.value); });
+  }
+  fields.forEach(function (f) { f.addEventListener("input", card); });
+  card();
+  // Buttons without a recording yet are shown as pending.
+  (function () {
+    var rec = window.RECORDED_AUDIO || {};
+    document.querySelectorAll(".say[data-id]").forEach(function (b) {
+      var id = b.getAttribute("data-id");
+      if (rec[id]) return;
+      b.classList.add("pending");
+      b.setAttribute("title", "Audio en cours d'enregistrement");
+      fetch("audio/" + id + ".mp3", { method: "HEAD" }).then(function (r) {
+        if (r.ok) { b.classList.remove("pending"); b.removeAttribute("title"); } else { missing[id] = true; }
+      }).catch(function () { missing[id] = true; });
+    });
+  })();
+})();
+</script>
+
+</body>
+</html>

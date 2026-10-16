@@ -53,6 +53,7 @@ src/
 │   ├── espace-instructeur/             # Marché des annonces, instructeurs approuvés — privé
 │   ├── forum/ , forum/[id]/            # Forum (Questions, Salle des profs) et page d'un sujet
 │   ├── bibliotheque/corriges/          # Étagère des corrigés, réservée aux comptes
+│   ├── anglais-technique/              # Manuels d'anglais technique : présentation et liste des chapitres (§7octodecies)
 │   ├── layout.tsx                      # Layout racine : métadonnées globales (Open Graph, Twitter Card, favicon, vérification Bing/Google — voir §7novies)
 │   ├── page.tsx                        # Vitrine (accueil), données structurées JSON-LD (EducationalOrganization), lien WhatsApp du footer (voir §8)
 │   ├── sitemap.ts                      # Génère /sitemap.xml (routes publiques, voir §7novies)
@@ -708,6 +709,16 @@ Branche `vitrine` (octobre 2026). L'accueil (`src/app/page.tsx`) ne parlait que 
 - **Nouvelle adresse de contact : `educonnect.ci@gmail.com`**, à la place de l'ancienne adresse personnelle, sur l'accueil et la page de confidentialité.
 - Coordonnées centralisées dans `src/lib/contact.ts` (`CONTACT_EMAIL`, `CONTACT_PHONES`, `GMAIL_COMPOSE_URL`, `CONTACT_VCARD_PATH`) ; **la fiche `public/educonnect.vcf` reprend les mêmes valeurs et doit être modifiée en même temps.** Les données structurées (JSON-LD) de l'accueil incluent désormais l'email et les numéros (`contactPoint`).
 - Les notifications envoyées à l'équipe partent toujours vers `ADMIN_NOTIFICATION_EMAIL` (variable Vercel), indépendante de l'adresse affichée.
+
+## 7octodecies. Anglais technique : chapitre 1 gratuit
+
+Branche `anglais-technique` (octobre 2026). Premier contenu des manuels bilingues d'anglais technique pour l'informatique (manuel A réseaux, cybersécurité et télécoms ; manuel B génie logiciel), conçus avec Claude et vendus plus tard sous la marque EduConnect.
+
+- **`/anglais-technique`** (`src/app/anglais-technique/page.tsx`, page serveur) : présentation des deux manuels et liste des chapitres (constante `CHAPTERS`). Ajoutée au menu déroulant (`NAV_LINKS` de `SiteHeader.tsx`, après « Bibliothèque ») et au sitemap.
+- **Chapitres** : chaque chapitre est une **page HTML autonome** dans `public/lecons/<dossier>/index.html` (styles, scripts et logo intégrés, aucune dépendance au reste du site), servie telle quelle par Vercel. Le logo de la page renvoie vers `/anglais-technique`. Le chapitre 1 (*Introducing Yourself and Your IT Background*, A1, 2 leçons) est **en accès libre** : c'est le produit d'appel.
+- **Audios** : `public/lecons/<dossier>/audio/aNN.mp3`, un fichier par bouton (identifiant `data-id` dans la page). **Aucune voix de synthèse** : tant qu'un fichier manque, son bouton s'affiche en pointillés « audio en cours d'enregistrement » et s'active dès que le fichier est déposé (la page vérifie sa présence par une requête `HEAD`). Les enregistrements bruts sont nettoyés et convertis par Claude avant d'être déposés.
+- La page enregistre seulement des préférences locales (onglet ouvert, brouillons, cases cochées) dans le `localStorage` du navigateur, préfixe `ec-ch01-`. Rien n'est envoyé au serveur.
+- **À venir (chapitres payants)** : comptes apprenants, paiement Mobile Money, leçons et audios dans R2 privé servis par URL signée, filigrane au nom de l'acheteur, enregistrement de la voix des apprenants. Les chapitres payants ne devront **pas** être placés dans `public/`, qui est accessible à tous.
 
 ---
 
