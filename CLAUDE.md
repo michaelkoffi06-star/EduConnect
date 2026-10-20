@@ -96,7 +96,7 @@ bloquant (`next build` ne lance pas le lint), ne pas chercher à tout corriger a
 
 - Pages comptes/forum/espace instructeur : composants communs dans `src/components/compte/ui.tsx`,
   fonds photo Unsplash dans `public/images/comptes/` (crédits en §7quindecies).
-- **Photos de fond immobiles** (ni zoom ni glissement), **cartes flottantes droites** (`animate-float-y`,
+- **Photos de fond immobiles** (ni zoom ni glissement), **cartes flottantes droites**, accueil compris (`animate-float-y`,
   sans rotation), fondu entre les pages via `src/components/PageTransition.tsx`.
 - Ne jamais laisser de `filter`/`transform` actif en permanence sur un conteneur de page (même
   `blur(0px)`) : ça dérègle les éléments `position: fixed` et `backdrop-blur` à l'intérieur — revenir

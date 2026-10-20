@@ -146,7 +146,7 @@ export default async function HomePage() {
 
           <ScrollReveal delay={150}>
             <div className="relative max-w-sm mx-auto lg:mx-0">
-              <div className="relative bg-white border border-[#eee6d3] rounded-[2rem] p-8 shadow-[0_20px_60px_-15px_rgba(13,27,62,0.15)] animate-float">
+              <div className="relative bg-white border border-[#eee6d3] rounded-[2rem] p-8 shadow-[0_20px_60px_-15px_rgba(13,27,62,0.15)] animate-float-y">
                 <div className="flex items-center mb-6">
                   {instructors.slice(0, 4).map((inst, i) => (
                     <div
@@ -187,7 +187,7 @@ export default async function HomePage() {
                 </div>
               </div>
 
-              <div className="absolute -top-4 -right-4 w-14 h-14 rounded-full bg-[#c9951a] text-white flex items-center justify-center rotate-6 shadow-lg">
+              <div className="absolute -top-4 -right-4 w-14 h-14 rounded-full bg-[#c9951a] text-white flex items-center justify-center shadow-lg">
                 <span className="text-xl">✓</span>
               </div>
             </div>

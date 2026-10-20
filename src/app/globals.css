@@ -33,6 +33,7 @@ body {
   animation: fadeInUp 0.5s ease both;
 }
 
+/* Plus utilisée par l'accueil depuis octobre 2026 (carte redressée : animate-float-y) */
 @keyframes float {
   0%, 100% { transform: rotate(-1deg) translateY(0); }
   50% { transform: rotate(-1deg) translateY(-14px); }
@@ -69,8 +70,7 @@ body {
   animation: drift 16s ease-in-out infinite;
 }
 
-/* Flottement vertical, sans rotation (cartes flottantes des pages de comptes et du forum).
-   L'animation « float » de l'accueil garde sa légère inclinaison. */
+/* Flottement vertical, sans rotation : toutes les cartes flottantes du site (accueil, comptes, forum). */
 @keyframes floatY {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-10px); }
