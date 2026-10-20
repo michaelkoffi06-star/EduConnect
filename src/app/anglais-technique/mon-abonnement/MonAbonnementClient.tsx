@@ -102,7 +102,7 @@ function PaymentForm({ sub, numbers, onDone }: { sub: Subscription; numbers: Dat
           <label className={labelClass} htmlFor={`method-${sub.id}`}>Moyen de paiement</label>
           <select id={`method-${sub.id}`} required value={method} onChange={(e) => setMethod(e.target.value as PaymentMethod)} className={inputClass}>
             <option value="">Choisir…</option>
-            {(Object.keys(PAYMENT_METHODS) as PaymentMethod[]).map((m) => (
+            {(numbers.length > 0 ? numbers.map((n) => n.method) : (Object.keys(PAYMENT_METHODS) as PaymentMethod[])).map((m) => (
               <option key={m} value={m}>{PAYMENT_METHODS[m]}</option>
             ))}
           </select>

@@ -163,6 +163,9 @@ export function sendEnglishReminderEmail(to: string, firstName: string, planLabe
 }
 
 // Annonce d'un nouveau contenu. Envoi groupé (100 emails par appel à Resend) ; renvoie le nombre accepté.
+// Les lots sont espacés (limite de débit de Resend) et un lot refusé est retenté une fois.
+const BATCH_PAUSE_MS = 600;
+const pause = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 export async function sendEnglishAnnouncementEmails(
   recipients: { email: string; firstName: string; unsubscribeLink: string }[],
   title: string,
@@ -183,12 +186,19 @@ export async function sendEnglishAnnouncementEmails(
          <p style="font-size: 12px; color: #888;">Tu reçois cet email car tu as accepté les nouveautés de l'anglais technique EduConnect. <a href="${r.unsubscribeLink}">Ne plus recevoir ces emails</a>.</p>`
       ),
     }));
-    try {
-      const { error } = await getResendClient().batch.send(batch);
-      if (error) console.error('⚠️ Annonce anglais technique : lot non envoyé :', JSON.stringify(error));
-      else sent += batch.length;
-    } catch (err) {
-      console.error('⚠️ Annonce anglais technique : lot non envoyé :', err);
+    if (i > 0) await pause(BATCH_PAUSE_MS);
+    for (let attempt = 1; attempt <= 2; attempt++) {
+      try {
+        const { error } = await getResendClient().batch.send(batch);
+        if (!error) {
+          sent += batch.length;
+          break;
+        }
+        console.error(`⚠️ Annonce anglais technique : lot non envoyé (essai ${attempt}) :`, JSON.stringify(error));
+      } catch (err) {
+        console.error(`⚠️ Annonce anglais technique : lot non envoyé (essai ${attempt}) :`, err);
+      }
+      if (attempt === 1) await pause(BATCH_PAUSE_MS * 3);
     }
   }
   return sent;

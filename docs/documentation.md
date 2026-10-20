@@ -761,6 +761,14 @@ Branche `abonnements-anglais` (octobre 2026), partie de `anglais-technique`. Les
 
 **Mise en production** : `npx prisma db push` sur Neon avant la fusion (nouvelles tables et enums, nouvelle valeur `APPRENANT`) ; variables Vercel `CRON_SECRET` et, à l'ouverture, `ENGLISH_PAYMENT_NUMBERS`.
 
+**Corrections après relecture** (branche `anglais-corrections`, octobre 2026, sans changement de schéma) :
+- la déclaration de paiement est une mise à jour conditionnelle (statut encore en attente) : si l'équipe valide au même instant, l'abonnement activé n'est plus remis « à vérifier » (409 côté apprenant) ;
+- `isPlan` / `isPaymentMethod` utilisent `Object.hasOwn` (« in » acceptait `constructor`, `toString`… et provoquait des 500) ; seuls les moyens de paiement configurés sont proposés et acceptés ;
+- tâche quotidienne : `CRON_SECRET` comparé sur les longueurs en octets (un en-tête non ASCII provoquait une 500) ;
+- annonces : enregistrées avant l'envoi (pas de double envoi si l'écriture échouait), lots Resend espacés de 0,6 s avec une nouvelle tentative, nombre de destinataires affiché = comptes confirmés seulement ;
+- annulation par mise à jour conditionnelle.
+- **À respecter quand les chapitres payants seront servis** : un renouvellement validé est `ACTIVE` avec un `startsAt` dans le futur ; l'accès doit vérifier `status = ACTIVE` **et** `startsAt <= maintenant < endsAt`, pas le statut seul.
+
 ---
 
 ## 8. Historique de conception (pour contexte)

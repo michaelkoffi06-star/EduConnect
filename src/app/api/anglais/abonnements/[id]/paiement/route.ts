@@ -3,7 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { getCurrentUser, unauthorized } from '@/lib/user-session';
 import { rateLimit, HOUR } from '@/lib/rate-limit';
 import { sendEnglishPaymentDeclaredAlert } from '@/lib/user-emails';
-import { PAYMENT_METHODS, cleanText, formatFcfa, isPaymentMethod, subscriptionLabel } from '@/lib/english';
+import { PAYMENT_METHODS, cleanText, formatFcfa, isPaymentMethod, paymentNumbers, subscriptionLabel } from '@/lib/english';
 
 // POST /api/anglais/abonnements/[id]/paiement — l'apprenant déclare son paiement Mobile Money
 // (moyen + identifiant de transaction). L'équipe le vérifie puis valide dans /administratif
@@ -22,6 +22,11 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     const method = body?.method;
     const transactionId = cleanText(body?.transactionId, 60);
     if (!isPaymentMethod(method)) return NextResponse.json({ error: 'Choisis le moyen de paiement.' }, { status: 400 });
+    // Seuls les moyens dont un numéro est configuré sont proposés (tous, si aucun ne l'est encore)
+    const configured = paymentNumbers();
+    if (configured.length > 0 && !configured.some((n) => n.method === method)) {
+      return NextResponse.json({ error: 'Ce moyen de paiement n’est pas proposé.' }, { status: 400 });
+    }
     if (transactionId.length < 4) {
       return NextResponse.json({ error: 'Saisis l’identifiant de la transaction (reçu par SMS).' }, { status: 400 });
     }
@@ -35,10 +40,15 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       return NextResponse.json({ error: 'Cet abonnement n’attend pas de paiement.' }, { status: 400 });
     }
 
-    await prisma.englishSubscription.update({
-      where: { id: sub.id },
+    // Mise à jour conditionnelle : si l'équipe valide au même instant, la déclaration ne doit pas
+    // remettre « à vérifier » un abonnement qui vient de passer ACTIVE (double validation, double email).
+    const { count } = await prisma.englishSubscription.updateMany({
+      where: { id: sub.id, userId: user.id, status: { in: ['PENDING_PAYMENT', 'PAYMENT_DECLARED'] } },
       data: { status: 'PAYMENT_DECLARED', paymentMethod: method, transactionId, declaredAt: new Date(), adminNote: null },
     });
+    if (count === 0) {
+      return NextResponse.json({ error: 'Cet abonnement vient d’être traité par l’équipe. Recharge la page.' }, { status: 409 });
+    }
 
     await sendEnglishPaymentDeclaredAlert(
       `${user.firstName} ${user.lastName} <${user.email}>`,

@@ -39,7 +39,8 @@ export async function GET(req: NextRequest) {
         },
       }),
       prisma.englishSubscription.groupBy({ by: ['status'], _count: { _all: true } }),
-      prisma.user.count({ where: { englishNewsOptIn: true, englishSubscriptions: { some: {} } } }),
+      // Mêmes critères que l'envoi réel (comptes confirmés uniquement)
+      prisma.user.count({ where: { englishNewsOptIn: true, emailVerifiedAt: { not: null }, englishSubscriptions: { some: {} } } }),
     ]);
 
     const counts = Object.fromEntries(STATUSES.map((s) => [s, 0])) as Record<EnglishSubscriptionStatus, number>;

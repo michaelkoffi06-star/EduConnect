@@ -51,11 +51,15 @@ export async function POST(req: NextRequest) {
       firstName: u.firstName,
       unsubscribeLink: `${origin}/anglais-technique/nouveautes?u=${encodeURIComponent(u.id)}&s=${newsUnsubscribeSignature(u.id)}`,
     }));
-    const sentCount = await sendEnglishAnnouncementEmails(recipients, title, message, link);
-
-    const announcement = await prisma.englishAnnouncement.create({
-      data: { title, message, link, sentCount, sentBy: req.headers.get('x-admin-id') },
+    // L'annonce est enregistrée AVANT l'envoi : si l'écriture échouait après coup, l'équipe
+    // recommencerait et chacun recevrait l'email deux fois.
+    const created = await prisma.englishAnnouncement.create({
+      data: { title, message, link, sentCount: 0, sentBy: req.headers.get('x-admin-id') },
     });
+    const sentCount = await sendEnglishAnnouncementEmails(recipients, title, message, link);
+    const announcement = await prisma.englishAnnouncement
+      .update({ where: { id: created.id }, data: { sentCount } })
+      .catch(() => ({ ...created, sentCount }));
     return NextResponse.json({ ...announcement, recipients: recipients.length }, { status: 201 });
   } catch (error) {
     console.error('Erreur API Admin annonce anglais :', error);

@@ -65,10 +65,11 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     }
 
     if (action === 'cancel') {
-      if (sub.status === 'CANCELLED' || sub.status === 'EXPIRED') {
-        return NextResponse.json({ error: 'Cet abonnement est déjà terminé.' }, { status: 409 });
-      }
-      await prisma.englishSubscription.update({ where: { id }, data: { status: 'CANCELLED', ...(note ? { adminNote: note } : {}) } });
+      const { count } = await prisma.englishSubscription.updateMany({
+        where: { id, status: { notIn: ['CANCELLED', 'EXPIRED'] } },
+        data: { status: 'CANCELLED', ...(note ? { adminNote: note } : {}) },
+      });
+      if (count === 0) return NextResponse.json({ error: 'Cet abonnement est déjà terminé.' }, { status: 409 });
       return NextResponse.json({ ok: true, status: 'CANCELLED' });
     }
 

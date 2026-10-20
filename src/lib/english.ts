@@ -8,8 +8,10 @@ export { MANUALS, PAYMENT_METHODS, PLANS, formatFcfa, subscriptionLabel, type Pa
 // des inscriptions, références de paiement et liens de désinscription. Les formules et les prix
 // sont dans english-plans.ts ; tant qu'un prix ou les numéros manquent, la formule reste fermée.
 
+// Object.hasOwn et non « in » : « in » accepte aussi les noms hérités de l'objet
+// (constructor, toString, __proto__…), qui provoquaient une erreur 500 au lieu d'un refus.
 export function isPaymentMethod(value: unknown): value is PaymentMethod {
-  return typeof value === 'string' && value in PAYMENT_METHODS;
+  return typeof value === 'string' && Object.hasOwn(PAYMENT_METHODS, value);
 }
 
 export function isManual(value: unknown): value is EnglishManual {
@@ -17,7 +19,7 @@ export function isManual(value: unknown): value is EnglishManual {
 }
 
 export function isPlan(value: unknown): value is EnglishPlan {
-  return typeof value === 'string' && value in PLANS;
+  return typeof value === 'string' && Object.hasOwn(PLANS, value);
 }
 
 // Numéros marchands où payer, lus dans ENGLISH_PAYMENT_NUMBERS (variable Vercel), au format
