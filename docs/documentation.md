@@ -125,6 +125,7 @@ src/
 │           ├── market-offers/ + [id]/ , market-interests/[id]/ # Marché : annonces et décisions sur les candidatures
 │           ├── english-subscriptions/ + [id]/     # Anglais technique : liste, validation/refus des paiements, annulation (§7novodecies)
 │           ├── english-announcements/route.ts     # Anglais technique : annonce « nouveau contenu » par email
+│           ├── site-users/route.ts                # Comptes du site : liste, chiffres, export CSV (SUPER_ADMIN, §7vicies)
 │           └── forum/route.ts                     # Modération : signalements, masquer/rétablir
 │       ├── compte/**                         # Comptes utilisateurs : inscription, connexion, confirmation, mot de passe (voir §7quindecies)
 │       ├── anglais/**                        # Anglais technique : inscription, abonnements, déclaration de paiement, préférences, désinscription (§7novodecies)
@@ -140,6 +141,7 @@ src/
 │   ├── admin/LibraryManager.tsx     # Onglet Bibliothèque commun aux 3 panneaux admin (canEdit), colonne Corrigé
 │   ├── admin/MarketManager.tsx      # Onglet Marché (/bleSseD, /administratif)
 │   ├── admin/EnglishSubscriptionsManager.tsx # Onglet Anglais technique (/bleSseD, /administratif) : paiements à vérifier, annonces
+│   ├── admin/SiteUsersManager.tsx   # Onglet Utilisateurs du site (/bleSseD) : chiffres, liste, copie des emails, export CSV (§7vicies)
 │   ├── admin/ForumModeration.tsx    # Onglet Forum (/bleSseD, /pedagogie)
 │   ├── compte/ui.tsx                # Styles et composants des pages de comptes, hook useAccount()
 │   ├── forum/shared.tsx             # Auteur + badge, dates relatives du forum
@@ -771,6 +773,18 @@ Branche `abonnements-anglais` (octobre 2026), partie de `anglais-technique`. Les
 
 ---
 
+## 7vicies. Tableau de bord des comptes du site (super-admin)
+
+Branche `comptes-utilisateurs` (octobre 2026). Nouvel onglet **« Utilisateurs du site »** dans `/bleSseD` (l'ancien onglet « Comptes », qui gère les comptes de l'équipe, s'appelle désormais « Comptes de l'équipe »).
+
+- **Chiffres** (sur l'ensemble des comptes, indépendants des filtres) : total et nouveaux comptes sur 30 jours, nombre d'élèves, de parents, d'instructeurs et d'apprenants (anglais technique), emails confirmés.
+- **Liste** filtrable par type de compte, par email confirmé ou non, et par recherche (nom ou email) : nom, email (lien `mailto:`), type (et statut de la fiche pour un instructeur), classe ou études, activité (messages du forum, inscriptions à l'anglais technique), date d'inscription. 5 000 comptes au plus, les plus récents.
+- **Récupérer les emails** : « Copier les emails » met les adresses de la liste affichée dans le presse-papiers, séparées par des virgules (à coller en « Cci ») ; « Exporter en CSV » télécharge la même liste (prénom, nom, email, type, email confirmé, classe/études, date), avec la même protection contre les formules Excel que l'export instructeur (§7sedecies).
+- **API** : `GET /api/bleSseD/site-users` (`?role=`, `?verified=yes|no`, `?q=`, `?format=csv`), **réservée à `SUPER_ADMIN`** (`requireRole`), réponses `Cache-Control: no-store`. Composant `src/components/admin/SiteUsersManager.tsx`.
+- **Usage des adresses** : la page de confidentialité indique que les données servent à la gestion des comptes et ne sont ni vendues ni partagées. Écrire aux inscrits pour le service (nouveautés du site, information) reste dans ce cadre ; pour des envois réguliers, prévoir un lien pour ne plus les recevoir, comme pour les annonces de l'anglais technique (§7novodecies).
+
+---
+
 ## 8. Historique de conception (pour contexte)
 
 Le projet a démarré comme deux choses séparées : une vitrine statique HTML/CSS/JS, et une app Next.js indépendante pour la gestion des instructeurs. Elles ont été fusionnées dans un seul projet Next.js pour simplifier le déploiement et la maintenance. Le design a ensuite évolué d'un thème sombre "glassmorphism" chargé vers un style plus sobre (fond blanc, moins de sections), avec un header unique simplifié (logo + menu hamburger) partagé entre toutes les pages sauf l'admin, resté en thème sombre.
@@ -822,6 +836,8 @@ La vitrine a ensuite été complétée (voir §7septdecies) pour présenter la b
 Le rôle ADMINISTRATIF a ensuite reçu les mêmes droits que SUPER_ADMIN et PEDAGOGIE sur la bibliothèque (ajout, modification et suppression des documents, chapitres et corrigés, couleurs des matières) : routes `/api/bleSseD/resources/**`, `chapters/**`, `corrections/**` et `subjects/[id]` ouvertes aux trois rôles, onglet Bibliothèque de `/administratif` en mode édition.
 
 Les manuels d'anglais technique pour l'informatique ont ensuite fait leur entrée sur le site (voir §7octodecies) : page `/anglais-technique` dans le menu, chapitre 1 gratuit en page autonome avec audios enregistrés (aucune voix de synthèse). Une version pro a suivi (§7novodecies, branche `abonnements-anglais`) : inscription avec études ou métier, formules à durée fixe, paiement Mobile Money déclaré par l'apprenant et validé par l'équipe en attendant un agrégateur, rappel automatique une semaine avant la fin et annonces des nouveaux contenus.
+
+Un tableau de bord des comptes du site a ensuite été ajouté au panneau super-admin (voir §7vicies) : chiffres par type de compte, liste filtrable, copie des emails et export CSV.
 
 Reste à traiter : l'analytics, le système de notation, et le pipeline de vérification automatique.
 

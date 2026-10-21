@@ -8,6 +8,7 @@ import LibraryManager from '@/components/admin/LibraryManager';
 import MarketManager from '@/components/admin/MarketManager';
 import EnglishSubscriptionsManager from '@/components/admin/EnglishSubscriptionsManager';
 import ForumModeration from '@/components/admin/ForumModeration';
+import SiteUsersManager from '@/components/admin/SiteUsersManager';
 
 interface Subject { id: string; name: string; }
 
@@ -53,7 +54,7 @@ interface WaitlistEntry {
 }
 
 type FilterOption = 'ALL' | 'PENDING' | 'APPROVED' | 'SUSPENDED';
-type AdminTab = 'instructors' | 'requests' | 'feedback' | 'waitlist' | 'resources' | 'market' | 'english' | 'forum' | 'accounts';
+type AdminTab = 'instructors' | 'requests' | 'feedback' | 'waitlist' | 'resources' | 'market' | 'english' | 'forum' | 'siteUsers' | 'accounts';
 
 interface AdminAccount {
   id: string;
@@ -629,12 +630,20 @@ export default function AdminPage() {
             Forum
           </button>
           <button
+            onClick={() => setTab('siteUsers')}
+            className={`px-4 py-2.5 text-sm font-semibold border-b-2 -mb-px transition ${
+              tab === 'siteUsers' ? 'border-[#c9951a] text-[#c9951a]' : 'border-transparent text-gray-400 hover:text-white'
+            }`}
+          >
+            Utilisateurs du site
+          </button>
+          <button
             onClick={() => setTab('accounts')}
             className={`px-4 py-2.5 text-sm font-semibold border-b-2 -mb-px transition ${
               tab === 'accounts' ? 'border-[#c9951a] text-[#c9951a]' : 'border-transparent text-gray-400 hover:text-white'
             }`}
           >
-            Comptes
+            Comptes de l&apos;équipe
           </button>
         </div>
 
@@ -995,6 +1004,7 @@ export default function AdminPage() {
         {tab === 'market' && <MarketManager />}
         {tab === 'english' && <EnglishSubscriptionsManager />}
         {tab === 'forum' && <ForumModeration />}
+        {tab === 'siteUsers' && <SiteUsersManager />}
         {tab === 'accounts' && (
           <div className="space-y-6">
             <div className="bg-[#112240] rounded-2xl border border-[#2a4a6e] p-5">
