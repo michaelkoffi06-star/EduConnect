@@ -11,6 +11,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Ubuntu:ital,wght@0,400;0,500;0,700;1,400&family=Ubuntu+Mono:wght@400;700&display=swap">
 <style>
+/* Les éléments masqués (leçon inactive, modèles) restent masqués malgré leur display: flex */
+[hidden] { display: none !important; }
 /* Layout: one reading column (max 720px), brand bar, chapter hero with a "video call" tile, lesson tabs, then each lesson's steps as stacked sections. */
 :root {
   --bg: #F5F7FB; --surface: #FFFFFF; --ink: #1C1C1C; --muted: #56657A; --line: #DCE2EE;
