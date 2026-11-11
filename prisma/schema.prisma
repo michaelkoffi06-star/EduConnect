@@ -297,6 +297,8 @@ model User {
   forumPosts           ForumPost[]
   forumReports         ForumReport[]
   englishSubscriptions EnglishSubscription[]
+  englishLessonProgress  EnglishLessonProgress[]
+  englishChapterProgress EnglishChapterProgress[]
 }
 
 // 22. Jetons à usage unique envoyés par email (confirmation d'adresse, mot de passe oublié)
@@ -516,4 +518,43 @@ model AppWaitlistEntry {
   whatsapp   String?   @unique // format international, ex. "+2250700000000"
   notifiedAt DateTime? // prévenu de la sortie (une seule fois)
   createdAt  DateTime  @default(now())
+}
+
+// 38. Progression d'un compte dans une leçon d'anglais technique (§7duovicies). Une ligne par
+// compte, chapitre et leçon. Les valeurs ne font que monter (meilleur score, date de réussite
+// posée une seule fois) : recommencer un exercice ne fait jamais perdre une leçon validée.
+model EnglishLessonProgress {
+  id          String    @id @default(uuid())
+  userId      String
+  chapter     Int // numéro du chapitre (1, 2…)
+  lesson      Int // numéro de la leçon dans le chapitre (1, 2…)
+  bestScore   Int       @default(0) // meilleur score obtenu aux exercices de la leçon
+  maxScore    Int // nombre d'exercices notés de la leçon (6 au chapitre 1)
+  completedAt DateTime? // date à laquelle la leçon a atteint 70 % ; null tant qu'elle ne l'a pas atteint
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, chapter, lesson])
+  @@index([userId])
+}
+
+// 39. Progression d'un compte dans un chapitre d'anglais technique (§7duovicies) : les critères
+// qui ne dépendent pas d'une leçon, et la date à laquelle le chapitre entier a été terminé.
+model EnglishChapterProgress {
+  id            String    @id @default(uuid())
+  userId        String
+  chapter       Int
+  selfCheckDone Boolean   @default(false) // toutes les cases « Je peux… » cochées au moins une fois
+  messageWords  Int       @default(0) // plus grand nombre de mots écrits dans le message du chapitre
+  challengeDone Boolean   @default(false) // défi du chapitre joué au moins une fois (s'il en a un)
+  completedAt   DateTime? // chapitre terminé : débloque le suivant ; jamais remis à null
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, chapter])
+  @@index([userId])
 }

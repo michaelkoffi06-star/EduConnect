@@ -4,6 +4,7 @@ import type { EnglishPlan } from "@prisma/client";
 import { CONTACT_EMAIL } from "@/lib/contact";
 import { PLANS, formatFcfa, isPlanOpen } from "@/lib/english";
 import AppWaitlistForm from "@/components/anglais/AppWaitlistForm";
+import ChapterList from "./ChapterList";
 
 export const metadata: Metadata = {
   title: "EduConnect - Anglais technique pour l'informatique",
@@ -14,20 +15,6 @@ export const metadata: Metadata = {
 
 // Les formules affichées dépendent des prix et des numéros de paiement (variables d'environnement)
 export const dynamic = "force-dynamic";
-
-// Chapitres publiés. Chaque chapitre est une page autonome dans public/lecons/<dossier>/index.html,
-// ses audios dans public/lecons/<dossier>/audio/aNN.mp3 (voir docs/documentation.md §7octodecies).
-const CHAPTERS = [
-  {
-    number: 1,
-    title: "Introducing Yourself and Your IT Background",
-    subtitle: "Se présenter et parler de son parcours en informatique",
-    level: "A1",
-    lessons: "2 leçons · ≈ 90 min",
-    href: "/lecons/chapitre-01/index.html",
-    free: true,
-  },
-];
 
 // Ce qu'apportera l'application mobile (février 2027, §7unvicies)
 const APP_FEATURES = [
@@ -72,30 +59,9 @@ export default function AnglaisTechniquePage() {
           ))}
         </div>
 
-        <h2 className="font-[family-name:var(--font-cinzel)] text-lg text-[#0d1b3e] mb-4">Chapitres disponibles</h2>
-        <ul className="space-y-3">
-          {CHAPTERS.map((c) => (
-            <li key={c.number}>
-              <a
-                href={c.href}
-                className="block bg-white rounded-3xl border border-[#eee6d3] shadow-sm p-6 transition hover:border-[#c9951a]"
-              >
-                <span className="flex flex-wrap items-center gap-2 text-xs font-medium">
-                  <span className="rounded-full bg-[#f6f1e4] px-2.5 py-0.5 text-[#0d1b3e]">Chapitre {c.number}</span>
-                  <span className="rounded-full bg-[#f6f1e4] px-2.5 py-0.5 text-[#8a6510]">Niveau {c.level}</span>
-                  {c.free && (
-                    <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-emerald-700">Gratuit</span>
-                  )}
-                </span>
-                <span className="mt-3 block font-semibold text-[#0d1b3e]">{c.title}</span>
-                <span className="mt-1 block text-sm text-gray-600">
-                  {c.subtitle} · {c.lessons}
-                </span>
-                <span className="mt-3 block text-sm font-semibold text-[#c9951a]">Commencer →</span>
-              </a>
-            </li>
-          ))}
-        </ul>
+        <h2 className="font-[family-name:var(--font-cinzel)] text-lg text-[#0d1b3e] mb-4">Chapitres</h2>
+        {/* Liste des chapitres avec la progression du compte connecté (§7duovicies) */}
+        <ChapterList />
 
         <p className="text-sm text-gray-500 mt-8 text-center">
           Les chapitres suivants arrivent bientôt. Une question ? Écris-nous à {CONTACT_EMAIL}.

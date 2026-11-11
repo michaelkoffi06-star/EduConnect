@@ -47,6 +47,8 @@ src/
 │   ├── user-emails.ts                  # Emails aux comptes (confirmation, mot de passe oublié, instructeur retenu, anglais technique)
 │   ├── english-plans.ts                # Anglais technique : manuels, formules (durées, prix), moyens de paiement — importable côté client (§7novodecies)
 │   ├── english.ts                      # Anglais technique, serveur : numéros de paiement, référence AT-XXXXXX, dates, lien de désinscription signé (§7novodecies)
+│   ├── english-chapters.ts             # Anglais technique : liste des chapitres et règles de progression (70 %, critères de fin, verrous) — importable côté client (§7duovicies)
+│   ├── english-progress.ts             # Anglais technique, serveur : enregistrement et lecture de la progression (§7duovicies)
 │   └── market.ts / forum.ts            # Marché des instructeurs et forum : validation, règles d'accès
 ├── app/
 │   ├── inscription/ , connexion/       # Création de compte (élève/parent/instructeur) et connexion — page.tsx + <Nom>Client.tsx
@@ -89,6 +91,7 @@ src/
 │       └── login/page.tsx              # Connexion partagée PEDAGOGIE / ADMINISTRATIF, redirige selon le rôle renvoyé (voir §7decies)
 ├── api/
 │       ├── instructors/route.ts              # Liste publique des instructeurs (APPROVED), filtrable (matière/niveau/mode/ville/commune)
+│       ├── anglais/progression/route.ts      # GET/POST : progression d'anglais technique du compte connecté (§7duovicies)
 │       ├── subjects/route.ts                 # Liste des matières
 │       ├── contact/route.ts                  # Demande de mise en relation → admin
 │       ├── contact-message/route.ts          # Formulaire de contact général → admin
@@ -187,6 +190,8 @@ private-uploads/
 - **`EnglishSubscription`** + **`EnglishManual`** *(`A`/`B`)*, **`EnglishPlan`** *(`AUTONOME`/`GUIDE`/`SPRINT`/`COACHE`)*, **`EnglishSubscriptionStatus`** *(`PENDING_PAYMENT`/`PAYMENT_DECLARED`/`ACTIVE`/`EXPIRED`/`CANCELLED`)* — abonnement d'un compte à un manuel d'anglais technique : prix figé à l'inscription (`priceFcfa`), `reference` unique à mettre dans le motif du paiement, moyen et identifiant de transaction déclarés par l'apprenant, `adminNote` (motif de refus), `validatedBy`, `startsAt`/`endsAt`, `reminderSentAt`. §7novodecies.
 - **`EnglishAnnouncement`** — annonce « nouveau contenu » envoyée par l'équipe (titre, message, lien, nombre d'emails acceptés, auteur).
 - **`AppWaitlistEntry`** — contact laissé pour être prévenu de la sortie de l'application mobile : `email` ou `whatsapp` (uniques, format international +225…), `notifiedAt`. §7unvicies.
+- **`EnglishLessonProgress`** — progression d'un compte dans une leçon d'anglais technique : `chapter`, `lesson`, `bestScore` (meilleur score), `maxScore`, `completedAt` (date où la leçon a atteint 70 %). Unique par `(userId, chapter, lesson)`. §7duovicies.
+- **`EnglishChapterProgress`** — critères d'un chapitre qui ne dépendent pas d'une leçon (`selfCheckDone`, `messageWords`, `challengeDone`) et `completedAt` (chapitre terminé, débloque le suivant). Unique par `(userId, chapter)`. §7duovicies.
 - **`UserToken`** + **`UserTokenType`** *(`VERIFY_EMAIL`/`RESET_PASSWORD`)* — jeton à usage unique envoyé par email ; seule l'empreinte SHA-256 (`tokenHash`) est stockée, avec `expiresAt`/`usedAt`.
 - **`Correction`** — corrigé d'une `Resource` (un seul par ressource, `resourceId` unique) : `fileExt`, compteurs vues/téléchargements. Fichier dans le bucket R2 privé, `corrections/<id>.<ext>`.
 - **`MarketOffer`** + **`MarketOfferStatus`** *(`OPEN`/`FILLED`/`CLOSED`)* — annonce du marché des instructeurs, publiée par l'équipe (matière, niveau, classe, mode, lieu, rythme, rémunération, description — jamais les coordonnées de la famille).
@@ -690,6 +695,7 @@ Revue de toutes les routes API (66) et du middleware, faite le 01/10/2026 ; corr
 | `/api/anglais/abonnements/[id]/paiement` | 10 / heure |
 | `/api/anglais/nouveautes` | 20 / heure |
 | `/api/anglais/application` (§7unvicies) | 5 / heure |
+| `/api/anglais/progression` (POST, §7duovicies) | 300 / heure |
 | `/api/register-instructor` | 10 / heure |
 | `/api/register-instructor/presign`, `/api/instructors/edit/[token]/files/presign` | 30 / heure |
 
@@ -752,7 +758,7 @@ Branche `anglais-technique` (octobre 2026). Premier contenu des manuels bilingue
 - **`/anglais-technique`** (`src/app/anglais-technique/page.tsx`, page serveur) : présentation des deux manuels et liste des chapitres (constante `CHAPTERS`). Ajoutée au menu déroulant (`NAV_LINKS` de `SiteHeader.tsx`, après « Bibliothèque ») et au sitemap.
 - **Chapitres** : chaque chapitre est une **page HTML autonome** dans `public/lecons/<dossier>/index.html` (styles, scripts et logo intégrés, aucune dépendance au reste du site), servie telle quelle par Vercel. Le logo de la page renvoie vers `/anglais-technique`. Le chapitre 1 (*Introducing Yourself and Your IT Background*, A1, 2 leçons) est **en accès libre** : c'est le produit d'appel.
 - **Audios** : `public/lecons/<dossier>/audio/aNN.mp3`, un fichier par bouton (identifiant `data-id` dans la page). **Aucune voix de synthèse** : tant qu'un fichier manque, son bouton s'affiche en pointillés « audio en cours d'enregistrement » et s'active dès que le fichier est déposé (la page vérifie sa présence par une requête `HEAD`). Les enregistrements bruts sont nettoyés et convertis par Claude avant d'être déposés.
-- La page enregistre seulement des préférences locales (onglet ouvert, brouillons, cases cochées) dans le `localStorage` du navigateur, préfixe `ec-ch01-`. Rien n'est envoyé au serveur.
+- La page enregistre ses préférences locales (onglet ouvert, brouillons, cases cochées) dans le `localStorage` du navigateur, préfixe `ec-ch01-`. Depuis le §7duovicies, si l'apprenant est connecté, elle envoie aussi son avancement au site (scores, cases « Je peux… », longueur du message).
 - **À venir (chapitres payants)** : leçons et audios dans R2 privé servis par URL signée aux abonnés actifs, filigrane au nom de l'acheteur, enregistrement de la voix des apprenants. Les chapitres payants ne devront **pas** être placés dans `public/`, qui est accessible à tous. Les comptes apprenants et le paiement sont en place depuis le §7novodecies.
 
 ---
@@ -816,6 +822,35 @@ Branche `application-mobile` (novembre 2026). Michaël développe une applicatio
 
 ---
 
+## 7duovicies. Anglais technique : progression séquentielle (étapes 1 à 3)
+
+Branche `progression-anglais` (novembre 2026). Premières étapes du plan validé le 11/11/2026 : l'apprenant termine un chapitre avant de passer au suivant, et sa progression est enregistrée sur son compte. Les étapes suivantes (chapitres 2+ servis par une page qui vérifie la progression, test de positionnement) restent à faire.
+
+**Règles** (`src/lib/english-chapters.ts`, partagé serveur / navigateur) :
+- une **leçon est validée** à partir de **70 %** de bonnes réponses à ses exercices notés (`passingScore(max)` = 70 % arrondi au supérieur : 5 sur 6). **Seule la première réponse à chaque exercice compte** pendant une visite (la correction affiche la bonne réponse : un second essai serait toujours juste) ; recharger la page permet de recommencer, et seul le meilleur score est gardé ;
+- un **chapitre est terminé** quand toutes ses leçons sont validées, ses cases « Je peux… » cochées (si `selfCheck`), son message écrit au nombre de mots demandé (`messageMinWords`) et son défi joué (si `challenge`) ;
+- **verrous** (`isChapterUnlocked`) : le chapitre 1 est ouvert à tous ; à partir du chapitre 2, il faut un compte (gratuit, n'importe quel type) et avoir terminé le chapitre précédent ; un chapitre terminé reste ouvert pour réviser.
+- La liste des chapitres (`CHAPTERS`, avec ces critères) est dans ce fichier : ajouter un chapitre = ajouter une entrée. Le chapitre 2 y figure déjà avec `href: null` (« bientôt en ligne »).
+
+**Données** : `EnglishLessonProgress` (une ligne par compte, chapitre et leçon) et `EnglishChapterProgress` (une ligne par compte et chapitre), voir §4. **Toutes les valeurs ne font que monter** : `src/lib/english-progress.ts` crée la ligne si besoin (`upsert` sans mise à jour), puis fait des mises à jour conditionnelles (`updateMany` « seulement si le nouveau score est plus grand », « seulement si la date n'est pas encore posée »). Deux envois qui arrivent dans le désordre ne peuvent donc ni baisser un score ni retirer une réussite (même principe que `startAttempt`, §7sedecies). Le serveur, et non la page, décide si une leçon ou un chapitre est terminé.
+
+**API** `/api/anglais/progression` (compte connecté, `getCurrentUser`) :
+- `GET` : progression de tous les chapitres (`summarizeChapter` : scores, critères, étapes faites / total pour la barre). 401 sans session.
+- `POST` : `{ chapter, lessons: [{ lesson, score }], selfCheck, messageWords, challenge }`. Chapitre connu et en ligne, leçons existantes, scores entiers entre 0 et le nombre d'exercices de la leçon, sinon 400. Limite 300 / heure **par compte** (clé `progression-anglais:<id du compte>` : une classe derrière la même connexion ne partage pas la limite) ; la page envoie au plus une fois toutes les 1,5 s, seulement les leçons modifiées, et réessaie une minute plus tard si l'envoi échoue (429, panne). Réponse : la progression du chapitre.
+
+**Page du chapitre** (`public/lecons/chapitre-01/index.html`) : le calcul du score déclenche un événement `ec-score` (leçon, score, nombre d'exercices) ; un second script, en bas de page, l'écoute ainsi que les cases marquées `data-can` (« Je peux… ») et le message marqué `data-chapter-message`, puis envoie l'avancement (regroupé, `keepalive` pour partir même si l'on quitte la page). Un défi de chapitre devra déclencher `document.dispatchEvent(new CustomEvent("ec-challenge"))`. Au chargement, un `GET` dit si l'apprenant est connecté : bandeau « progression enregistrée » avec barre et détail, ou, **seulement sur une réponse 401**, bandeau « connecte-toi pour garder ta progression » (lien `/connexion?suite=<page>`) ; une autre erreur (panne) n'affiche rien plutôt que de demander à tort de se connecter. Les cases et le message déjà remplis avant la connexion (gardés dans le navigateur) sont envoyés à la première visite connectée. **Tout futur chapitre doit reprendre ces trois marqueurs et ce script** (et mettre `CHAPTER` au bon numéro).
+
+**Page `/anglais-technique`** : la liste des chapitres devient un composant client (`src/app/anglais-technique/ChapterList.tsx`) qui appelle `GET /api/anglais/progression` : barre de progression et détail des critères, badge « Terminé ✓ », bouton « Commencer / Continuer / Réviser », chapitres verrouillés avec cadenas et message (créer un compte, ou terminer le chapitre précédent).
+
+**Limites connues** :
+- **Le verrou n'est encore qu'affiché.** Tant que les chapitres sont des fichiers de `public/`, leur adresse directe reste ouverte à tous. La vraie protection viendra à l'étape 4 : chapitres 2+ servis par une page qui vérifie la progression (même mécanisme que la future version pro).
+- **La progression est déclarée par le navigateur.** Un apprenant habile peut envoyer de faux scores et débloquer un chapitre gratuit plus tôt : sans conséquence tant que les chapitres sont gratuits. Pour une certification, les exercices devront être corrigés par le serveur.
+- Les scores du chapitre 1 ne sont pas gardés dans le navigateur : les exercices faits sans être connecté ne sont pas récupérés après la connexion (les cases et le message, si).
+
+**Mise en production** : schéma modifié (deux tables) ⇒ `npx prisma db push` sur Neon **avant** la fusion dans `main`.
+
+---
+
 ## 8. Historique de conception (pour contexte)
 
 Le projet a démarré comme deux choses séparées : une vitrine statique HTML/CSS/JS, et une app Next.js indépendante pour la gestion des instructeurs. Elles ont été fusionnées dans un seul projet Next.js pour simplifier le déploiement et la maintenance. Le design a ensuite évolué d'un thème sombre "glassmorphism" chargé vers un style plus sobre (fond blanc, moins de sections), avec un header unique simplifié (logo + menu hamburger) partagé entre toutes les pages sauf l'admin, resté en thème sombre.
@@ -870,6 +905,8 @@ Les manuels d'anglais technique pour l'informatique ont ensuite fait leur entré
 
 Un tableau de bord des comptes du site a ensuite été ajouté au panneau super-admin (voir §7vicies) : chiffres par type de compte, liste filtrable, copie des emails et export CSV.
 
+La progression séquentielle de l'anglais technique a ensuite commencé (voir §7duovicies) : progression enregistrée par compte, envoyée par la page du chapitre, barres de progression et chapitres verrouillés sur `/anglais-technique`.
+
 Michaël a ensuite annoncé une application mobile d'anglais technique pour février 2027 ; le site en est l'avant-goût et recueille une liste d'attente (§7unvicies).
 
 Reste à traiter : l'analytics, le système de notation, et le pipeline de vérification automatique.
@@ -893,7 +930,7 @@ Fonctionnalités identifiées comme nécessaires au bon fonctionnement et à la 
 
 ### 9.3 Gestion (côté admin)
 
-- **Anglais technique** (§7novodecies) : servir les chapitres payants aux abonnés actifs (R2 privé, URL signée, filigrane), brancher un agrégateur de paiement (CinetPay, Kkiapay…) pour activer les abonnements sans validation manuelle, fixer les prix après le test du groupe pilote. Application mobile (février 2027, §7unvicies) : prévenir la liste d'attente à la sortie (renseigner `notifiedAt`), servir les mêmes chapitres et la même progression que le site.
+- **Anglais technique** (§7novodecies, §7duovicies) : étape 4 de la progression (chapitres 2+ servis par une page qui vérifie la progression), test de positionnement ; servir les chapitres payants aux abonnés actifs (R2 privé, URL signée, filigrane), brancher un agrégateur de paiement (CinetPay, Kkiapay…) pour activer les abonnements sans validation manuelle, fixer les prix après le test du groupe pilote. Application mobile (février 2027, §7duovicies) : prévenir la liste d'attente à la sortie (renseigner `notifiedAt`), servir les mêmes chapitres et la même progression que le site.
 
 - **Tableau de bord analytique** : au-delà du trafic (Vercel Analytics), un tableau montrant les matières les plus demandées, le taux de conversion demande → mise en relation réussie, et le temps moyen de traitement d'une candidature — pour piloter l'activité plutôt que seulement l'observer.
 - **Historique des candidatures rejetées/suspendues avec motif.** Utile si un instructeur repostule des mois plus tard : retrouver pourquoi il avait été refusé la première fois, sans avoir à s'en souvenir.

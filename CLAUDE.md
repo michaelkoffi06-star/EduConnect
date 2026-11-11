@@ -101,6 +101,9 @@ bloquant (`next build` ne lance pas le lint), ne pas chercher à tout corriger a
 - Pages publiques interactives : `page.tsx` (serveur, métadonnées SEO) + `<Nom>Client.tsx` (client).
 - `next/image` : toute qualité utilisée (`quality={…}`) doit figurer dans `images.qualities` de
   `next.config.ts` — sinon Next.js 16 répond 400 et l'image ne s'affiche pas.
+- Chapitres d'anglais technique (`public/lecons/chapitre-0N/index.html`) : chaque nouveau chapitre reprend
+  le script de progression et ses marqueurs (`ec-score`, `data-can`, `data-chapter-message`) et s'ajoute à
+  `CHAPTERS` de `src/lib/english-chapters.ts` (§7duovicies).
 - Bibliothèque v2 (étagère + classeur, lecture PDF via PDF.js depuis un CDN) : §7quaterdecies.
   Comptes, corrigés, marché des instructeurs et forum : §7quindecies.
 

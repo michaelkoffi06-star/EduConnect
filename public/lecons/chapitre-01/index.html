@@ -190,6 +190,10 @@ textarea { width: 100%; min-height: 130px; resize: vertical; line-height: 1.5; }
 .card-out p { font-size: 15px; }
 .card-out small { opacity: 0.75; font-size: 12px; }
 
+.progress-note { margin: 0 0 16px; padding: 12px 14px; border-radius: var(--radius); background: var(--gold-soft); border: 1px solid var(--gold-bright); font-size: 14px; line-height: 1.5; }
+.progress-note a { color: var(--gold); font-weight: 700; }
+.progress-note .bar { display: block; height: 6px; margin-top: 8px; border-radius: 99px; background: var(--line); overflow: hidden; }
+.progress-note .bar > span { display: block; height: 100%; background: var(--gold-bright); border-radius: 99px; transition: width .3s; }
 .next { border: 1px dashed var(--gold-bright); border-radius: var(--radius); padding: 14px 16px; display: flex; flex-direction: column; gap: 8px; }
 
 footer { max-width: 720px; margin: 0 auto; padding-inline: 16px; padding-block: 20px 32px; border-top: 1px solid var(--line); color: var(--muted); font-size: 13px; display: flex; flex-direction: column; gap: 4px; }
@@ -237,6 +241,9 @@ footer b { color: var(--ink); }
       </div>
     </div>
   </div>
+
+  <!-- Progression enregistrée sur le compte (§7duovicies de docs/documentation.md) -->
+  <div class="progress-note" id="progress-note" role="status" hidden></div>
 
   <nav class="tabs" role="tablist" aria-label="Leçons du chapitre">
     <button class="tab" type="button" role="tab" id="tab-1" aria-controls="lecon-1" aria-selected="true"><small>Leçon 1</small><b>Hello, I'm Aya</b></button>
@@ -401,7 +408,7 @@ footer b { color: var(--ink); }
     <section>
       <div class="eyebrow"><span class="n">09</span>Practice</div>
       <h2>À toi de jouer</h2>
-      <p class="fr">Correction immédiate, avec l'explication. Score : <span class="score" data-score>0 / 6</span></p>
+      <p class="fr">Correction immédiate, avec l'explication. Seule ta première réponse à chaque exercice compte ; recharge la page pour recommencer. Score : <span class="score" data-score>0 / 6</span></p>
       <div class="panel ex-block">
         <h3>A. Choisis la bonne réponse</h3>
         <div class="q" data-answer="1" data-why="En anglais, on met « a » devant un métier ou un statut : I'm a student.">
@@ -461,7 +468,7 @@ footer b { color: var(--ink); }
       <h2>Ton message dans le groupe WhatsApp du hackathon</h2>
       <p>Kwame crée un groupe WhatsApp pour l'équipe. Écris ton message de présentation <b>en anglais</b>, en 30 à 50 mots.</p>
       <label for="msg-1" class="fr">Ton message (enregistré sur cet appareil)</label>
-      <textarea id="msg-1" data-save="msg1" data-min="30" data-max="50" placeholder="Hi everyone! My name is…"></textarea>
+      <textarea id="msg-1" data-chapter-message data-save="msg1" data-min="30" data-max="50" placeholder="Hi everyone! My name is…"></textarea>
       <div class="row"><span class="counter" data-count-for="msg-1">0 mot</span></div>
       <div class="panel">
         <h3>Avant d'envoyer, vérifie :</h3>
@@ -480,9 +487,9 @@ footer b { color: var(--ink); }
       <div class="eyebrow"><span class="n">12</span>Self-assessment</div>
       <h2>Je peux…</h2>
       <div class="panel">
-        <label class="check"><input type="checkbox" id="l1s1" data-save-check><span>…say my name, where I'm from and what I do. <span class="fr">dire mon nom, d'où je viens et ce que je fais.</span></span></label>
-        <label class="check"><input type="checkbox" id="l1s2" data-save-check><span>…spell my name and my email address. <span class="fr">épeler mon nom et mon adresse e-mail.</span></span></label>
-        <label class="check"><input type="checkbox" id="l1s3" data-save-check><span>…ask: What's your name? Where are you from? What do you do? <span class="fr">poser ces trois questions.</span></span></label>
+        <label class="check"><input type="checkbox" id="l1s1" data-save-check data-can><span>…say my name, where I'm from and what I do. <span class="fr">dire mon nom, d'où je viens et ce que je fais.</span></span></label>
+        <label class="check"><input type="checkbox" id="l1s2" data-save-check data-can><span>…spell my name and my email address. <span class="fr">épeler mon nom et mon adresse e-mail.</span></span></label>
+        <label class="check"><input type="checkbox" id="l1s3" data-save-check data-can><span>…ask: What's your name? Where are you from? What do you do? <span class="fr">poser ces trois questions.</span></span></label>
       </div>
       <div class="next"><b>Leçon suivante : My IT background</b><p class="fr">Tu vas parler de tes études, de ce que tu sais faire en informatique et de ton objectif.</p><div class="row"><button class="btn" type="button" data-go="2">Aller à la leçon 2</button></div></div>
     </section>
@@ -633,7 +640,7 @@ footer b { color: var(--ink); }
     <section>
       <div class="eyebrow"><span class="n">09</span>Practice</div>
       <h2>À toi de jouer</h2>
-      <p class="fr">Correction immédiate, avec l'explication. Score : <span class="score" data-score>0 / 6</span></p>
+      <p class="fr">Correction immédiate, avec l'explication. Seule ta première réponse à chaque exercice compte ; recharge la page pour recommencer. Score : <span class="score" data-score>0 / 6</span></p>
       <div class="panel ex-block">
         <h3>A. Choisis la bonne réponse</h3>
         <div class="q" data-answer="0" data-why="Après « can », le verbe est à la forme de base : pas de « to », pas de « -ing ».">
@@ -715,10 +722,10 @@ footer b { color: var(--ink); }
       <div class="eyebrow"><span class="n">12</span>Self-assessment</div>
       <h2>Je peux…</h2>
       <div class="panel">
-        <label class="check"><input type="checkbox" id="l2s1" data-save-check><span>…say what I study and in which year. <span class="fr">dire ce que j'étudie et en quelle année.</span></span></label>
-        <label class="check"><input type="checkbox" id="l2s2" data-save-check><span>…say what I can and can't do. <span class="fr">dire ce que je sais et ne sais pas encore faire.</span></span></label>
-        <label class="check"><input type="checkbox" id="l2s3" data-save-check><span>…say what I'd like to do in the future. <span class="fr">dire mon objectif professionnel.</span></span></label>
-        <label class="check"><input type="checkbox" id="l2s4" data-save-check><span>…read “2 × 6 = 12” aloud in English. <span class="fr">lire une multiplication à voix haute.</span></span></label>
+        <label class="check"><input type="checkbox" id="l2s1" data-save-check data-can><span>…say what I study and in which year. <span class="fr">dire ce que j'étudie et en quelle année.</span></span></label>
+        <label class="check"><input type="checkbox" id="l2s2" data-save-check data-can><span>…say what I can and can't do. <span class="fr">dire ce que je sais et ne sais pas encore faire.</span></span></label>
+        <label class="check"><input type="checkbox" id="l2s3" data-save-check data-can><span>…say what I'd like to do in the future. <span class="fr">dire mon objectif professionnel.</span></span></label>
+        <label class="check"><input type="checkbox" id="l2s4" data-save-check data-can><span>…read “2 × 6 = 12” aloud in English. <span class="fr">lire une multiplication à voix haute.</span></span></label>
       </div>
       <div class="next"><b>Bravo, tu as fini le chapitre 1 !</b><p class="fr">Tu sais te présenter et parler de ton parcours en anglais. Dans le chapitre 2, tu apprendras à construire des phrases correctes pour décrire un système.</p></div>
     </section>
@@ -827,8 +834,19 @@ footer b { color: var(--ink); }
 
   // ---------- scoring (per lesson) ----------
   function scorer(lesson) {
-    var results = {}, el = lesson.querySelector("[data-score]");
-    return function (id, ok) { results[id] = ok; var n = 0; for (var k in results) if (results[k]) n++; el.textContent = n + " / 6"; };
+    // Seule la PREMIÈRE réponse à chaque exercice compte : la correction affiche la bonne réponse,
+    // un second essai serait donc toujours juste. Recharger la page permet de recommencer.
+    var first = {}, el = lesson.querySelector("[data-score]");
+    // Nombre d'exercices notés de la leçon (6 au chapitre 1)
+    var max = lesson.querySelectorAll(".q[data-answer], form[data-dictation], form[data-calc], .q[data-gaps]").length;
+    var number = +lesson.id.replace("lecon-", "");
+    return function (id, ok) {
+      if (id in first) return;
+      first[id] = ok; var n = 0; for (var k in first) if (first[k]) n++;
+      el.textContent = n + " / " + max;
+      // Le script de progression (en bas de page) écoute cet événement
+      document.dispatchEvent(new CustomEvent("ec-score", { detail: { lesson: number, score: n, max: max } }));
+    };
   }
   function feedback(fb, ok, text) { fb.hidden = false; fb.className = "feedback " + (ok ? "ok" : "ko"); fb.textContent = text; }
 
@@ -954,6 +972,129 @@ footer b { color: var(--ink); }
       }).catch(function () { missing[id] = true; });
     });
   })();
+})();
+</script>
+
+<script>
+// ---------- progression enregistrée sur le compte (§7duovicies de docs/documentation.md) ----------
+// Si l'apprenant est connecté, la page envoie son avancement à /api/anglais/progression : meilleur
+// score de chaque leçon, cases « Je peux… », nombre de mots du message, défi joué. C'est le serveur
+// qui décide si une leçon (70 %) ou le chapitre est terminé. Sans compte, rien n'est envoyé.
+(function () {
+  "use strict";
+  var CHAPTER = 1;
+  var API = "/api/anglais/progression";
+  var note = document.getElementById("progress-note");
+  var connected = false, timer = null, pending = false, retry = null;
+  var state = { lessons: {}, selfCheck: false, messageWords: 0, challenge: false };
+  var dirty = {}; // leçons dont le score a changé depuis le dernier envoi réussi
+
+  function link(text, href) { var a = document.createElement("a"); a.href = href; a.textContent = text; return a; }
+  function showAnonymous() {
+    note.textContent = "";
+    note.append(
+      "Ta progression n'est pas enregistrée. ",
+      link("Connecte-toi", "/connexion?suite=" + encodeURIComponent(location.pathname)),
+      " ou ",
+      link("crée un compte gratuit", "/inscription"),
+      " pour la garder et débloquer le chapitre 2."
+    );
+    note.hidden = false;
+  }
+  function showProgress(view) {
+    note.textContent = "";
+    var done = view.completedAt;
+    var parts = view.lessons.map(function (l) {
+      return "Leçon " + l.lesson + " : " + l.bestScore + "/" + l.maxScore + (l.passed ? " ✓" : " (" + l.passingScore + " pour valider)");
+    });
+    if (view.messageMinWords > 0) parts.push("message : " + Math.min(view.messageWords, view.messageMinWords) + "/" + view.messageMinWords + " mots");
+    parts.push("« Je peux… » " + (view.selfCheckDone ? "✓" : "à cocher"));
+    var text = document.createElement("span");
+    text.textContent = done
+      ? "Chapitre terminé, bravo ! Le chapitre suivant est débloqué sur ton compte."
+      : "Progression enregistrée sur ton compte · " + parts.join(" · ");
+    var bar = document.createElement("span"); bar.className = "bar";
+    var fill = document.createElement("span"); fill.style.width = Math.round(view.steps.done / view.steps.total * 100) + "%";
+    bar.appendChild(fill);
+    note.append(text, bar);
+    if (done) { note.append(" "); note.appendChild(link("Voir mes chapitres", "/anglais-technique")); }
+    note.hidden = false;
+  }
+
+  // Cases et message : relus dans la page (ils sont aussi gardés dans le navigateur)
+  function collect() {
+    var boxes = document.querySelectorAll("[data-can]"), all = boxes.length > 0;
+    boxes.forEach(function (b) { if (!b.checked) all = false; });
+    state.selfCheck = all;
+    var words = 0;
+    document.querySelectorAll("[data-chapter-message]").forEach(function (ta) {
+      words = Math.max(words, (ta.value.trim().match(/\S+/g) || []).length);
+    });
+    state.messageWords = words;
+  }
+
+  function send() {
+    timer = null;
+    if (!connected) { pending = true; return; }
+    // On n'envoie que les leçons qui ont changé : moins de travail pour le serveur
+    var sent = Object.keys(dirty);
+    var lessons = sent.map(function (k) { return state.lessons[k]; });
+    fetch(API, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "same-origin",
+      keepalive: true,
+      body: JSON.stringify({ chapter: CHAPTER, lessons: lessons, selfCheck: state.selfCheck, messageWords: state.messageWords, challenge: state.challenge })
+    })
+      .then(function (r) {
+        if (r.ok) return r.json();
+        if (r.status !== 400) retryLater(); // trop de requêtes (429) ou panne : on réessaiera
+        return null;
+      })
+      .then(function (d) {
+        if (!d || !d.chapter) return;
+        sent.forEach(function (k) { delete dirty[k]; });
+        showProgress(d.chapter);
+      })
+      .catch(retryLater);
+  }
+  // Envoi raté : nouvel essai dans une minute (rien n'est perdu, l'état est gardé dans la page)
+  function retryLater() { if (!retry) retry = setTimeout(function () { retry = null; send(); }, 60000); }
+  // On regroupe les changements : un envoi au plus toutes les 1,5 s
+  function queue() { clearTimeout(timer); timer = setTimeout(send, 1500); }
+
+  document.addEventListener("ec-score", function (e) {
+    var d = e.detail, prev = state.lessons[d.lesson];
+    if (!prev || d.score > prev.score) { state.lessons[d.lesson] = { lesson: d.lesson, score: d.score }; dirty[d.lesson] = true; }
+    queue();
+  });
+  document.addEventListener("change", function (e) { if (e.target.matches && e.target.matches("[data-can]")) { collect(); queue(); } });
+  document.addEventListener("input", function (e) { if (e.target.matches && e.target.matches("[data-chapter-message]")) { collect(); queue(); } });
+  // Un défi de chapitre envoie : document.dispatchEvent(new CustomEvent("ec-challenge"))
+  document.addEventListener("ec-challenge", function () { state.challenge = true; queue(); });
+  // En quittant la page, un envoi en attente part tout de suite (keepalive le laisse finir)
+  window.addEventListener("pagehide", function () { if (timer) { clearTimeout(timer); send(); } });
+
+  // Au chargement : l'apprenant est-il connecté ? (401 = non)
+  fetch(API, { credentials: "same-origin", cache: "no-store" })
+    .then(function (r) {
+      if (r.status === 401) throw new Error("anonyme");
+      if (!r.ok) throw new Error("indisponible");
+      return r.json();
+    })
+    .then(function (d) {
+      connected = true;
+      var view = (d.chapters || []).filter(function (c) { return c.chapter === CHAPTER; })[0];
+      if (view) showProgress(view);
+      // Cases déjà cochées et message déjà écrit avant la connexion : on les envoie
+      collect();
+      if (state.selfCheck || state.messageWords > 0 || pending) queue();
+    })
+    .catch(function (e) {
+      // 401 : personne n'est connecté. Autre erreur (panne, réseau) : on ne dit pas « connecte-toi »
+      // à quelqu'un qui l'est peut-être déjà ; on se tait simplement.
+      if (e && e.message === "anonyme") showAnonymous();
+    });
 })();
 </script>
 

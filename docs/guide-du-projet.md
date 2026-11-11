@@ -20,7 +20,7 @@ défini dans le [glossaire](#13-glossaire) à la fin.
 6. [Les fichiers (photos, PDF) et Cloudflare R2](#6-les-fichiers-photos-pdf-et-cloudflare-r2)
 7. [Connexion, sessions et rôles](#7-connexion-sessions-et-rôles)
 8. [Les emails](#8-les-emails)
-9. [Les fonctionnalités, une par une](#9-les-fonctionnalités-une-par-une)
+9. [Les fonctionnalités, une par une](#9-les-fonctionnalités-une-par-une) (dont 9.7 : la progression de l'anglais technique)
 10. [La sécurité : les principes appliqués](#10-la-sécurité--les-principes-appliqués)
 11. [Travailler et mettre en production](#11-travailler-et-mettre-en-production)
 12. [Pour s'exercer](#12-pour-sexercer)
@@ -433,6 +433,58 @@ besoin.
 | PEDAGOGIE | Valider les instructeurs et consulter leurs CNI et CV, gérer la bibliothèque, les contrats, modérer le forum |
 | ADMINISTRATIF | Gérer les demandes des familles, le marché et la bibliothèque ; voir les instructeurs en lecture seule |
 
+### 9.7 La progression de l'anglais technique
+
+Objectif : un apprenant termine un chapitre avant de passer au suivant, et son avancement est gardé
+sur son compte (détail technique : doc, §7duovicies). C'est un bon exemple de fonctionnalité qui
+traverse toutes les couches du site.
+
+**1. Les règles, écrites une seule fois.** `src/lib/english-chapters.ts` décrit chaque chapitre (ses
+leçons, leur nombre d'exercices, ses critères de fin) et contient les fonctions de calcul : seuil de
+70 % (`passingScore`), résumé d'un chapitre (`summarizeChapter`), verrou (`isChapterUnlocked`). Ce
+fichier n'importe rien du serveur : la page web et l'API peuvent donc s'en servir toutes les deux et
+appliquent exactement les mêmes règles.
+
+**2. Deux tables.** Une ligne par compte et par leçon (`EnglishLessonProgress` : meilleur score, date
+de réussite) et une ligne par compte et par chapitre (`EnglishChapterProgress` : cases cochées, mots
+écrits, défi, date de fin). La contrainte `@@unique([userId, chapter, lesson])` garantit qu'il n'y a
+jamais deux lignes pour la même leçon d'un même compte.
+
+**3. Des valeurs qui ne font que monter.** Si l'apprenant recommence un exercice et fait moins bien,
+son meilleur score ne doit pas baisser. Plutôt que « lire, comparer, écrire » (deux requêtes
+simultanées pourraient s'écraser : **condition de course**), le code demande à la base de faire la
+comparaison elle-même :
+
+```ts
+await prisma.englishLessonProgress.updateMany({
+  where: { userId, chapter, lesson, bestScore: { lt: score } }, // seulement si c'est mieux
+  data: { bestScore: score },
+});
+```
+
+Si le score n'est pas meilleur, la condition ne trouve aucune ligne et rien ne change. La date de
+réussite suit la même idée (`completedAt: null` dans la condition) : elle est posée une seule fois.
+
+**4. Le navigateur raconte, le serveur décide.** La page du chapitre (un fichier HTML autonome) ne dit
+pas « leçon validée » : elle envoie des faits (score 5 sur 6, cases cochées, 34 mots). L'API vérifie
+qu'ils sont plausibles (chapitre connu, score entre 0 et 6) puis calcule elle-même ce qui est terminé.
+Ainsi, changer la règle des 70 % ne demande de toucher qu'un fichier. Détail important trouvé en relecture : la correction
+affiche la bonne réponse, donc seul le **premier** essai de chaque exercice est compté (sinon tout le
+monde aurait 6/6 en recliquant) ; pour retenter, on recharge la page.
+
+**5. Des événements pour relier deux scripts.** Le script qui corrige les exercices et celui qui envoie
+la progression ne se connaissent pas. Le premier annonce `ec-score` (`CustomEvent`), le second
+l'écoute. On peut ainsi ajouter la progression sans réécrire la correction des exercices.
+
+**6. Regrouper les envois.** Chaque clic pourrait déclencher une requête. Le script attend 1,5 seconde
+sans nouveau changement avant d'envoyer (**anti-rebond**, *debounce*), et `keepalive` laisse partir le
+dernier envoi même si l'apprenant ferme la page.
+
+**7. Ce que le verrou ne fait pas encore.** La page `/anglais-technique` affiche un cadenas, mais un
+fichier placé dans `public/` reste accessible à quiconque connaît son adresse. Afficher n'est pas
+protéger : la vraie protection sera une page qui vérifie la progression avant de servir le chapitre
+(étape 4 du plan).
+
 ---
 
 ## 10. La sécurité : les principes appliqués
@@ -525,6 +577,7 @@ Quelques questions pour vérifier sa compréhension en relisant le code :
 
 | Terme | Définition |
 |---|---|
+| **Anti-rebond (*debounce*)** | Attendre un court moment sans nouvelle action avant d'agir, pour regrouper plusieurs changements en un seul envoi. |
 | **API** | Ensemble d'adresses (ici `/api/…`) qu'un programme appelle pour obtenir ou envoyer des données, en JSON, plutôt que des pages à afficher. |
 | **App Router** | Système de Next.js où l'arborescence des dossiers de `src/app/` définit les adresses du site. |
 | **Asynchrone (`async` / `await`)** | Code qui attend une réponse (base, réseau) sans bloquer le reste ; `await` « attend » le résultat. |
@@ -544,6 +597,7 @@ Quelques questions pour vérifier sa compréhension en relisant le code :
 | **DNS** | L'« annuaire » d'Internet : il relie un nom de domaine à des serveurs et porte des réglages (vérification d'emails…). |
 | **Docker** | Outil qui fait tourner un logiciel (ici PostgreSQL) dans un conteneur isolé, identique partout. |
 | **Enum** | Liste fermée de valeurs possibles pour un champ. |
+| **Événement personnalisé (`CustomEvent`)** | Message qu'un script envoie dans la page et que d'autres scripts peuvent écouter, sans dépendre les uns des autres. |
 | **Hachage** | Transformation à sens unique d'un texte en empreinte : on peut vérifier, pas retrouver l'original. |
 | **HMAC** | Signature calculée avec un secret : prouve qu'un message vient du détenteur du secret et n'a pas été modifié. |
 | **HTTP / HTTPS** | Le protocole du web (requête → réponse) ; HTTPS est sa version chiffrée. |
@@ -555,10 +609,11 @@ Quelques questions pour vérifier sa compréhension en relisant le code :
 | **Métadonnées** | Informations sur une page (titre, description, image d'aperçu) lues par Google et les réseaux sociaux. |
 | **Middleware** | Code exécuté avant chaque requête, qui peut la laisser passer, la rediriger ou la refuser. |
 | **Migration** | Fichier qui décrit un changement de la base, rejouable dans l'ordre ; alternative à `db push`. |
+| **Mise à jour conditionnelle** | Écriture en base qui ne s'applique que si une condition est vraie au moment même de l'écriture (`updateMany` avec un `where`) ; évite les conditions de course. |
 | **Moindre privilège** | Principe : donner à chacun uniquement les droits dont il a besoin. |
 | **ORM** | Outil (ici Prisma) qui permet de manipuler la base avec des objets du langage plutôt qu'en SQL. |
-| **Route dynamique** | Adresse avec une partie variable (`[key]`), reçue en paramètre par le code. |
 | **Redirection ouverte** | Faille où un site accepte de renvoyer ses visiteurs vers n'importe quelle adresse. |
+| **Route dynamique** | Adresse avec une partie variable (`[key]`), reçue en paramètre par le code. |
 | **Sel** | Valeur aléatoire ajoutée au mot de passe avant hachage, pour que deux mots de passe identiques n'aient pas la même empreinte. |
 | **Service** | Logiciel qui tourne à part et rend un service par le réseau (base, stockage, emails). |
 | **Session** | Le fait de « rester connecté » entre plusieurs requêtes, grâce à un jeton dans un cookie. |
