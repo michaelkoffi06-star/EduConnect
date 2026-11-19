@@ -6,7 +6,8 @@ import { PAYMENT_METHODS, formatFcfa, subscriptionLabel, type PaymentMethod } fr
 
 // Onglet « Anglais technique » des panneaux /administratif et /bleSseD (§7novodecies) :
 // vérification des paiements Mobile Money déclarés par les apprenants (valider / refuser avec motif /
-// annuler) et envoi d'une annonce « nouveau contenu » aux apprenants qui l'ont acceptée.
+// annuler), envoi d'une annonce « nouveau contenu » aux apprenants qui l'ont acceptée, et liste
+// d'attente de l'application mobile (§7unvicies).
 
 interface Subscription {
   id: string;
@@ -297,6 +298,88 @@ export default function EnglishSubscriptionsManager() {
           </div>
         )}
       </div>
+
+      <AppWaitlistPanel />
+    </div>
+  );
+}
+
+interface WaitlistEntry { id: string; email: string | null; whatsapp: string | null; createdAt: string; }
+
+// Liste d'attente de l'application mobile (§7unvicies) : contacts laissés sur /anglais-technique
+function AppWaitlistPanel() {
+  const [entries, setEntries] = useState<WaitlistEntry[]>([]);
+  const [total, setTotal] = useState(0);
+  const [error, setError] = useState('');
+  const [copied, setCopied] = useState('');
+
+  const load = useCallback(async () => {
+    try {
+      const res = await fetch('/api/bleSseD/app-waitlist');
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Chargement impossible.');
+      setEntries(data.entries);
+      setTotal(data.total);
+      setError('');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Chargement impossible.');
+    }
+  }, []);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  const copy = async (kind: 'email' | 'whatsapp') => {
+    const list = entries.map((e) => e[kind]).filter(Boolean).join(kind === 'email' ? ', ' : '\n');
+    if (!list) return;
+    try {
+      await navigator.clipboard.writeText(list);
+      setCopied(kind === 'email' ? 'Emails copiés.' : 'Numéros copiés.');
+    } catch {
+      setCopied('Copie impossible : sélectionne la liste à la main.');
+    }
+  };
+
+  const remove = async (entry: WaitlistEntry) => {
+    if (!window.confirm(`Retirer ${entry.email || entry.whatsapp} de la liste ?`)) return;
+    const res = await fetch(`/api/bleSseD/app-waitlist/${entry.id}`, { method: 'DELETE' });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      setError(data.error || 'Suppression impossible.');
+      return;
+    }
+    load();
+  };
+
+  const emails = entries.filter((e) => e.email).length;
+  const phones = entries.filter((e) => e.whatsapp).length;
+
+  return (
+    <div className={card}>
+      <h3 className="font-semibold text-white">Liste d&apos;attente de l&apos;application</h3>
+      <p className="text-xs text-gray-400 mt-1 mb-4">
+        {total} contact(s) : {emails} email(s), {phones} numéro(s) WhatsApp. À prévenir une seule fois, à la sortie (février 2027).
+      </p>
+      {error && <p className="mb-3 text-sm text-red-300">{error}</p>}
+      <div className="flex flex-wrap gap-2 mb-3">
+        <button type="button" onClick={() => copy('email')} disabled={!emails} className={ghostBtn}>Copier les emails</button>
+        <button type="button" onClick={() => copy('whatsapp')} disabled={!phones} className={ghostBtn}>Copier les numéros</button>
+        {copied && <span className="text-xs text-emerald-300 self-center">{copied}</span>}
+      </div>
+      {entries.length > 0 && (
+        <ul className="max-h-80 overflow-y-auto divide-y divide-[#2a4a6e] text-sm">
+          {entries.map((e) => (
+            <li key={e.id} className="flex items-center justify-between gap-3 py-2">
+              <span className="min-w-0 break-all text-gray-200">{e.email || e.whatsapp}</span>
+              <span className="flex shrink-0 items-center gap-3">
+                <span className="text-xs text-gray-500">{formatDate(e.createdAt)}</span>
+                <button type="button" onClick={() => remove(e)} className={dangerBtn}>Retirer</button>
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }

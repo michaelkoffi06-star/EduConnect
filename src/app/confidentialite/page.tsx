@@ -23,7 +23,7 @@ export default function ConfidentialitePage() {
           </div>
           <h1 className="font-[family-name:var(--font-cinzel)] text-3xl text-[#0d1b3e]">Confidentialité &amp; protection des données</h1>
           <p className="text-gray-600 mt-2 text-sm">
-            Dernière mise à jour : septembre 2026
+            Dernière mise à jour : novembre 2026
           </p>
         </div>
 
@@ -37,6 +37,11 @@ export default function ConfidentialitePage() {
             <p className={textClass}>
               Pour les instructeurs : prénom, nom, email, numéro WhatsApp, une biographie, une photo de profil,
               ainsi qu'une copie de votre carte nationale d'identité (CNI) et votre CV.
+            </p>
+            <p className={textClass}>
+              Pour l'application mobile d'anglais technique : l'email ou le numéro WhatsApp que vous laissez sur la page
+              « Anglais technique ». Il sert uniquement à vous prévenir de la sortie de l'application, une seule fois ;
+              vous pouvez demander sa suppression à tout moment (voir « Vos droits »).
             </p>
           </div>
 

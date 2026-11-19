@@ -55,7 +55,7 @@ src/
 │   ├── espace-instructeur/             # Marché des annonces, instructeurs approuvés — privé
 │   ├── forum/ , forum/[id]/            # Forum (Questions, Salle des profs) et page d'un sujet
 │   ├── bibliotheque/corriges/          # Étagère des corrigés, réservée aux comptes
-│   ├── anglais-technique/              # Manuels d'anglais technique : présentation, chapitres et formules pro (§7octodecies, §7novodecies)
+│   ├── anglais-technique/              # Manuels d'anglais technique : présentation, chapitres, application mobile (liste d'attente) et formules pro (§7octodecies, §7novodecies, §7unvicies)
 │   │   ├── inscription/                # Inscription à la version pro (manuel, formule, études, compte) — §7novodecies
 │   │   ├── mon-abonnement/             # Statut, paiement Mobile Money, renouvellement, nouveautés — privé
 │   │   └── nouveautes/                 # Désinscription des emails « nouveautés » (lien signé)
@@ -125,6 +125,7 @@ src/
 │           ├── market-offers/ + [id]/ , market-interests/[id]/ # Marché : annonces et décisions sur les candidatures
 │           ├── english-subscriptions/ + [id]/     # Anglais technique : liste, validation/refus des paiements, annulation (§7novodecies)
 │           ├── english-announcements/route.ts     # Anglais technique : annonce « nouveau contenu » par email
+│           ├── app-waitlist/ + [id]/              # Liste d'attente de l'application mobile : lecture, retrait d'un contact (§7unvicies)
 │           ├── site-users/route.ts                # Comptes du site : liste, chiffres, export CSV (SUPER_ADMIN, §7vicies)
 │           └── forum/route.ts                     # Modération : signalements, masquer/rétablir
 │       ├── compte/**                         # Comptes utilisateurs : inscription, connexion, confirmation, mot de passe (voir §7quindecies)
@@ -185,6 +186,7 @@ private-uploads/
 - **`User`** + **`UserRole`** *(enum `ELEVE`/`PARENT`/`INSTRUCTEUR`/`APPRENANT`)* — compte du site (distinct d'`AdminUser`) : email unique en minuscules, `passwordHash`, prénom/nom, `classe` (élève), `emailVerifiedAt` (connexion impossible avant confirmation), `instructorId` (unique : compte instructeur ↔ fiche `Instructor`, supprimé avec la fiche), `sessionVersion` (incrémenté au changement de mot de passe, §7sedecies). Voir §7quindecies. Pour l'anglais technique (§7novodecies) : `studyField` (études ou métier, texte libre) et `englishNewsOptIn` (emails « nouveautés »).
 - **`EnglishSubscription`** + **`EnglishManual`** *(`A`/`B`)*, **`EnglishPlan`** *(`AUTONOME`/`GUIDE`/`SPRINT`/`COACHE`)*, **`EnglishSubscriptionStatus`** *(`PENDING_PAYMENT`/`PAYMENT_DECLARED`/`ACTIVE`/`EXPIRED`/`CANCELLED`)* — abonnement d'un compte à un manuel d'anglais technique : prix figé à l'inscription (`priceFcfa`), `reference` unique à mettre dans le motif du paiement, moyen et identifiant de transaction déclarés par l'apprenant, `adminNote` (motif de refus), `validatedBy`, `startsAt`/`endsAt`, `reminderSentAt`. §7novodecies.
 - **`EnglishAnnouncement`** — annonce « nouveau contenu » envoyée par l'équipe (titre, message, lien, nombre d'emails acceptés, auteur).
+- **`AppWaitlistEntry`** — contact laissé pour être prévenu de la sortie de l'application mobile : `email` ou `whatsapp` (uniques, format international +225…), `notifiedAt`. §7unvicies.
 - **`UserToken`** + **`UserTokenType`** *(`VERIFY_EMAIL`/`RESET_PASSWORD`)* — jeton à usage unique envoyé par email ; seule l'empreinte SHA-256 (`tokenHash`) est stockée, avec `expiresAt`/`usedAt`.
 - **`Correction`** — corrigé d'une `Resource` (un seul par ressource, `resourceId` unique) : `fileExt`, compteurs vues/téléchargements. Fichier dans le bucket R2 privé, `corrections/<id>.<ext>`.
 - **`MarketOffer`** + **`MarketOfferStatus`** *(`OPEN`/`FILLED`/`CLOSED`)* — annonce du marché des instructeurs, publiée par l'équipe (matière, niveau, classe, mode, lieu, rythme, rémunération, description — jamais les coordonnées de la famille).
@@ -674,6 +676,7 @@ Revue de toutes les routes API (66) et du middleware, faite le 01/10/2026 ; corr
 | `/api/anglais/inscription` (§7novodecies) | 5 / heure |
 | `/api/anglais/abonnements/[id]/paiement` | 10 / heure |
 | `/api/anglais/nouveautes` | 20 / heure |
+| `/api/anglais/application` (§7unvicies) | 5 / heure |
 | `/api/register-instructor` | 10 / heure |
 | `/api/register-instructor/presign`, `/api/instructors/edit/[token]/files/presign` | 30 / heure |
 
@@ -785,6 +788,21 @@ Branche `comptes-utilisateurs` (octobre 2026). Nouvel onglet **« Utilisateurs d
 
 ---
 
+## 7unvicies. Anglais technique : application mobile annoncée et liste d'attente
+
+Branche `application-mobile` (novembre 2026). Michaël développe une application mobile d'anglais technique, prévue pour **février 2027**, en même temps que l'ouverture de la version pro. Le site devient un avant-goût : on y découvre les manuels, l'application servira à apprendre (hors connexion, enregistrement de la voix, rappels, progression, version pro).
+
+- **Page `/anglais-technique`** : bloc « L'application EduConnect arrive » (février 2027, Android d'abord puis iPhone) entre la liste des chapitres et la version pro, avec le formulaire **« Prévenez-moi à la sortie »** (`src/components/anglais/AppWaitlistForm.tsx`). La section version pro indique « Ouverture en février 2027 ».
+- **Un seul champ** : email ou numéro WhatsApp (`src/lib/app-waitlist.ts`). Un texte contenant `@` est traité comme un email (`normalizeEmail`, `EMAIL_RE`) ; sinon comme un numéro : espaces, points, tirets et parenthèses retirés, `00` en tête devient `+`, un numéro à 10 chiffres sans indicatif reçoit `+225`, puis 8 à 15 chiffres exigés (E.164).
+- **API publique** `POST /api/anglais/application` : `rateLimit` 5 / heure / IP, contact enregistré dans `AppWaitlistEntry` (email et numéro uniques). Un contact déjà présent renvoie la même réponse qu'un nouveau : la liste ne peut pas être sondée.
+- **Équipe** : dans l'onglet « Anglais technique » de `/administratif` et `/bleSseD`, bloc « Liste d'attente de l'application » : nombre de contacts, liste, « Copier les emails » (séparés par des virgules, pour un envoi en Cci) et « Copier les numéros » (un par ligne), « Retirer » (demande de suppression, erreur de saisie). API `GET /api/bleSseD/app-waitlist` et `DELETE /api/bleSseD/app-waitlist/[id]`, rôles `SUPER_ADMIN` et `ADMINISTRATIF`, `Cache-Control: no-store`.
+- **Confidentialité** : la page `/confidentialite` précise que ce contact ne sert qu'à prévenir de la sortie, une seule fois. À la sortie, renseigner `notifiedAt` pour ne prévenir personne deux fois (à faire avec l'envoi, pas encore codé).
+- **À vérifier avant de vendre dans l'application** : les règles de paiement de Google Play pour les contenus numériques (le paiement Mobile Money de la version pro est sur le site, §7novodecies).
+
+**Mise en production** : `npx prisma db push` sur Neon avant la fusion (nouvelle table).
+
+---
+
 ## 8. Historique de conception (pour contexte)
 
 Le projet a démarré comme deux choses séparées : une vitrine statique HTML/CSS/JS, et une app Next.js indépendante pour la gestion des instructeurs. Elles ont été fusionnées dans un seul projet Next.js pour simplifier le déploiement et la maintenance. Le design a ensuite évolué d'un thème sombre "glassmorphism" chargé vers un style plus sobre (fond blanc, moins de sections), avec un header unique simplifié (logo + menu hamburger) partagé entre toutes les pages sauf l'admin, resté en thème sombre.
@@ -839,6 +857,8 @@ Les manuels d'anglais technique pour l'informatique ont ensuite fait leur entré
 
 Un tableau de bord des comptes du site a ensuite été ajouté au panneau super-admin (voir §7vicies) : chiffres par type de compte, liste filtrable, copie des emails et export CSV.
 
+Michaël a ensuite annoncé une application mobile d'anglais technique pour février 2027 ; le site en est l'avant-goût et recueille une liste d'attente (§7unvicies).
+
 Reste à traiter : l'analytics, le système de notation, et le pipeline de vérification automatique.
 
 ---
@@ -860,7 +880,7 @@ Fonctionnalités identifiées comme nécessaires au bon fonctionnement et à la 
 
 ### 9.3 Gestion (côté admin)
 
-- **Anglais technique** (§7novodecies) : servir les chapitres payants aux abonnés actifs (R2 privé, URL signée, filigrane), brancher un agrégateur de paiement (CinetPay, Kkiapay…) pour activer les abonnements sans validation manuelle, fixer les prix après le test du groupe pilote.
+- **Anglais technique** (§7novodecies) : servir les chapitres payants aux abonnés actifs (R2 privé, URL signée, filigrane), brancher un agrégateur de paiement (CinetPay, Kkiapay…) pour activer les abonnements sans validation manuelle, fixer les prix après le test du groupe pilote. Application mobile (février 2027, §7unvicies) : prévenir la liste d'attente à la sortie (renseigner `notifiedAt`), servir les mêmes chapitres et la même progression que le site.
 
 - **Tableau de bord analytique** : au-delà du trafic (Vercel Analytics), un tableau montrant les matières les plus demandées, le taux de conversion demande → mise en relation réussie, et le temps moyen de traitement d'une candidature — pour piloter l'activité plutôt que seulement l'observer.
 - **Historique des candidatures rejetées/suspendues avec motif.** Utile si un instructeur repostule des mois plus tard : retrouver pourquoi il avait été refusé la première fois, sans avoir à s'en souvenir.

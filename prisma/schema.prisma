@@ -507,3 +507,13 @@ model EnglishAnnouncement {
   sentBy    String? // identifiant du compte admin
   createdAt DateTime @default(now())
 }
+
+// 37. Liste d'attente de l'application mobile d'anglais technique (§7unvicies) : un email OU un
+// numéro WhatsApp, laissé sur /anglais-technique pour être prévenu de la sortie (février 2027).
+model AppWaitlistEntry {
+  id         String    @id @default(uuid())
+  email      String?   @unique
+  whatsapp   String?   @unique // format international, ex. "+2250700000000"
+  notifiedAt DateTime? // prévenu de la sortie (une seule fois)
+  createdAt  DateTime  @default(now())
+}

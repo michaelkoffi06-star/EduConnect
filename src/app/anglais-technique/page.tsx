@@ -3,6 +3,7 @@ import SiteHeader from "@/components/SiteHeader";
 import type { EnglishPlan } from "@prisma/client";
 import { CONTACT_EMAIL } from "@/lib/contact";
 import { PLANS, formatFcfa, isPlanOpen } from "@/lib/english";
+import AppWaitlistForm from "@/components/anglais/AppWaitlistForm";
 
 export const metadata: Metadata = {
   title: "EduConnect - Anglais technique pour l'informatique",
@@ -26,6 +27,14 @@ const CHAPTERS = [
     href: "/lecons/chapitre-01/index.html",
     free: true,
   },
+];
+
+// Ce qu'apportera l'application mobile (février 2027, §7unvicies)
+const APP_FEATURES = [
+  { title: "Hors connexion :", text: "télécharge tes leçons et révise sans consommer ton forfait." },
+  { title: "Ta voix enregistrée dans la leçon :", text: "écoute-toi et compare avec le modèle." },
+  { title: "Des rappels", text: "pour garder le rythme, et ta progression sauvegardée." },
+  { title: "La version pro :", text: "coaching, certification et nouveaux chapitres." },
 ];
 
 const MANUALS = [
@@ -92,11 +101,33 @@ export default function AnglaisTechniquePage() {
           Les chapitres suivants arrivent bientôt. Une question ? Écris-nous à {CONTACT_EMAIL}.
         </p>
 
+        {/* Application mobile : annonce et liste d'attente (§7unvicies) */}
+        <section className="mt-12 rounded-3xl bg-[#0d1b3e] p-6 text-white sm:p-8">
+          <p className="text-xs font-medium tracking-wide text-[#e2b94a]">Février 2027</p>
+          <h2 className="mt-1 font-[family-name:var(--font-cinzel)] text-xl">L&apos;application EduConnect arrive</h2>
+          <p className="mt-2 text-sm leading-relaxed text-white/80">
+            Le site te fait découvrir les manuels. L&apos;application te permettra d&apos;apprendre partout.
+          </p>
+          <ul className="mt-4 space-y-2 text-sm leading-relaxed text-white/90">
+            {APP_FEATURES.map((f) => (
+              <li key={f.title} className="flex gap-2">
+                <span aria-hidden="true" className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-[#e2b94a]" />
+                <span><b className="text-white">{f.title}</b> {f.text}</span>
+              </li>
+            ))}
+          </ul>
+          <p className="mt-4 text-sm text-white/80">D&apos;abord sur Android, puis sur iPhone.</p>
+          <div className="mt-5 rounded-2xl bg-white p-4">
+            <AppWaitlistForm />
+          </div>
+          <p className="mt-4 text-sm text-white/80">En attendant, le chapitre 1 est gratuit ici, sur le site.</p>
+        </section>
+
         {/* Version pro : formules à durée fixe, paiement Mobile Money (§7novodecies) */}
         <section className="mt-12">
           <h2 className="font-[family-name:var(--font-cinzel)] text-lg text-[#0d1b3e] mb-1">Version pro</h2>
           <p className="text-sm text-gray-600 mb-4">
-            Tous les chapitres de ton manuel, pour la durée de ta formule. Paiement par Wave, Orange Money, MTN MoMo ou Moov Money.
+            Ouverture en février 2027. Tous les chapitres de ton manuel, pour la durée de ta formule. Paiement par Wave, Orange Money, MTN MoMo ou Moov Money.
           </p>
           <div className="grid gap-3 sm:grid-cols-2">
             {(Object.keys(PLANS) as EnglishPlan[]).map((p) => {
