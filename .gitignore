@@ -46,3 +46,6 @@ create-admin-user.js
 
 # fichiers de verrou LibreOffice
 .~lock*
+
+# réglages personnels de Claude Code (autorisations accordées pendant les sessions)
+.claude/settings.local.json

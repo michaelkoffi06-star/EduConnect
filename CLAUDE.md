@@ -10,8 +10,20 @@ toute modification importante (architecture, modèle de données, choix passés,
 
 - Réponses, commentaires dans le code et messages de commit en **français** ; les noms de code
   (variables, fonctions, fichiers) restent en **anglais**, comme dans le code existant.
-- Michaël lance lui-même les commandes : donner des commandes **prêtes à coller**, étape par étape,
-  et lui demander la sortie du terminal quand il faut vérifier.
+- Michaël apprend en construisant : **expliquer clairement** chaque changement (quoi, pourquoi, quels
+  fichiers), en termes simples, et définir tout terme technique nouveau. Le guide pédagogique du
+  projet est `docs/guide-du-projet.md`.
+- **Ne jamais pousser sur GitHub** (`git push`) : c'est Michaël qui pousse, et qui pousse le schéma sur
+  Neon. Il fusionne lui-même dans `main` (fusion `--ff-only`).
+- **Dans Claude Code, sur le PC de Michaël (Ubuntu)** : Claude peut lire et modifier les fichiers et
+  lancer les vérifications (`npx tsc --noEmit`, `npm run build`, `git status`, `git diff`) ; chaque
+  commande qui modifie quelque chose est soumise à l'accord de Michaël. Les interdits (`git push`,
+  `prisma migrate`, lecture de `.env`) sont aussi posés dans `.claude/settings.json`.
+- **Ailleurs (claude.ai)** : Michaël lance lui-même les commandes : donner un patch et des commandes
+  **prêtes à coller**, étape par étape, et lui demander la sortie du terminal quand il faut vérifier.
+- Anglais technique : le plan de développement (progression des chapitres, application mobile, version
+  pro de février 2027) est dans le skill personnel `technical-english-manuals`
+  (`references/plan-de-developpement.md`), hors dépôt car le dépôt est public.
 - Une **branche** par fonctionnalité conséquente (`git checkout -b <nom>`) : `main` est déployée
   automatiquement en production par Vercel à chaque push.
 - Après chaque fonctionnalité livrée : mettre à jour `docs/documentation.md` (nouvelle section §7…,

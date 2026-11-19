@@ -251,6 +251,19 @@ CRON_SECRET=                # tâche quotidienne Vercel, §7novodecies (chaîne 
 node --env-file=.env create-admin-user.js <identifiant> <mot_de_passe> <SUPER_ADMIN|PEDAGOGIE|ADMINISTRATIF>
 ```
 
+**Travailler avec Claude Code** (novembre 2026, sur le PC Ubuntu de Michaël) : lancer `claude` à la racine
+du dépôt. Claude Code lit automatiquement `CLAUDE.md` (consignes) et `.claude/settings.json`
+(autorisations communes, commitées) :
+- autorisées sans demander : `npx tsc --noEmit`, `npx prisma generate`, `npm run build` ;
+- toujours soumises à accord : `prisma db push`, `git commit`, `git merge`, `git rebase`, `git reset`, `git am` ;
+- refusées : `git push`, `prisma migrate`, `db push --force-reset` / `--accept-data-loss`, la CLI `vercel`,
+  la lecture de `.env` et de `create-admin-user.js`.
+
+Ces règles sont un garde-fou, pas un coffre-fort : elles bloquent la forme habituelle de la commande, pas
+toutes ses variantes. Les autorisations accordées pendant une session (« Yes, and don't ask again ») vont
+dans `.claude/settings.local.json`, personnel et ignoré par git. Le plan de l'anglais technique vit dans
+le skill personnel `technical-english-manuals` (`~/.claude/skills/`), pas dans le dépôt public.
+
 ---
 
 ## 7. Limitations connues / à traiter avant mise en production
