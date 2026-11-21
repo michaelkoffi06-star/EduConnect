@@ -62,7 +62,7 @@ src/
 │   │   ├── mon-abonnement/             # Statut, paiement Mobile Money, renouvellement, nouveautés — privé
 │   │   └── nouveautes/                 # Désinscription des emails « nouveautés » (lien signé)
 │   ├── layout.tsx                      # Layout racine : métadonnées globales (Open Graph, Twitter Card, favicon, vérification Bing/Google — voir §7novies)
-│   ├── page.tsx                        # Vitrine (accueil), données structurées JSON-LD (EducationalOrganization), lien WhatsApp du footer (voir §8)
+│   ├── page.tsx                        # Accueil : requêtes Prisma (instructeurs, chiffres), métadonnées, JSON-LD (EducationalOrganization) ; sections dans components/home/ (§7tervicies)
 │   ├── sitemap.ts                      # Génère /sitemap.xml (routes publiques, voir §7novies)
 │   ├── robots.ts                       # Génère /robots.txt (bloque /bleSseD, /pedagogie, /administratif, /api, /modifier-profil)
 │   ├── trouver-un-tuteur/
@@ -140,6 +140,8 @@ src/
 ├── components/
 │   ├── SiteHeader.tsx      # Header partagé, thème clair/sombre selon la page
 │   ├── ScrollReveal.tsx    # Fondu + glissement au chargement/scroll (IntersectionObserver)
+│   ├── home/               # Sections de l'accueil (§7tervicies) : HomeHero, ServicesBento, TechEnglishSection (+ AudioSample),
+│   │                       #   HowItWorks (+ StepsTimeline), AppSection, FinalCta, HomeFooter, icons.tsx (icônes SVG), types.ts
 │   ├── MarketingStyles.tsx # Ancien système CSS custom (conservé, plus utilisé activement)
 │   ├── FileDropzone.tsx   # Zone de glisser-déposer réutilisable (register-instructor, modifier-profil)
 │   ├── admin/LibraryManager.tsx     # Onglet Bibliothèque commun aux 3 panneaux admin (canEdit), colonne Corrigé
@@ -849,6 +851,33 @@ Branche `progression-anglais` (novembre 2026). Premières étapes du plan valid�
 
 **Mise en production** : schéma modifié (deux tables) ⇒ `npx prisma db push` sur Neon **avant** la fusion dans `main`.
 
+## 7tervicies. Refonte de la page d'accueil (novembre 2026)
+
+Branche `refonte-accueil`. L'accueil ne présentait presque que la mise en relation ; l'anglais technique et l'application n'y figuraient pas. Refonte visuelle inspirée des sites EdTech actuels (et des animations des modèles MotionSites), **réécrite dans le projet Next.js** (aucun fichier HTML exporté) : la logique ne change pas.
+
+**Ce qui est conservé à l'identique** : les quatre requêtes Prisma de `src/app/page.tsx` (4 derniers instructeurs approuvés, nombre d'instructeurs, de matières, de mises en relation terminées), le rendu serveur (`force-dynamic`), les métadonnées, le JSON-LD `EducationalOrganization`, les ancres `#instructeurs`, `#decouvrir`, `#contact`, l'état vide « Aucun instructeur disponible pour le moment » et l'affichage « +N ». `SiteHeader`, `PageTransition`, les API et le schéma ne sont pas touchés.
+
+**Structure** (`src/components/home/`, une section par composant) :
+1. **`HomeHero`** (serveur) : slogan « Innovation for Academic Success », titre « Le bon tuteur, au bon moment. », boutons Trouver un tuteur / Devenir instructeur, trois garanties (instructeurs vérifiés, domicile ou en ligne, primaire à terminale). À droite, la photo `public/images/comptes/connexion.jpg` (Unsplash, Santi Vedrí, §7septdecies) en `next/image` chargée en priorité (`preload`), l'arc doré du logo et la carte de statistiques flottante (compteurs `AnimatedCounter`).
+2. **`ServicesBento`** (`#decouvrir`) : grille « bento » (cartes de tailles différentes). Grande carte « Trouver un tuteur » (`#instructeurs`) avec les portraits des instructeurs et les filtres réels de `/trouver-un-tuteur` ; Bibliothèque, Exercices et corrigés, Forum, bandeau Espace instructeur. Les cinq services sont en ligne : leurs étiquettes disent qui y accède (« Accès libre », « Avec un compte », « Lecture libre », « Instructeurs validés »), pas de « Bientôt disponible ».
+3. **`TechEnglishSection`** (`#anglais-technique`, fond bleu nuit) : cartes Manuel A (réseaux, cybersécurité, télécoms) et Manuel B (génie logiciel), points forts (A1 → B2, bilingue, audio, chapitre 1 gratuit, application). **Tout vient de `CHAPTERS`** (`src/lib/english-chapters.ts`, lu sans modification) : le bouton « Commencer le chapitre 1 gratuit » et l'extrait audio n'apparaissent que si le chapitre 1 est en ligne et gratuit, et le nombre de chapitres en ligne se met à jour seul. **`AudioSample`** (client) joue trois vrais enregistrements de la leçon 1 (`a07`, `a06`, `a09` : *networking*, *computer science*, *web developer*), un seul à la fois ; l'onde ne bouge que pendant la lecture.
+4. **`HowItWorks`** + **`StepsTimeline`** (client) : trois étapes. L'étape 03 dit le vrai fonctionnement (l'équipe EduConnect fait l'intermédiaire). Une ligne dorée se dessine **au fil du défilement** (variable CSS `--p` mise à jour au plus une fois par image, `requestAnimationFrame`) et chaque pastille s'allume quand la ligne l'atteint ; la ligne ne recule pas, et l'écoute du défilement s'arrête une fois la ligne complète.
+5. **`AppSection`** (`#application`) : l'application de février 2027 (§7unvicies), badges « Février 2027 » et « Bientôt disponible », maquette de téléphone **dessinée en CSS et signalée comme indicative**, et le formulaire de liste d'attente existant (`AppWaitlistForm`, API inchangée). Section au tutoiement, comme ce formulaire.
+6. **`FinalCta`** : Trouver un tuteur, Devenir instructeur, Créer un compte, lien Se connecter.
+7. **`HomeFooter`** (`#contact`, fond bleu nuit) : coordonnées de `src/lib/contact.ts` (téléphones, email, Gmail, fiche vCard), Facebook et chaîne WhatsApp, liens Explorer (avec Anglais technique), Mon compte, Le projet (Suggestions, Soutenir, Confidentialité). Copyright à l'année en cours (« © 2026 EduConnect CI. Tous droits réservés. », coquilles corrigées).
+
+**Couleurs** : jetons ajoutés dans `@theme` de `globals.css`, mesurés sur le logo et alignés sur le code existant : `navy-950` #081633, `navy-900` #0d1b3e, `navy-700` #1e3a5f, `gold-500` #c9951a, `gold-300` #e2a349, `gold-700` #8a6510, `cream-50` #faf8f2, `line` #eee6d3 (classes `bg-navy-900`, `text-gold-700`…). **Contrastes** : le doré `#c9951a` sur blanc n'atteint que 2,7 (il faut 4,5 pour du texte) ; texte doré sur fond clair = `gold-700` (5,3), texte sur bouton doré = `navy-900` (6,3), doré sur fond bleu nuit = `gold-300` (8,2).
+
+**Polices** : Cinzel pour les titres, **Geist** pour le texte de l'accueil seulement (classe `font-sans` sur la page ; `globals.css` impose encore Arial au `body` des autres pages).
+
+**Animations** (CSS et IntersectionObserver, aucune dépendance ajoutée) : apparition mot par mot du titre et fondu du visuel en **CSS pur** (`animate-fade-blur` avec délais : rien à attendre du JavaScript pour afficher le hero, contrairement à l'ancien hero sous `ScrollReveal`) ; arc doré qui se trace une fois (`animate-draw`, `pathLength="1"`) ; sections suivantes avec `ScrollReveal` ; survols discrets (élévation, flèches) ; barres sonores (`animate-sound-bar`) pendant la lecture. Photos immobiles, cartes flottantes droites, aucun filtre ni transformation laissé actif sur un conteneur de page. `prefers-reduced-motion` : tout s'affiche d'emblée (bloc commun de `globals.css`, et `StepsTimeline` affiche la ligne complète).
+
+**Détails techniques** : la racine de la page passe de `overflow-hidden` à `overflow-x-clip` (coupe les décors qui débordent sans créer de zone de défilement, qui empêchait l'en-tête de rester collant) ; `scroll-mt-*` sur les ancres pour qu'elles ne passent pas sous l'en-tête. Photos des instructeurs (R2) en `<img>` simple : `next/image` demanderait de déclarer le domaine R2 dans `next.config.ts`.
+
+**Vérifié** : `tsc`, ESLint sur les fichiers de l'accueil, `npm run build` ; captures en production locale à 1440, 768 et 390 px de large, et en mouvements réduits ; tous les liens de la page répondent (200, ou redirection vers la connexion pour `/espace-instructeur`), audios compris.
+
+**Points laissés en l'état (hors périmètre)** : le bouton de `AppWaitlistForm` garde un texte blanc sur doré (contraste 2,7), à corriger avec la page `/anglais-technique` ; pas de page « mentions légales » (seulement la confidentialité) ; menu ☰ unique à toutes les tailles (`SiteHeader`, commun à tout le site) ; ancien code `MarketingStyles.tsx`, `public/marketing/css|js` inutilisé (garder `public/marketing/images/`, qui contient les logos).
+
 ---
 
 ## 8. Historique de conception (pour contexte)
@@ -909,6 +938,8 @@ La progression séquentielle de l'anglais technique a ensuite commencé (voir §
 
 Michaël a ensuite annoncé une application mobile d'anglais technique pour février 2027 ; le site en est l'avant-goût et recueille une liste d'attente (§7unvicies).
 
+La page d'accueil a ensuite été entièrement refondue (§7tervicies, branche `refonte-accueil`) : services en grille, section dédiée à l'anglais technique avec un extrait audio, application de février 2027 et sa liste d'attente, nouvelles couleurs en jetons mesurés sur le logo, contrastes corrigés.
+
 Reste à traiter : l'analytics, le système de notation, et le pipeline de vérification automatique.
 
 ---
@@ -927,6 +958,8 @@ Fonctionnalités identifiées comme nécessaires au bon fonctionnement et à la 
 
 - **Notifications WhatsApp automatiques**, en plus de l'email — dans le contexte ivoirien, WhatsApp est probablement le canal le plus consulté par les utilisateurs. Un message automatique du type "Votre candidature a été approuvée" ou "Vous avez une nouvelle demande" via l'API WhatsApp Business serait plus fiable que l'email, surtout tant que la réputation du domaine Resend reste jeune (voir §7octies).
 - **Badge de vérification à plusieurs niveaux**, au lieu d'un simple statut approuvé/suspendu — par exemple "Profil vérifié" (CNI/CV validés) vs "Profil vérifié + expérience confirmée" (références vérifiées par appel). Rassure les parents sur la qualité et différencie les meilleurs instructeurs.
+
+- **Suites de la refonte de l'accueil** (§7tervicies) : contraste du bouton de `AppWaitlistForm` (texte bleu nuit sur doré), liens principaux visibles sur ordinateur dans `SiteHeader` (touche tout le site), page « mentions légales », suppression du code mort `MarketingStyles.tsx` et `public/marketing/css|js`, police Geist étendue aux autres pages.
 
 ### 9.3 Gestion (côté admin)
 

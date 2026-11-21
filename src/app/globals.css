@@ -10,6 +10,17 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+
+  /* Couleurs de la marque, mesurées sur le logo (§7tervicies) : classes bg-navy-950, text-gold-700…
+     Texte doré sur fond clair : gold-700 (contraste 5,3) ; texte sur bouton doré : navy-900. */
+  --color-navy-950: #081633;
+  --color-navy-900: #0d1b3e;
+  --color-navy-700: #1e3a5f;
+  --color-gold-500: #c9951a;
+  --color-gold-300: #e2a349;
+  --color-gold-700: #8a6510;
+  --color-cream-50: #faf8f2;
+  --color-line: #eee6d3;
 }
 
 body {
@@ -114,6 +125,28 @@ body {
   animation-timing-function: ease;
 }
 
+/* --- Page d'accueil (§7tervicies) --- */
+
+/* Arc doré du logo qui se trace une seule fois (SVG : pathLength="1" sur le tracé) */
+@keyframes drawStroke {
+  from { stroke-dashoffset: 1; }
+  to { stroke-dashoffset: 0; }
+}
+.animate-draw {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: drawStroke 1.6s cubic-bezier(0.65, 0, 0.35, 1) 0.3s forwards;
+}
+
+/* Barres d'onde sonore : animées seulement pendant la lecture d'un extrait audio */
+@keyframes soundBar {
+  0%, 100% { transform: scaleY(0.35); }
+  50% { transform: scaleY(1); }
+}
+.animate-sound-bar {
+  animation: soundBar 0.9s ease-in-out infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
   @view-transition {
     navigation: none;
@@ -123,8 +156,14 @@ body {
   .animate-drift,
   .animate-float,
   .animate-float-y,
+  .animate-sound-bar,
   .skeleton {
     animation: none !important;
+  }
+  /* Arc affiché d'emblée, sans tracé */
+  .animate-draw {
+    animation: none !important;
+    stroke-dashoffset: 0;
   }
 }
 

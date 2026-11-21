@@ -113,6 +113,8 @@ bloquant (`next build` ne lance pas le lint), ne pas chercher à tout corriger a
   fonds photo Unsplash dans `public/images/comptes/` (crédits en §7quindecies).
 - **Photos de fond immobiles** (ni zoom ni glissement), **cartes flottantes droites**, accueil compris (`animate-float-y`,
   sans rotation), fondu entre les pages via `src/components/PageTransition.tsx`.
+- Couleurs : jetons `navy-*`, `gold-*`, `cream-50`, `line` dans `@theme` de `globals.css` (§7tervicies). Texte
+  doré sur fond clair en `gold-700`, jamais `#c9951a` (contraste 2,7, illisible) ; texte sur bouton doré en `navy-900`.
 - Ne jamais laisser de `filter`/`transform` actif en permanence sur un conteneur de page (même
   `blur(0px)`) : ça dérègle les éléments `position: fixed` et `backdrop-blur` à l'intérieur — revenir
   à `none` au repos.
